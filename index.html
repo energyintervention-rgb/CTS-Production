@@ -621,11 +621,16 @@ header{
 .login-role-btn:hover{border-color:var(--amber);color:var(--amber);}
 .remember-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
 .remember-row label{font-family:var(--font-mono);font-size:0.7rem;color:var(--text-dim);cursor:pointer;}
-#sessionBanner{display:flex;align-items:center;gap:8px;padding:4px 12px;background:var(--cyan-dim);border:1px solid var(--cyan);border-radius:8px;font-family:var(--font-mono);font-size:0.65rem;color:var(--cyan);margin-right:8px;}
+#sessionBanner{display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--cyan-dim);border:1px solid var(--cyan);border-radius:8px;font-family:var(--font-mono);font-size:0.65rem;color:var(--cyan);margin-right:4px;white-space:nowrap;}
 #sessionBanner.supervisor{background:var(--amber-dim);border-color:var(--amber);color:var(--amber);}
 #sessionBanner.hidden{display:none;}
-.logout-btn{font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);background:none;border:1px solid var(--border);cursor:pointer;padding:2px 6px;border-radius:4px;}
+.logout-btn{font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);background:none;border:1px solid var(--border);cursor:pointer;padding:2px 6px;border-radius:4px;white-space:nowrap;}
 .logout-btn:hover{color:var(--red);border-color:var(--red);}
+@media(max-width:480px){
+  .session-name-full{display:none;}
+  #sessionBanner{padding:4px 8px;}
+  #syncIndicator{display:none;}
+}
 </style>
 </head>
 <body>
@@ -699,10 +704,10 @@ header{
   </div>
   <div class="header-right">
     <div id="sessionBanner" class="hidden">
-      <span id="sessionName"></span>
-      <button class="logout-btn" onclick="logout()">× Log out</button>
+      <span id="sessionName" class="session-name-full"></span>
+      <button class="logout-btn" onclick="logout()">× Out</button>
     </div>
-    <span id="syncIndicator" style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;">⏳ SYNC</span>
+    <span id="syncIndicator" style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;">⏳</span>
     <button class="btn-admin" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
     <button class="btn-admin" id="adminBtn" onclick="toggleAdminLogin()" style="display:none">⚙ ADMIN</button>
   </div>
