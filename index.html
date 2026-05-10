@@ -2,7 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#070B14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CTS Prod">
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIkNUUyBQcm9kdWN0aW9uIFVwZGF0ZSIsICJzaG9ydF9uYW1lIjogIkNUUyBQcm9kIiwgImRlc2NyaXB0aW9uIjogIkNUUyBMaXZlIFByb2R1Y3Rpb24gJiBBdHRlbmRhbmNlIERhc2hib2FyZCIsICJzdGFydF91cmwiOiAiLi8iLCAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwgIm9yaWVudGF0aW9uIjogInBvcnRyYWl0LXByaW1hcnkiLCAiYmFja2dyb3VuZF9jb2xvciI6ICIjMDcwQjE0IiwgInRoZW1lX2NvbG9yIjogIiMwMEQ0RkYiLCAiaWNvbnMiOiBbeyJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpSUhkcFpIUm9QU0l4T1RJaUlHaGxhV2RvZEQwaU1Ua3lJaUIyYVdWM1FtOTRQU0l3SURBZ01Ua3lJREU1TWlJK0NpQWdQSEpsWTNRZ2QybGtkR2c5SWpFNU1pSWdhR1ZwWjJoMFBTSXhPVElpSUhKNFBTSTBNaUlnWm1sc2JEMGlJekJFTVRJeU1DSXZQZ29nSUR4eVpXTjBJSGc5SWpFMUlpQjVQU0l4TlNJZ2QybGtkR2c5SWpFMk1TSWdhR1ZwWjJoMFBTSXhOakVpSUhKNFBTSXpNeUlnWm1sc2JEMGlJekV6TVVNeVJTSWdjM1J5YjJ0bFBTSWpNREJFTkVaR0lpQnpkSEp2YTJVdGQybGtkR2c5SWpRaUx6NEtJQ0E4ZEdWNGRDQjRQU0k1TmlJZ2VUMGlPVGtpSUdadmJuUXRabUZ0YVd4NVBTSkJjbWxoYkN4ellXNXpMWE5sY21sbUlpQm1iMjUwTFhkbGFXZG9kRDBpT1RBd0lpQm1iMjUwTFhOcGVtVTlJamN5SWlCbWFXeHNQU0lqTURCRU5FWkdJaUIwWlhoMExXRnVZMmh2Y2owaWJXbGtaR3hsSWlCa2IyMXBibUZ1ZEMxaVlYTmxiR2x1WlQwaWJXbGtaR3hsSWo1RFZGTThMM1JsZUhRK0NpQWdQSFJsZUhRZ2VEMGlPVFlpSUhrOUlqRTBOU0lnWm05dWRDMW1ZVzFwYkhrOUlrRnlhV0ZzTEhOaGJuTXRjMlZ5YVdZaUlHWnZiblF0ZDJWcFoyaDBQU0kyTURBaUlHWnZiblF0YzJsNlpUMGlNelFpSUdacGJHdzlJaU0zUVRoQ1FUQWlJSFJsZUhRdFlXNWphRzl5UFNKdGFXUmtiR1VpSUdSdmJXbHVZVzUwTFdKaGMyVnNhVzVsUFNKdGFXUmtiR1VpUGxCU1QwUlZRMVJKVDA0OEwzUmxlSFErQ2p3dmMzWm5QZz09IiwgInNpemVzIjogIjE5MngxOTIiLCAidHlwZSI6ICJpbWFnZS9zdmcreG1sIn0sIHsic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjRiV3h1Y3owaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNQzl6ZG1jaUlIZHBaSFJvUFNJMU1USWlJR2hsYVdkb2REMGlOVEV5SWlCMmFXVjNRbTk0UFNJd0lEQWdOVEV5SURVeE1pSStDaUFnUEhKbFkzUWdkMmxrZEdnOUlqVXhNaUlnYUdWcFoyaDBQU0kxTVRJaUlISjRQU0l4TVRJaUlHWnBiR3c5SWlNd1JERXlNakFpTHo0S0lDQThjbVZqZENCNFBTSTBNQ0lnZVQwaU5EQWlJSGRwWkhSb1BTSTBNekFpSUdobGFXZG9kRDBpTkRNd0lpQnllRDBpT0RraUlHWnBiR3c5SWlNeE16RkRNa1VpSUhOMGNtOXJaVDBpSXpBd1JEUkdSaUlnYzNSeWIydGxMWGRwWkhSb1BTSXhNaUl2UGdvZ0lEeDBaWGgwSUhnOUlqSTFOaUlnZVQwaU1qWTJJaUJtYjI1MExXWmhiV2xzZVQwaVFYSnBZV3dzYzJGdWN5MXpaWEpwWmlJZ1ptOXVkQzEzWldsbmFIUTlJamt3TUNJZ1ptOXVkQzF6YVhwbFBTSXhPVFFpSUdacGJHdzlJaU13TUVRMFJrWWlJSFJsZUhRdFlXNWphRzl5UFNKdGFXUmtiR1VpSUdSdmJXbHVZVzUwTFdKaGMyVnNhVzVsUFNKdGFXUmtiR1VpUGtOVVV6d3ZkR1Y0ZEQ0S0lDQThkR1Y0ZENCNFBTSXlOVFlpSUhrOUlqTTRPU0lnWm05dWRDMW1ZVzFwYkhrOUlrRnlhV0ZzTEhOaGJuTXRjMlZ5YVdZaUlHWnZiblF0ZDJWcFoyaDBQU0kyTURBaUlHWnZiblF0YzJsNlpUMGlPVElpSUdacGJHdzlJaU0zUVRoQ1FUQWlJSFJsZUhRdFlXNWphRzl5UFNKdGFXUmtiR1VpSUdSdmJXbHVZVzUwTFdKaGMyVnNhVzVsUFNKdGFXUmtiR1VpUGxCU1QwUlZRMVJKVDA0OEwzUmxlSFErQ2p3dmMzWm5QZz09IiwgInNpemVzIjogIjUxMng1MTIiLCAidHlwZSI6ICJpbWFnZS9zdmcreG1sIiwgInB1cnBvc2UiOiAiYW55IG1hc2thYmxlIn1dfQ==">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiB2aWV3Qm94PSIwIDAgMTgwIDE4MCI+CiAgPHJlY3Qgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIHJ4PSIzOSIgZmlsbD0iIzBEMTIyMCIvPgogIDxyZWN0IHg9IjE0IiB5PSIxNCIgd2lkdGg9IjE1MSIgaGVpZ2h0PSIxNTEiIHJ4PSIzMSIgZmlsbD0iIzEzMUMyRSIgc3Ryb2tlPSIjMDBENEZGIiBzdHJva2Utd2lkdGg9IjQiLz4KICA8dGV4dCB4PSI5MCIgeT0iOTMiIGZvbnQtZmFtaWx5PSJBcmlhbCxzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjY4IiBmaWxsPSIjMDBENEZGIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5DVFM8L3RleHQ+CiAgPHRleHQgeD0iOTAiIHk9IjEzNiIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI2MDAiIGZvbnQtc2l6ZT0iMzIiIGZpbGw9IiM3QThCQTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPlBST0RVQ1RJT048L3RleHQ+Cjwvc3ZnPg==">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiB2aWV3Qm94PSIwIDAgMTkyIDE5MiI+CiAgPHJlY3Qgd2lkdGg9IjE5MiIgaGVpZ2h0PSIxOTIiIHJ4PSI0MiIgZmlsbD0iIzBEMTIyMCIvPgogIDxyZWN0IHg9IjE1IiB5PSIxNSIgd2lkdGg9IjE2MSIgaGVpZ2h0PSIxNjEiIHJ4PSIzMyIgZmlsbD0iIzEzMUMyRSIgc3Ryb2tlPSIjMDBENEZGIiBzdHJva2Utd2lkdGg9IjQiLz4KICA8dGV4dCB4PSI5NiIgeT0iOTkiIGZvbnQtZmFtaWx5PSJBcmlhbCxzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjcyIiBmaWxsPSIjMDBENEZGIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5DVFM8L3RleHQ+CiAgPHRleHQgeD0iOTYiIHk9IjE0NSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI2MDAiIGZvbnQtc2l6ZT0iMzQiIGZpbGw9IiM3QThCQTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPlBST0RVQ1RJT048L3RleHQ+Cjwvc3ZnPg==">
 <title>CTS Production Update</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Exo+2:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -3967,6 +3975,29 @@ if(S.adminMode){
 loadTheme(); // Apply theme immediately so login screen renders in correct mode
 showToast('⏳ Connecting to CTS Cloud…');
 startRealtimeSync();
+
+// ── Service Worker (PWA offline support) ──
+if('serviceWorker' in navigator){
+  const swCode = `
+    const CACHE = 'cts-v1';
+    self.addEventListener('install', e=>{
+      e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])));
+      self.skipWaiting();
+    });
+    self.addEventListener('activate', e=>{ e.waitUntil(self.clients.claim()); });
+    self.addEventListener('fetch', e=>{
+      if(e.request.url.includes('firestore') || e.request.url.includes('firebase')) return;
+      e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{
+        const clone = res.clone();
+        caches.open(CACHE).then(c=>c.put(e.request,clone));
+        return res;
+      })));
+    });
+  `;
+  const blob = new Blob([swCode], {type:'application/javascript'});
+  const swURL = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swURL).catch(()=>{});
+}
 
 </script>
 </body>
