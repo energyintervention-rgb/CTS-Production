@@ -391,9 +391,56 @@ header{
 }
 
 @media(max-width:600px){
-  .table-header,.part-row{grid-template-columns:2fr 1fr 1fr 2fr;}
+  /* Header */
+  header{padding:8px 10px;gap:6px;}
+  .app-title{font-size:0.9rem;}
+  .app-sub{display:none;}
+  .logo-box{width:28px!important;height:28px!important;font-size:0.7rem!important;}
+  #sessionBanner{font-size:0.55rem;padding:2px 6px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .logout-btn{font-size:0.5rem;padding:1px 4px;}
+  #syncIndicator{font-size:0.5rem;letter-spacing:0;}
+  #themeBtn{padding:4px 7px;font-size:0.65rem;}
+  #adminBtn{padding:4px 8px;font-size:0.6rem;letter-spacing:0;}
+
+  /* Nav pills */
+  .nav-pills{padding:10px 8px 0;gap:4px;}
+  .pill{padding:6px 12px;font-size:0.78rem;letter-spacing:0;}
+
+  /* Page */
+  .page{padding:10px 8px;}
+
+  /* Share bar */
+  .share-bar{padding:6px 8px;gap:5px;flex-wrap:nowrap;overflow-x:auto;}
+  .share-bar-label{display:none;}
+  .share-btn{padding:5px 8px;font-size:0.68rem;}
+  .share-bar-proj{display:none;}
+  .btn-send{padding:7px 10px;font-size:0.72rem;}
+
+  /* Project tabs */
+  .proj-tabs{gap:4px;padding:6px 0 2px;overflow-x:auto;flex-wrap:nowrap;}
+  .proj-tab{padding:4px 10px;font-size:0.7rem;white-space:nowrap;}
+
+  /* Assembly table */
+  .table-header,.part-row{grid-template-columns:2fr 0.7fr 0.7fr 0.6fr 1.2fr 0.8fr;font-size:0.72rem;padding:8px 8px;}
   .table-header .col-total,.part-row .part-total{display:none;}
-  .worker-grid{grid-template-columns:1fr;}
+  .overall-banner{padding:12px;}
+  .overall-pct{font-size:2.5rem;}
+
+  /* Worker cards */
+  .worker-card{padding:12px 10px;}
+
+  /* Charts */
+  .stat-cards{grid-template-columns:repeat(2,1fr);}
+  .stat-card .val{font-size:1.2rem;}
+  .donut-wrap{min-width:140px;}
+  .hbar-label{width:70px;font-size:0.68rem;}
+
+  /* Activity log */
+  #activityLogPanel .log-entry{flex-direction:column;gap:2px;}
+}
+@media(max-width:400px){
+  .pill{padding:5px 8px;font-size:0.72rem;}
+  .table-header,.part-row{grid-template-columns:1.8fr 0.6fr 0.6fr 0.5fr 1fr 0.8fr;}
 }
 
 .edit-panel{
@@ -546,6 +593,9 @@ header{
 .proj-tab:not(.active):hover{border-color:var(--cyan);color:var(--cyan);}
 .proj-tab-add{border-style:dashed;color:var(--amber);border-color:var(--amber-dim);}
 .proj-tab-add:hover{background:var(--amber-dim);border-color:var(--amber);}
+/* ══ MOBILE RESPONSIVE ══ */
+
+
 /* ══ LOGIN SCREEN ══ */
 #loginScreen{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;padding:20px;}
 #loginScreen.hidden{display:none;}
@@ -1904,7 +1954,7 @@ function buildWAMessage(){
   const maxLen = Math.max(...parts.map(p=>p.name.length), 8);
   function pad(s,l){ return s+' '.repeat(Math.max(0,l-s.length)); }
   function padL(s,l){ return ' '.repeat(Math.max(0,l-s.length))+s; }
-  const div = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+  const div = '--------------------';
   let lines=[];
   lines.push(div);
   lines.push('  CTS PRODUCTION UPDATE');
@@ -2311,7 +2361,7 @@ function confirmOvertimeRequest(){
   const hol = holidays.find(h=>h.enabled&&h.date===TODAY);
   const dow = new Date().getDay();
   const dayName = hol?('PUBLIC HOLIDAY — '+hol.name.toUpperCase()):'REST DAY';
-  const div = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+  const div = '--------------------';
   const msg = [
     div,
     '  🔔 OVERTIME REQUEST',
@@ -2521,11 +2571,13 @@ function renderActivityLog(){
                 e.type.includes('APPROVE')||e.type==='LOGIN'?'var(--green)':
                 e.type.includes('PIN')?'var(--amber)':'var(--text-dim)';
     const idx = log.indexOf(e);
-    return `<div style="padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:flex-start;">
-      <input type="checkbox" class="log-chk" data-idx="${idx}" style="margin-top:2px;width:12px;height:12px;cursor:pointer;flex-shrink:0;">
-      <span style="color:var(--text-dim);white-space:nowrap;font-size:0.6rem">${dt}</span>
-      <span style="color:${col};white-space:nowrap">${e.type}</span>
-      <span style="color:var(--text);word-break:break-word">${escH(e.detail||'')}${e.actor?' — <em style="color:var(--text-dim)">'+escH(e.actor)+'</em>':''}</span>
+    return `<div style="padding:5px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+        <input type="checkbox" class="log-chk" data-idx="${idx}" style="width:12px;height:12px;cursor:pointer;flex-shrink:0;">
+        <span style="color:var(--text-dim);font-size:0.58rem;white-space:nowrap;">${dt}</span>
+        <span style="color:${col};font-size:0.62rem;font-weight:700;">${e.type}</span>
+      </div>
+      <div style="color:var(--text);font-size:0.65rem;padding-left:18px;word-break:break-word;line-height:1.4;">${escH(e.detail||'')}${e.actor?' <span style="color:var(--text-dim);font-style:italic;">— '+escH(e.actor)+'</span>':''}</div>
     </div>`;
   }).join('');
 }
@@ -3294,14 +3346,14 @@ function toggleTheme(){
 }
 function loadTheme(){
   const saved = localStorage.getItem('cts_theme');
-  // Default is dark — only apply light if explicitly saved
   if(saved==='light'){
     document.body.classList.add('light-mode');
     const btn = document.getElementById('themeBtn');
     if(btn) btn.textContent = '🌑';
   } else {
-    // Ensure dark mode
+    // Default dark — remove light mode if somehow set
     document.body.classList.remove('light-mode');
+    localStorage.setItem('cts_theme','dark');
     const btn = document.getElementById('themeBtn');
     if(btn) btn.textContent = '🌙';
   }
@@ -3588,7 +3640,7 @@ function sendAttWhatsApp(){
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-MY',{day:'2-digit',month:'long',year:'numeric'}).toUpperCase();
   const timeStr = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+' HRS';
-  const div = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+  const div = '--------------------';
 
   // Determine today's day type
   const todayDow = now.getDay();
@@ -3617,9 +3669,8 @@ function sendAttWhatsApp(){
     const inStr  = rec.clockIn  ? rec.clockIn.substring(0,5)  : '--:--';
     const outStr = rec.clockOut ? rec.clockOut.substring(0,5) : '--:--';
     const hoursStr = rec.clockIn&&rec.clockOut ? '('+hours.toFixed(1)+'h)' : '';
-    const nm = name.toUpperCase().padEnd(12,' ');
-    let row = `  ${icon} ${nm} IN: ${inStr}  OUT: ${outStr} ${hoursStr}  ${statusLabel}`;
-    if(rec.reason) row += `\n      ↳ ${rec.reason}`;
+    let row = `${icon} ${name}\n   IN: ${inStr} | OUT: ${outStr} ${hoursStr}\n   ${statusLabel}`;
+    if(rec.reason) row += `\n   Reason: ${rec.reason}`;
     return row;
   }).join('\n');
 
@@ -3680,7 +3731,7 @@ function sendChartWhatsApp(){
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-MY',{day:'2-digit',month:'long',year:'numeric'}).toUpperCase();
   const timeStr = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+' HRS';
-  const div = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+  const div = '--------------------';
   const allParts   = S.projects.flatMap(pr=>pr.parts);
   const totalUp    = allParts.reduce((a,x)=>a+x.updated,0);
   const totalBuild = allParts.reduce((a,x)=>a+x.total,0);
@@ -3908,6 +3959,7 @@ if(S.adminMode){
   document.getElementById('adminBtn').textContent='⚙ ADMIN ON';
 }
 // ── INIT ──
+loadTheme(); // Apply theme immediately so login screen renders in correct mode
 showToast('⏳ Connecting to CTS Cloud…');
 startRealtimeSync();
 
