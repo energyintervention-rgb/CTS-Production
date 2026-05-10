@@ -991,10 +991,41 @@ header{
 <!-- Update number modal -->
 <div class="modal-overlay" id="updateModal">
   <div class="modal">
-    <h3>Update Progress</h3>
-    <p id="updateModalSub">Enter updated count for this part</p>
-    <input class="modal-input" id="updateInput" type="number" min="0" placeholder="Enter number...">
-    <div class="modal-actions">
+    <h3 id="updateModalTitle">Update Progress</h3>
+    <p id="updateModalSub" style="color:var(--text-dim);font-size:0.8rem;margin-bottom:12px;"></p>
+
+    <!-- Admin tabs — shown only for admin -->
+    <div id="updateModeTabs" style="display:none;margin-bottom:12px;">
+      <div style="display:flex;gap:6px;">
+        <button id="tabDirect" onclick="switchUpdateTab('direct')"
+          class="btn-sm btn-cyan" style="flex:1">📊 Set Total</button>
+        <button id="tabWorker" onclick="switchUpdateTab('worker')"
+          class="btn-sm" style="flex:1;border-color:var(--border);color:var(--text-dim)">👤 By Worker</button>
+      </div>
+    </div>
+
+    <!-- Direct update (Admin bulk / current total) -->
+    <div id="updateDirect">
+      <label style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-dim);letter-spacing:1px;display:block;margin-bottom:6px;">SET TOTAL UNITS DONE</label>
+      <input class="modal-input" id="updateInput" type="number" min="0" placeholder="Enter total..."
+        onkeydown="if(event.key==='Enter')confirmUpdate()">
+    </div>
+
+    <!-- By worker (Admin per-worker entry) -->
+    <div id="updateByWorker" style="display:none;">
+      <label style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-dim);letter-spacing:1px;display:block;margin-bottom:8px;">SELECT WORKER & ENTER UNITS DONE TODAY</label>
+      <div id="workerUpdateList"></div>
+    </div>
+
+    <!-- Worker self-update (adds to their tally) -->
+    <div id="updateSelf" style="display:none;">
+      <label style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-dim);letter-spacing:1px;display:block;margin-bottom:6px;">HOW MANY UNITS DID YOU COMPLETE?</label>
+      <input class="modal-input" id="updateSelfInput" type="number" min="0" placeholder="Your units today..."
+        onkeydown="if(event.key==='Enter')confirmUpdate()">
+      <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-dim);margin-top:6px;" id="updateSelfCurrent"></div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:14px;">
       <button class="btn-cancel" onclick="closeModal('updateModal')">Cancel</button>
       <button class="btn-confirm" onclick="confirmUpdate()">Update</button>
     </div>
@@ -1156,6 +1187,7 @@ function makeProject(id, name){
     hiddenWorkers:[],
     workerTargets:{},   // {workerName: dailyTarget} — admin override
     workerAssignments:{}, // {workerName: [partName, ...]}
+    workerUpdates:{},     // {partName: {workerName: totalUnits}}
     dailySnapshots:{},  // {YYYY-MM-DD: {total, byPart:{partName:units}}}
     workHours:{
       schedule:{
@@ -1209,7 +1241,9 @@ function defaultState(){
 
 let S = loadState();
 let currentPart = null;
+let _updateTab = 'direct';
 let pendingClockAction = null;
+let _pendingClockName = '';
 
 // ── project helpers ──
 function activeProject(){ return S.projects.find(p=>p.id===S.activeProjectId)||S.projects[0]; }
@@ -1820,33 +1854,97 @@ function renderAssembly(){
   updateShareLabels();
 }
 
+function switchUpdateTab(tab){
+  _updateTab = tab;
+  document.getElementById('updateDirect').style.display   = tab==='direct'?'':'none';
+  document.getElementById('updateByWorker').style.display = tab==='worker'?'':'none';
+  const btnD = document.getElementById('tabDirect');
+  const btnW = document.getElementById('tabWorker');
+  if(btnD){ btnD.className='btn-sm '+(tab==='direct'?'btn-cyan':''); btnD.style.borderColor=tab==='direct'?'':'var(--border)'; btnD.style.color=tab==='direct'?'':'var(--text-dim)'; }
+  if(btnW){ btnW.className='btn-sm '+(tab==='worker'?'btn-cyan':''); btnW.style.borderColor=tab==='worker'?'':'var(--border)'; btnW.style.color=tab==='worker'?'':'var(--text-dim)'; }
+}
+
 function openUpdate(idx){
   currentPart = idx;
-  const p = activeProject().parts[idx];
-  document.getElementById('updateModalSub').textContent = `${p.name} — Current: ${p.updated} / ${p.total}`;
-  document.getElementById('updateInput').value = p.updated;
+  const pr = activeProject();
+  const p  = pr.parts[idx];
+  const isWorkerRole = SESSION && SESSION.role==='worker';
+  document.getElementById('updateModalTitle').textContent = p.name;
+  document.getElementById('updateModalSub').textContent   = `Total: ${p.total} | Done: ${p.updated}`;
+  if(!pr.workerUpdates) pr.workerUpdates={};
+  if(!pr.workerUpdates[p.name]) pr.workerUpdates[p.name]={};
+
+  if(isWorkerRole){
+    _updateTab='self';
+    document.getElementById('updateModeTabs').style.display='none';
+    document.getElementById('updateDirect').style.display='none';
+    document.getElementById('updateByWorker').style.display='none';
+    document.getElementById('updateSelf').style.display='';
+    document.getElementById('updateSelfInput').value='';
+    const myDone = pr.workerUpdates[p.name][SESSION.name]||0;
+    document.getElementById('updateSelfCurrent').textContent=`Your total so far: ${myDone} units`;
+    setTimeout(()=>document.getElementById('updateSelfInput').focus(),100);
+  } else {
+    _updateTab='direct';
+    document.getElementById('updateModeTabs').style.display='block';
+    document.getElementById('updateDirect').style.display='';
+    document.getElementById('updateByWorker').style.display='none';
+    document.getElementById('updateSelf').style.display='none';
+    document.getElementById('updateInput').value=p.updated;
+    switchUpdateTab('direct');
+    const workers = pr.workers||[];
+    document.getElementById('workerUpdateList').innerHTML = workers.map(w=>{
+      const done = pr.workerUpdates[p.name][w]||0;
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="flex:1;font-family:var(--font-ui);font-size:0.85rem;">${escH(w)}</span>
+        <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-dim);">So far: ${done}</span>
+        <input class="admin-input" type="number" min="0" id="wu_${w.replace(/\s/g,'_')}"
+          value="${done}" style="width:80px;flex:none;">
+      </div>`;
+    }).join('');
+    setTimeout(()=>document.getElementById('updateInput').select(),100);
+  }
   document.getElementById('updateModal').classList.add('show');
-  setTimeout(()=>document.getElementById('updateInput').select(),100);
 }
+
 function confirmUpdate(){
-  const val = parseInt(document.getElementById('updateInput').value)||0;
   if(currentPart===null) return;
   const pr = activeProject();
-  const p = pr.parts[currentPart];
-  const oldVal = p.updated;
-  pr.parts[currentPart].updated = Math.min(val, p.total);
-  // Track daily update count for worker role
-  if(SESSION && SESSION.role==='worker'){
-    const updateKey = 'updates_'+TODAY+'_'+pr.id+'_'+p.name;
-    const count = parseInt(localStorage.getItem(updateKey)||'0');
-    localStorage.setItem(updateKey, String(count+1));
-    logActivity('PART_UPDATE', `Updated ${p.name} to ${val}`, SESSION.name);
+  const p  = pr.parts[currentPart];
+  if(!pr.workerUpdates) pr.workerUpdates={};
+  if(!pr.workerUpdates[p.name]) pr.workerUpdates[p.name]={};
+
+  if(_updateTab==='self'){
+    const add = parseInt(document.getElementById('updateSelfInput').value)||0;
+    if(add<=0){ showToast('Enter units you completed','warn'); return; }
+    const name = SESSION.name;
+    pr.workerUpdates[p.name][name] = (pr.workerUpdates[p.name][name]||0)+add;
+    p.updated = Math.min(p.total, Object.values(pr.workerUpdates[p.name]).reduce((a,v)=>a+v,0));
+    const k='updates_'+TODAY+'_'+pr.id+'_'+p.name;
+    localStorage.setItem(k,String((parseInt(localStorage.getItem(k)||'0')+1)));
+    // Track today's personal units for display
+    const snapKey='workerDay_'+TODAY+'_'+pr.id+'_'+p.name+'_'+name;
+    localStorage.setItem(snapKey,String((parseInt(localStorage.getItem(snapKey)||'0')+add)));
+    logActivity('PART_UPDATE',`+${add} units on ${p.name}`,name);
+
+  } else if(_updateTab==='worker'){
+    (pr.workers||[]).forEach(w=>{
+      const el=document.getElementById('wu_'+w.replace(/\s/g,'_'));
+      if(el) pr.workerUpdates[p.name][w]=Math.max(0,parseInt(el.value)||0);
+    });
+    p.updated=Math.min(p.total,Object.values(pr.workerUpdates[p.name]).reduce((a,v)=>a+v,0));
+    logActivity('PART_UPDATE',`Admin set per-worker units for ${p.name}`);
+
+  } else {
+    const val=parseInt(document.getElementById('updateInput').value)||0;
+    p.updated=Math.min(val,p.total);
+    logActivity('PART_UPDATE',`Admin set ${p.name} total to ${val}`);
   }
   recordDailySnapshot(pr);
   saveState();
   closeModal('updateModal');
   renderAssembly();
-  showToast('✓ '+p.name+' updated to '+val);
+  showToast('✓ '+p.name+' updated');
 }
 
 function recordDailySnapshot(pr){
@@ -1920,21 +2018,21 @@ function getPresentWorkers(pr){
 }
 
 function getWorkerUnits(pr, name){
-  const present = getPresentWorkers(pr);
-  const isPresent = present.includes(name);
-  const {today} = getTodayUnits(pr);
-  const count = Math.max(present.length, 1);
-  const todayShare = isPresent ? Math.round(today / count) : 0;
-
-  // Cumulative = units done on assigned parts
+  if(!pr.workerUpdates) pr.workerUpdates={};
+  // Cumulative = sum of this worker's personal updates on assigned parts
   const assigned = (pr.workerAssignments&&pr.workerAssignments[name])||[];
-  const assignedParts = assigned.length>0
-    ? pr.parts.filter(p=>assigned.includes(p.name))
-    : [];
-  const cumulative = assignedParts.reduce((a,p)=>a+p.updated,0);
+  const assignedParts = pr.parts.filter(p=>assigned.includes(p.name));
+  const cumulative = assignedParts.reduce((a,p)=>a+(pr.workerUpdates[p.name]&&pr.workerUpdates[p.name][name]||0),0);
   const cumulativeTotal = assignedParts.reduce((a,p)=>a+p.total,0);
 
-  return {today: todayShare, cumulative, cumulativeTotal};
+  // Today's units = what this worker entered today (from localStorage key)
+  let today = 0;
+  assignedParts.forEach(p=>{
+    const snapKey = 'workerDay_'+TODAY+'_'+pr.id+'_'+p.name+'_'+name;
+    today += parseInt(localStorage.getItem(snapKey)||'0');
+  });
+
+  return {today, cumulative, cumulativeTotal};
 }
 
 function renderProjectNameConfig(){
@@ -2087,7 +2185,10 @@ function removeWAContact(i){
 // ══════════════════════════════════════════
 // ATTENDANCE  — per-project
 // ══════════════════════════════════════════
-const TODAY = new Date().toISOString().split('T')[0];
+// TODAY in Malaysia Time (MYT = UTC+8)
+const _now = new Date();
+const _myt = new Date(_now.getTime() + (8*60*60*1000));
+const TODAY = _myt.toISOString().split('T')[0];
 
 function renderAttProjectTabs(){
   const el = document.getElementById('attProjectTabs');
@@ -2147,6 +2248,9 @@ function getDaySchedule(pr, dayName){
 }
 function isEarlyLeave(clockOutStr){
   if(!clockOutStr) return false;
+  const rec = getAttRecord(_pendingClockName||'');
+  // If overnight shift (clockOut < clockIn), never flag as early leave
+  if(rec&&rec.clockIn&&isOvernightClockout(rec.clockIn, clockOutStr)) return false;
   const pr = attProject();
   const sched = getTodaySchedule(pr);
   const [eh,em] = sched.end.split(':').map(Number);
@@ -2167,6 +2271,13 @@ function getClockStatus(timeStr){
   if(timeMin<=startMin) return 'onTime';
   return 'late';
 }
+function calcLateForTime(timeStr, pr){
+  if(!timeStr) return 0;
+  const sched = getTodaySchedule(pr);
+  const [sh,sm] = sched.start.split(':').map(Number);
+  const [th,tm] = timeStr.substring(0,5).split(':').map(Number);
+  return Math.max(0,(th*60+tm)-(sh*60+sm));
+}
 function calcLate(timeStr){
   if(!timeStr) return 0;
   const t = timeStr.substring(0,5);
@@ -2180,7 +2291,17 @@ function calcHours(inStr, outStr){
   if(!inStr||!outStr) return 0;
   const [ih,im] = inStr.substring(0,5).split(':').map(Number);
   const [oh,om] = outStr.substring(0,5).split(':').map(Number);
-  return Math.max(0,((oh*60+om)-(ih*60+im))/60);
+  let diff = (oh*60+om)-(ih*60+im);
+  // Overnight shift — clock out is next day
+  if(diff<0) diff += 24*60;
+  return Math.max(0, diff/60);
+}
+
+function isOvernightClockout(inStr, outStr){
+  if(!inStr||!outStr) return false;
+  const [ih,im] = inStr.substring(0,5).split(':').map(Number);
+  const [oh,om] = outStr.substring(0,5).split(':').map(Number);
+  return (oh*60+om) < (ih*60+im);
 }
 
 function nowHMS(){
@@ -2221,13 +2342,16 @@ function renderAttendance(){
 
   body.innerHTML = displayWorkers.map(name=>{
     const rec = getAttRecord(name);
-    const status = getClockStatus(rec.clockIn);
-    const lateMin = calcLate(rec.clockIn);
+    const _pr2 = attProject();
+    // Check if today is rest/holiday OR if record was an OT request
+    const isOTDay = !!(dayOff) || !!(rec.overtimeStatus);
+    const status = isOTDay ? (rec.clockIn?'ot':'absent') : getClockStatus(rec.clockIn);
+    const lateMin = isOTDay ? 0 : calcLate(rec.clockIn);
     const hours = calcHours(rec.clockIn, rec.clockOut);
     const lateStr = lateMin>0 ? Math.floor(lateMin/60)+'h '+String(lateMin%60).padStart(2,'0')+'m late' : '';
     const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-    const colors = {onTime:'var(--green)',late:'var(--amber)',tooEarly:'var(--cyan)',absent:'var(--text-dim)'};
-    const statusText = {onTime:'ON TIME',late:'LATE',tooEarly:'EARLY',absent:'ABSENT'};
+    const colors = {onTime:'var(--green)',late:'var(--amber)',tooEarly:'var(--cyan)',absent:'var(--text-dim)',ot:'var(--green)'};
+    const statusText = {onTime:'ON TIME',late:'LATE',tooEarly:'EARLY',absent:'ABSENT',ot:'OT'};
     const key = name.replace(/\s/g,'_');
 
     // Reason display: locked after clockIn submitted
@@ -2314,13 +2438,20 @@ function renderAttendance(){
         </div>
         <div style="flex:1;min-width:0;">
           <div class="worker-name">${escH(name)}${isWorkerHidden(name)?'<span style="font-family:var(--font-mono);font-size:0.55rem;color:var(--amber);border:1px solid var(--amber);border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:middle">FLEX</span>':''}</div>
-          <div class="worker-status" style="color:${colors[status]}">${statusText[status]}</div>
+          ${isOTDay&&rec.clockIn?`
+            <div style="color:var(--green);font-family:var(--font-mono);font-size:0.65rem;font-weight:700;">
+              ${rec.overtimeStatus==='approved'?'✓ OT APPROVED'+(rec.overtimeApprovedBy?' by '+rec.overtimeApprovedBy:'')
+                :rec.overtimeStatus==='pending'?'⏳ OT PENDING'
+                :rec.overtimeStatus==='rejected'?'✗ OT REJECTED'
+                :'OT'}
+            </div>`
+          :`<div class="worker-status" style="color:${colors[status]}">${statusText[status]}</div>`}
         </div>
         <div class="worker-times">
           ${rec.clockIn?`<div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text)">
-            IN: ${rec.clockIn}${lateStr?` <small style="color:var(--amber)">(${lateStr})</small>`:''}
+            IN: ${rec.clockIn}${(!isOTDay&&lateStr)?` <small style="color:var(--amber)">(${lateStr})</small>`:''}
           </div>`:''}
-          ${rec.clockOut?`<div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--cyan)">OUT: ${rec.clockOut} (${hours.toFixed(1)}h)</div>`:''}
+          ${rec.clockOut?`<div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--cyan)">OUT: ${rec.clockOut} (${hours.toFixed(1)}h)${(rec.overnight||isOvernightClockout(rec.clockIn,rec.clockOut))?' <span style="color:var(--amber);font-size:0.6rem;font-weight:700">(+1d)</span>':''}</div>`:''}
           ${rec.gps_in?`<div style="font-size:0.58rem;color:var(--text-dim)">📍${rec.gps_in}</div>`:''}
         </div>
       </div>
@@ -2330,7 +2461,10 @@ function renderAttendance(){
 
       <div class="worker-actions">
         ${actionBtn}
-        ${(S.adminMode)?`<button class="btn-sm" onclick="toggleEditPanel('${name}')" style="padding:8px 14px;">✏ Edit</button>`:''}
+        ${(S.adminMode)?`
+          <button class="btn-sm" onclick="toggleEditPanel('${name}')" style="padding:8px 14px;">✏ Edit</button>
+          <button class="btn-sm btn-red" onclick="clearTodayRecord('${name}')" style="padding:8px 14px;" title="Clear today's attendance record">🗑 Clear Today</button>
+        `:''}
         ${(SESSION&&SESSION.role==='worker'&&SESSION.name===name)?`
           <button class="btn-sm" onclick="generateWorkerReport('${name}')" style="padding:8px 14px;border-color:var(--cyan);color:var(--cyan);">📄 My Report</button>
           <button class="btn-sm" onclick="openChangePIN('${name}')" style="padding:8px 14px;border-color:var(--amber);color:var(--amber);">🔐 Change PIN</button>
@@ -2374,9 +2508,7 @@ let pendingOTWorker = null;
 function requestOvertime(name){
   pendingOTWorker = name;
   const pr = attProject();
-  const plan = pr.plan;
-  const wdpw = plan.workDaysPerWeek||5;
-  const holidays = plan.holidays||[];
+  const holidays = pr.plan.holidays||[];
   const hol = holidays.find(h=>h.enabled&&h.date===TODAY);
   const dow = new Date().getDay();
   const dayName = hol ? ('Public Holiday — '+hol.name) : 'Rest Day';
@@ -2448,7 +2580,9 @@ function confirmOvertimeRequest(){
 
 function approveOvertime(name){
   const rec = getAttRecord(name);
-  setAttRecord(name, {...rec, overtimeStatus:'approved'});
+  const approver = SESSION?SESSION.name:'Admin';
+  setAttRecord(name, {...rec, overtimeStatus:'approved', overtimeApprovedBy:approver});
+  logActivity('OT_APPROVED','Overtime approved for '+name, approver);
   renderAttendance();
   showToast('✓ Overtime approved for '+name);
 }
@@ -2682,7 +2816,11 @@ function requestClockin(name){
   pendingClockAction = {name, type:'in', isLate};
   document.getElementById('clockConfirmIcon').textContent = '▶';
   document.getElementById('clockConfirmTitle').textContent = 'Confirm Clock In';
-  const lateNow = calcLate(nowHMS());
+  const _pr3 = attProject();
+  const _sched3 = getTodaySchedule(_pr3);
+  const _hols3 = (_pr3.plan&&_pr3.plan.holidays)||[];
+  const _isOTNow = !_sched3.on || !!_hols3.find(h=>h.enabled&&h.date===TODAY);
+  const lateNow = _isOTNow ? 0 : calcLate(nowHMS());
   const lateStr = lateNow>0 ? Math.floor(lateNow/60)+'h '+String(lateNow%60).padStart(2,'0')+'m late' : '';
   document.getElementById('clockConfirmMsg').innerHTML =
     `Clocking in for <strong>${escH(name)}</strong>.`+
@@ -2701,6 +2839,7 @@ function requestClockin(name){
 function requestClockOut(name){
   const rec = getAttRecord(name);
   const early = isEarlyLeave(nowHMS());
+  _pendingClockName = name;
   pendingClockAction = {name, type:'out', isEarly:early};
   document.getElementById('clockConfirmIcon').textContent = '⏹';
   document.getElementById('clockConfirmTitle').textContent = early ? 'Leaving Early?' : 'Confirm Clock Out';
@@ -2748,8 +2887,12 @@ async function doClockin(name, reason=''){
   const rec = getAttRecord(name);
   const timeStr = nowHMS();
   const gps = await getGPS();
-  const status = getClockStatus(timeStr);
-  const lateMin = calcLate(timeStr);
+  const pr = attProject();
+  const sched = getTodaySchedule(pr);
+  const hols = (pr.plan&&pr.plan.holidays)||[];
+  const isOT = !sched.on || !!hols.find(h=>h.enabled&&h.date===TODAY) || !!rec.overtimeStatus;
+  const status = isOT ? 'ot' : getClockStatus(timeStr);
+  const lateMin = isOT ? 0 : calcLate(timeStr);
   setAttRecord(name,{...rec, clockIn:timeStr, gps_in:gps, status, lateMin, reason});
   renderAttendance();
   showToast('✓ '+name+' clocked in at '+timeStr);
@@ -2760,8 +2903,9 @@ async function doClockout(name, reason=''){
   if(!rec.clockIn){ showToast('Not clocked in','warn'); return; }
   const timeStr = nowHMS();
   const gps = await getGPS();
+  const overnight = isOvernightClockout(rec.clockIn, timeStr);
   setAttRecord(name,{...rec, clockOut:timeStr, gps_out:gps, reason:reason||rec.reason,
-    earlyLeave: isEarlyLeave(timeStr)});
+    earlyLeave: isEarlyLeave(timeStr), overnight});
   renderAttendance();
   showToast('✓ '+name+' clocked out at '+timeStr);
 }
@@ -2959,17 +3103,16 @@ function exportAttCSV(){
   const pr = attProject();
   const workers = pr.workers||[];
   const att = pr.attendance||{};
-  const plan = pr.plan;
-  const wdpw = plan.workDaysPerWeek||5;
-  const holidays = plan.holidays||[];
+  const holidays = pr.plan.holidays||[];
 
   function getDayType(dateStr){
     const d = new Date(dateStr);
-    const dow = d.getDay();
-    const hol = holidays.find(h=>h.enabled&&h.date===dateStr);
-    if(hol) return {type:'holiday', label:'Public Holiday — '+hol.name};
-    const isRest = (wdpw===5&&(dow===0||dow===6))||(wdpw===6&&dow===0);
-    if(isRest) return {type:'rest', label:'Rest Day'};
+    const dayN = DAY_NAMES[d.getDay()];
+    const hDay = holidays.find(h=>h.enabled&&h.date===dateStr);
+    if(hDay) return {type:'holiday', label:'Public Holiday — '+hDay.name};
+    const daySchedEntry = (pr.workHours&&pr.workHours.schedule&&pr.workHours.schedule[dayN]);
+    const isR = daySchedEntry ? !daySchedEntry.on : (dayN==='Sun');
+    if(isR) return {type:'rest', label:'Rest Day — '+dayN};
     return {type:'work', label:''};
   }
 
@@ -2979,7 +3122,7 @@ function exportAttCSV(){
   dateSet.add(TODAY);
   const dates = [...dateSet].sort();
 
-  let csv = 'Worker,Date,Day Type,Clock In,Clock Out,Hours,Status,Late Duration,Today Units,Target,Cumulative,Hit Target,Reason,OT Reason\n';
+  let csv = '\uFEFF'+'Worker,Date,Day Type,Clock In,Clock Out,Hours,Status,Late Duration,Today Units,Target,Cumulative,Hit Target,Reason,OT Reason\n';
   const exportWorkers = workers.filter(n=>!isWorkerHidden(n));
   dates.forEach(date=>{
     const dayInfo = getDayType(date);
@@ -2987,27 +3130,52 @@ function exportAttCSV(){
       const key = name+'_'+date;
       const rec = att[key]||{clockIn:'',clockOut:'',status:'',lateMin:0,reason:''};
       if(dayInfo.type!=='work'){
-        csv += `"${name}","${date}","${dayInfo.label}","","","","${dayInfo.label}","","0","0","0","—","${rec.reason||''}","${rec.overtimeReason||''}"\n`;
+        const hours2 = calcHours(rec.clockIn,rec.clockOut).toFixed(1);
+        const outStr2 = rec.clockOut?(rec.clockOut+((rec.overnight||isOvernightClockout(rec.clockIn,rec.clockOut))?' (+1d)':'')):'';
+        let otSt;
+        if(!rec.clockIn) otSt = dayInfo.label;
+        else if(rec.overtimeStatus==='approved') otSt='OT Approved'+(rec.overtimeApprovedBy?' by '+rec.overtimeApprovedBy:'');
+        else if(rec.overtimeStatus==='pending')  otSt='OT Pending';
+        else if(rec.overtimeStatus==='rejected') otSt='OT Rejected';
+        else otSt='OT (no approval)';
+        // Per-worker units from workerUpdates (same as dashboard)
+        if(!pr.workerUpdates) pr.workerUpdates={};
+        const assigned = (pr.workerAssignments&&pr.workerAssignments[name])||[];
+        const assignedParts = pr.parts.filter(p=>assigned.includes(p.name));
+        // Today's units from localStorage snapshot key
+        let otTodayUnits2 = 0;
+        assignedParts.forEach(p=>{
+          const snapKey = 'workerDay_'+date+'_'+pr.id+'_'+p.name+'_'+name;
+          otTodayUnits2 += parseInt(localStorage.getItem(snapKey)||'0');
+        });
+        // Cumulative = sum of worker's personal updates on assigned parts
+        const otCumulative = assignedParts.reduce((a,p)=>a+(pr.workerUpdates[p.name]&&pr.workerUpdates[p.name][name]||0),0);
+        const otCumulativeTotal = assignedParts.reduce((a,p)=>a+p.total,0);
+        const otTarget = getWorkerDailyTarget(pr, name);
+        const otHit = otTodayUnits2>=otTarget?'Yes':'No';
+        csv += `"${name}","${date}","${dayInfo.label}","${rec.clockIn||''}","${outStr2}","${rec.clockIn?hours2+'h':''}","${otSt}","","${otTodayUnits2}","${otTarget}","${otCumulative}/${otCumulativeTotal}","${otHit}","${rec.reason||''}","${rec.overtimeReason||''}"\n`;
         return;
       }
       const hours = calcHours(rec.clockIn,rec.clockOut).toFixed(1);
       const lateMin = rec.lateMin||0;
       const lateStr = lateMin>0?Math.floor(lateMin/60)+'h '+String(lateMin%60).padStart(2,'0')+'m':'';
       const status = rec.clockIn?(lateMin>0?'Late':'On Time'):'Absent';
-      // For historical dates use snapshot if available, else 0
-      const snap = pr.dailySnapshots&&pr.dailySnapshots[date];
-      const dates2 = pr.dailySnapshots?Object.keys(pr.dailySnapshots).sort():[];
-      const dateIdx = dates2.indexOf(date);
-      const prevDate2 = dateIdx>0?dates2[dateIdx-1]:null;
-      const prevTotal2 = prevDate2&&pr.dailySnapshots[prevDate2]?pr.dailySnapshots[prevDate2].total:0;
-      const snapTotal = snap?snap.total:0;
-      const todayUnits2 = snap?Math.max(0,snapTotal-prevTotal2):0;
-      const presentOnDate = (pr.workers||[]).filter(n=>{ const r=att[n+'_'+date]||{}; return !!r.clockIn; });
-      const share = presentOnDate.length>0?Math.round(todayUnits2/presentOnDate.length):0;
-      const cumShare = presentOnDate.length>0?Math.round(snapTotal/presentOnDate.length):0;
+      // Per-worker units from workerUpdates (matches dashboard)
+      if(!pr.workerUpdates) pr.workerUpdates={};
+      const wAssigned = (pr.workerAssignments&&pr.workerAssignments[name])||[];
+      const wParts = pr.parts.filter(p=>wAssigned.includes(p.name));
+      let wTodayUnits=0;
+      wParts.forEach(p=>{
+        const sk='workerDay_'+date+'_'+pr.id+'_'+p.name+'_'+name;
+        wTodayUnits+=parseInt(localStorage.getItem(sk)||'0');
+      });
+      const wCumulative = wParts.reduce((a,p)=>a+(pr.workerUpdates[p.name]&&pr.workerUpdates[p.name][name]||0),0);
+      const wCumulativeTotal = wParts.reduce((a,p)=>a+p.total,0);
       const wTarget2 = getWorkerDailyTarget(pr, name);
-      const hitTarget2 = share>=wTarget2?'Yes':'No';
-      csv += `"${name}","${date}","Working Day","${rec.clockIn||''}","${rec.clockOut||''}","${rec.clockIn?hours+'h':''}","${status}","${lateStr}","${share}","${wTarget2}","${cumShare}","${hitTarget2}","${rec.reason||''}","${rec.overtimeReason||''}"\n`;
+      const hitTarget2 = wTodayUnits>=wTarget2?'Yes':'No';
+      const csvOutStr = rec.clockOut?(rec.clockOut+((rec.overnight||isOvernightClockout(rec.clockIn,rec.clockOut))?' (+1d)':'')):'';
+      csv += `"${name}","${date}","Working Day","${rec.clockIn||''}","${csvOutStr}","${rec.clockIn?hours+'h':''}","${status}","${lateStr}","${wTodayUnits}","${wTarget2}","${wCumulative}/${wCumulativeTotal}","${hitTarget2}","${rec.reason||''}","${rec.overtimeReason||''}"
+`;
     });
   });
   downloadFile('CTS_'+pr.name.replace(/\s+/g,'_')+'_attendance_'+TODAY+'.csv', csv, 'text/csv');
@@ -3041,12 +3209,25 @@ function saveEditRecord(name){
   const ci = document.getElementById('ei-'+k).value;
   const co = document.getElementById('eo-'+k).value;
   const re = document.getElementById('er-'+k).value;
-  const lateMin = calcLate(ci);
-  const status = getClockStatus(ci);
+  const pr3 = attProject();
+  const sched3 = getTodaySchedule(pr3);
+  const hols3 = (pr3.plan&&pr3.plan.holidays)||[];
+  const recCur = getAttRecord(name);
+  const isOT3 = !sched3.on || !!hols3.find(h=>h.enabled&&h.date===TODAY) || !!recCur.overtimeStatus;
+  const lateMin = isOT3 ? 0 : calcLate(ci);
+  const status = isOT3 ? 'ot' : getClockStatus(ci);
   setAttRecord(name,{clockIn:ci, clockOut:co, gps_in:'', gps_out:'', status, lateMin, reason:re});
   renderAttendance();
   showToast('✓ Record updated for '+name);
 }
+function clearTodayRecord(name){
+  if(!confirm(`Clear today's attendance record for ${name}?\nThis cannot be undone.`)) return;
+  setAttRecord(name,{clockIn:'',clockOut:'',gps_in:'',gps_out:'',status:'',lateMin:0,reason:'',overtimeStatus:'',overtimeReason:'',overtimeApprovedBy:'',overnight:false,earlyLeave:false});
+  logActivity('CLEAR_RECORD',`Admin cleared today\'s record for ${name}`);
+  renderAttendance();
+  showToast('✓ Today\'s record cleared for '+name);
+}
+
 function clearRecord(name){
   setAttRecord(name,{clockIn:'',clockOut:'',gps_in:'',gps_out:'',status:'',lateMin:0,reason:''});
   renderAttendance();
@@ -3496,108 +3677,116 @@ async function sharePDF(page){
 
   } else if(page==='attendance'){
     const workers = (pr.workers||[]).filter(n=>!isWorkerHidden(n));
-    const plan = pr.plan;
-    const wdpw = plan.workDaysPerWeek||5;
-    const holidays = plan.holidays||[];
-    const todayDow = new Date().getDay();
-    const hol = holidays.find(h=>h.enabled&&h.date===TODAY);
-    const isRest = (wdpw===5&&(todayDow===0||todayDow===6))||(wdpw===6&&todayDow===0);
-    const dayLabel = hol ? '🎌 PUBLIC HOLIDAY — '+hol.name.toUpperCase()
-                   : isRest ? '🏖 REST DAY — '+['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][todayDow]
-                   : null;
+    const att = pr.attendance||{};
+    const holidays = pr.plan.holidays||[];
 
-    // Stats
-    let present=0, onTime=0, late=0, absent=0;
+    // Helper: get day info for any date string
+    function pdfDayInfo(dateStr){
+      const d = new Date(dateStr);
+      const dayN = DAY_NAMES[d.getDay()];
+      const h = holidays.find(hh=>hh.enabled&&hh.date===dateStr);
+      if(h) return {isOT:true, isHol:true, label:'Public Holiday — '+h.name, hol:h};
+      const sc = (pr.workHours&&pr.workHours.schedule&&pr.workHours.schedule[dayN]);
+      const isR = sc ? !sc.on : (dayN==='Sun');
+      if(isR) return {isOT:true, isHol:false, label:'Rest Day — '+dayN, hol:null};
+      return {isOT:false, isHol:false, label:'Working Day', hol:null};
+    }
+
+    // Collect all dates
+    const dateSet = new Set(Object.keys(att).map(k=>k.split('_').pop()));
+    dateSet.add(TODAY);
+    const allDates = [...dateSet].sort();
+
+    // Summary stats (today only for header)
+    const todayDI = pdfDayInfo(TODAY);
+    let present=0, onTime=0, late=0, absent=0, otCount=0;
     workers.forEach(name=>{
-      const rec=getAttRecord(name);
-      if(rec.clockIn){ present++; calcLate(rec.clockIn)>0?late++:onTime++; } else absent++;
+      const rec=att[name+'_'+TODAY]||{};
+      if(todayDI.isOT){ if(rec.clockIn) otCount++; }
+      else if(rec.clockIn){ present++; (calcLate(rec.clockIn)>0&&!rec.overtimeStatus)?late++:onTime++; }
+      else absent++;
     });
 
+    // Generate all-dates rows
+    const allRows = allDates.flatMap((date,di)=>{
+      const di2 = pdfDayInfo(date);
+      const dateBg = di2.isOT?(di2.isHol?'#EEF':'#FEFCE8'):'';
+      const dateHeader = `<tr style="background:${di2.isOT?'#FEF9C3':'#E0F2FE'}">
+        <td colspan="10" style="padding:6px 12px;font-weight:700;font-size:12px;color:${di2.isOT?'#92400E':'#0F766E'}">
+          ${date} &nbsp;·&nbsp; ${di2.label}
+        </td>
+      </tr>`;
+      const workerRows = workers.map((name,wi)=>{
+        const rec = att[name+'_'+date]||{};
+        const lateMin = di2.isOT ? 0 : (rec.lateMin||(rec.clockIn?Math.max(0,calcLateForTime(rec.clockIn,pr)):0));
+        const hours = calcHours(rec.clockIn,rec.clockOut);
+        const lateStr = lateMin>0?Math.floor(lateMin/60)+'h '+String(lateMin%60).padStart(2,'0')+'m':'—';
+        const otStatus = rec.overtimeStatus;
+        const outStr = rec.clockOut?(rec.clockOut+(rec.overnight||isOvernightClockout(rec.clockIn,rec.clockOut)?' (+1d)':'')):'—';
+        let status,sc,bg;
+        if(di2.isOT){
+          if(otStatus==='approved'&&rec.clockIn){ status='OT APPROVED'+(rec.overtimeApprovedBy?' by '+rec.overtimeApprovedBy:''); sc='#0D9488'; bg='#CCFBF1'; }
+          else if(otStatus==='pending')  { status='OT PENDING';  sc='#D97706'; bg='#FEF9C3'; }
+          else if(otStatus==='rejected') { status='OT REJECTED'; sc='#DC2626'; bg='#FEE2E2'; }
+          else if(rec.clockIn)           { status='OT (no approval)'; sc='#D97706'; bg='#FEF9C3'; }
+          else                           { status='Rest / Off'; sc='#6A8AB0'; bg='#F0FDFA'; }
+        } else {
+          status=rec.clockIn?(lateMin>0?'LATE':'ON TIME'):'ABSENT';
+          sc=rec.clockIn?(lateMin>0?'#D97706':'#0D9488'):'#DC2626';
+          bg=rec.clockIn?(lateMin>0?'#FEF9C3':'#CCFBF1'):'#FEE2E2';
+        }
+        return `<tr style="background:${wi%2===0?'#F8FFFE':'#fff'}">
+          <td style="padding:8px 12px;font-weight:600;color:#134E4A;font-size:12px;padding-left:20px">${escH(name)}</td>
+          <td style="padding:8px 10px;font-family:monospace;color:#134E4A;font-size:11px">${rec.clockIn||'—'}</td>
+          <td style="padding:8px 10px;font-family:monospace;color:#134E4A;font-size:11px">${outStr}</td>
+          <td style="padding:8px 10px;font-family:monospace;color:#134E4A;font-size:11px">${rec.clockIn&&rec.clockOut?hours.toFixed(1)+'h':'—'}</td>
+          <td style="padding:8px 10px"><span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:${bg};color:${sc}">${status}</span></td>
+          <td style="padding:8px 10px;font-family:monospace;font-size:11px;color:${lateMin>0?'#D97706':'#6A8AB0'}">${lateStr}</td>
+          <td style="padding:8px 10px;font-size:11px;color:#134E4A">${escH(rec.reason||rec.overtimeReason||'')}</td>
+        </tr>`;
+      }).join('');
+      return dateHeader + workerRows;
+    }).join('');
+
     bodyHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:16px;border-bottom:3px solid #0D9488">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:3px solid #0D9488">
         <div>
-          <div style="font-size:11px;letter-spacing:2px;color:#0F766E;margin-bottom:4px">ATTENDANCE REPORT</div>
+          <div style="font-size:11px;letter-spacing:2px;color:#0F766E;margin-bottom:4px">ATTENDANCE REPORT — ALL DATES</div>
           <div style="font-size:22px;font-weight:900;color:#134E4A">${escH(pr.name)}</div>
-          <div style="font-size:12px;color:#0F766E;margin-top:4px">${dateStr}</div>
+          <div style="font-size:12px;color:#0F766E;margin-top:4px">Printed: ${dateStr}</div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;text-align:center;">
           <div style="background:#F0FDFA;border:1px solid #5EEAD4;border-radius:8px;padding:8px 12px">
-            <div style="font-size:20px;font-weight:900;color:#0D9488">${present}</div>
-            <div style="font-size:10px;color:#0F766E;letter-spacing:1px">PRESENT</div>
+            <div style="font-size:18px;font-weight:900;color:#0D9488">${present}</div>
+            <div style="font-size:10px;color:#0F766E">PRESENT TODAY</div>
           </div>
           <div style="background:#F0FDFA;border:1px solid #5EEAD4;border-radius:8px;padding:8px 12px">
-            <div style="font-size:20px;font-weight:900;color:#16A34A">${onTime}</div>
-            <div style="font-size:10px;color:#0F766E;letter-spacing:1px">ON TIME</div>
+            <div style="font-size:18px;font-weight:900;color:#16A34A">${onTime}</div>
+            <div style="font-size:10px;color:#0F766E">ON TIME</div>
           </div>
           <div style="background:#FEF9C3;border:1px solid #FDE68A;border-radius:8px;padding:8px 12px">
-            <div style="font-size:20px;font-weight:900;color:#D97706">${late}</div>
-            <div style="font-size:10px;color:#92400E;letter-spacing:1px">LATE</div>
+            <div style="font-size:18px;font-weight:900;color:#D97706">${late}</div>
+            <div style="font-size:10px;color:#92400E">LATE</div>
           </div>
           <div style="background:#FEE2E2;border:1px solid #FECACA;border-radius:8px;padding:8px 12px">
-            <div style="font-size:20px;font-weight:900;color:#DC2626">${absent}</div>
-            <div style="font-size:10px;color:#991B1B;letter-spacing:1px">ABSENT</div>
+            <div style="font-size:18px;font-weight:900;color:#DC2626">${absent}</div>
+            <div style="font-size:10px;color:#991B1B">ABSENT</div>
           </div>
         </div>
       </div>
-      ${dayLabel?`<div style="background:#FEF9C3;border:2px solid #FDE68A;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:14px;font-weight:700;color:#92400E;text-align:center;letter-spacing:1px">${dayLabel}</div>`:''}
       <table style="width:100%;border-collapse:collapse">
         <thead>
           <tr style="background:#0D9488">
-            <th style="padding:10px 12px;text-align:left;color:#fff;font-size:12px">WORKER</th>
-            <th style="padding:10px 12px;color:#fff;font-size:12px">DAY TYPE</th>
-            <th style="padding:10px 12px;color:#fff;font-size:12px">CLOCK IN</th>
-            <th style="padding:10px 12px;color:#fff;font-size:12px">CLOCK OUT</th>
-            <th style="padding:10px 12px;color:#fff;font-size:12px">HOURS</th>
-            <th style="padding:10px 12px;color:#fff;font-size:12px">STATUS</th>
-            <th style="padding:10px 12px;color:#fff;font-size:12px">LATE</th>
-            <th style="padding:10px 12px;color:#fff;font-size:12px">TODAY UNITS</th>
-            <th style="padding:10px 12px;color:#fff;font-size:12px">TARGET</th>
-            <th style="padding:10px 12px;color:#fff;font-size:12px">CUMULATIVE</th>
-            <th style="padding:10px 12px;color:#fff;font-size:12px">REASON</th>
+            <th style="padding:8px 12px;text-align:left;color:#fff;font-size:11px">WORKER</th>
+            <th style="padding:8px 10px;color:#fff;font-size:11px">CLOCK IN</th>
+            <th style="padding:8px 10px;color:#fff;font-size:11px">CLOCK OUT</th>
+            <th style="padding:8px 10px;color:#fff;font-size:11px">HOURS</th>
+            <th style="padding:8px 10px;color:#fff;font-size:11px">STATUS</th>
+            <th style="padding:8px 10px;color:#fff;font-size:11px">LATE</th>
+            <th style="padding:8px 10px;color:#fff;font-size:11px">REASON</th>
           </tr>
         </thead>
-        <tbody>
-          ${workers.map((name,i)=>{
-            const rec=getAttRecord(name);
-            const lateMin=calcLate(rec.clockIn);
-            const hours=calcHours(rec.clockIn,rec.clockOut);
-            const lateStr=lateMin>0?Math.floor(lateMin/60)+'h '+String(lateMin%60).padStart(2,'0')+'m':'—';
-            const wUnits=getWorkerUnits(pr,name);
-            const wTarget=getWorkerDailyTarget(pr,name);
-            const otStatus = rec.overtimeStatus;
-            const isOT = (hol||isRest);
-            let dayType = hol?'Public Holiday':isRest?'Rest Day':'Working Day';
-            if(isOT && otStatus==='approved') dayType += ' (OT Approved)';
-            if(isOT && otStatus==='pending')  dayType += ' (OT Pending)';
-            if(isOT && otStatus==='rejected') dayType += ' (OT Rejected)';
-            const dtColor = isOT?'#D97706':'#0F766E';
-            const dtBg    = isOT?'#FEF9C3':'#F0FDFA';
-            let status,sc,bg;
-            if(isOT){
-              if(otStatus==='approved'&&rec.clockIn){ status='OVERTIME'; sc='#0D9488'; bg='#CCFBF1'; }
-              else if(otStatus==='pending')  { status='OT PENDING'; sc='#D97706'; bg='#FEF9C3'; }
-              else if(otStatus==='rejected') { status='OT REJECTED'; sc='#DC2626'; bg='#FEE2E2'; }
-              else { status='—'; sc='#D97706'; bg='#FEF9C3'; }
-            } else {
-              status=rec.clockIn?(lateMin>0?'LATE':'ON TIME'):'ABSENT';
-              sc=rec.clockIn?(lateMin>0?'#D97706':'#0D9488'):'#DC2626';
-              bg=rec.clockIn?(lateMin>0?'#FEF9C3':'#CCFBF1'):'#FEE2E2';
-            }
-            return `<tr style="background:${i%2===0?'#F0FDFA':'#fff'}">
-              <td style="padding:10px 12px;font-weight:700;color:#134E4A;font-size:13px">${escH(name)}</td>
-              <td style="padding:10px 12px"><span style="padding:2px 8px;border-radius:8px;font-size:11px;font-weight:600;background:${dtBg};color:${dtColor}">${dayType}</span></td>
-              <td style="padding:10px 12px;font-family:monospace;color:#134E4A;font-size:12px">${rec.clockIn||'—'}</td>
-              <td style="padding:10px 12px;font-family:monospace;color:#134E4A;font-size:12px">${rec.clockOut||'—'}</td>
-              <td style="padding:10px 12px;font-family:monospace;color:#134E4A;font-size:12px">${rec.clockIn&&rec.clockOut?hours.toFixed(1)+'h':'—'}</td>
-              <td style="padding:10px 12px"><span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;background:${bg};color:${sc}">${status}</span></td>
-              <td style="padding:10px 12px;font-family:monospace;font-size:12px;color:${lateMin>0?'#D97706':'#134E4A'}">${lateStr}</td>
-              <td style="padding:10px 12px;font-family:monospace;font-size:12px;font-weight:700;color:${wUnits.today>=wTarget?'#0D9488':'#D97706'}">${wUnits.today}</td>
-              <td style="padding:10px 12px;font-family:monospace;font-size:12px;color:#134E4A">${wTarget}</td>
-              <td style="padding:10px 12px;font-family:monospace;font-size:12px;color:#0D9488">${wUnits.cumulative}</td>
-              <td style="padding:10px 12px;font-size:12px;color:#134E4A">${escH(rec.reason||'—')}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
+        <tbody>${allRows}</tbody>
       </table>`;
 
   } else if(page==='charts'){
@@ -3687,40 +3876,46 @@ async function sharePDF(page){
 function sendAttWhatsApp(){
   const pr = attProject();
   const workers = pr.workers||[];
-  const plan = pr.plan;
-  const wdpw = plan.workDaysPerWeek||5;
-  const holidays = plan.holidays||[];
+  const holidays = pr.plan.holidays||[];
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-MY',{day:'2-digit',month:'long',year:'numeric'}).toUpperCase();
   const timeStr = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+' HRS';
   const div = '--------------------';
 
-  // Determine today's day type
-  const todayDow = now.getDay();
+  // Use per-day schedule for rest day detection
+  const todaySched2 = getTodaySchedule(pr);
   const hol = holidays.find(h=>h.enabled&&h.date===TODAY);
-  const isRest = (wdpw===5&&(todayDow===0||todayDow===6))||(wdpw===6&&todayDow===0);
+  const isRest = todaySched2.on===false;
   const dayLabel = hol ? '🎌 PUBLIC HOLIDAY — '+hol.name.toUpperCase()
-                 : isRest ? '🏖 REST DAY'
+                 : isRest ? '🏖 REST DAY — '+DAY_NAMES[now.getDay()]
                  : null;
 
   const visibleWorkers = workers.filter(n=>!isWorkerHidden(n));
   let present=0, onTime=0, late=0, absent=0;
   const lines = visibleWorkers.map(name=>{
     const rec = getAttRecord(name);
-    const lateMin = calcLate(rec.clockIn);
+    const isRestOrHol = !!(dayLabel);
+    const lateMin = isRestOrHol ? 0 : calcLate(rec.clockIn);
     const lateStr = lateMin>0 ? Math.floor(lateMin/60)+'h '+String(lateMin%60).padStart(2,'0')+'m' : '';
     const hours = calcHours(rec.clockIn, rec.clockOut);
-    const status = getClockStatus(rec.clockIn);
+    const status = isRestOrHol ? (rec.clockIn?'ot':'absent') : getClockStatus(rec.clockIn);
     let icon='❌', statusLabel='ABSENT';
     if(dayLabel && !rec.clockIn){
       icon='—'; statusLabel=hol?'HOLIDAY':'REST DAY';
+    } else if(dayLabel && rec.clockIn){
+      const otSt = rec.overtimeStatus||'unapproved';
+      present++;
+      icon = otSt==='approved'?'✅':otSt==='pending'?'⏳':'⚠';
+      statusLabel = 'OT '+(otSt==='approved'?'APPROVED':otSt==='pending'?'PENDING':'UNAPPROVED');
+      if(rec.overtimeApprovedBy) statusLabel += ' by '+rec.overtimeApprovedBy;
     } else if(rec.clockIn){
       present++;
-      if(status==='late'){ late++; icon='⚠'; statusLabel='LATE +'+lateStr; }
+      if(lateMin>0){ late++; icon='⚠'; statusLabel='LATE +'+lateStr; }
       else{ onTime++; icon='✅'; statusLabel='ON TIME'; }
     } else { absent++; }
     const inStr  = rec.clockIn  ? rec.clockIn.substring(0,5)  : '--:--';
-    const outStr = rec.clockOut ? rec.clockOut.substring(0,5) : '--:--';
+    const isON   = rec.overnight || isOvernightClockout(rec.clockIn, rec.clockOut);
+    const outStr = rec.clockOut ? rec.clockOut.substring(0,5)+(isON?' (+1d)':'') : '--:--';
     const hoursStr = rec.clockIn&&rec.clockOut ? '('+hours.toFixed(1)+'h)' : '';
     let row = `${icon} ${name}\n   IN: ${inStr} | OUT: ${outStr} ${hoursStr}\n   ${statusLabel}`;
     if(rec.reason) row += `\n   Reason: ${rec.reason}`;
@@ -3882,9 +4077,7 @@ function confirmChangePIN(){
 async function generateWorkerReport(name){
   showToast('⏳ Generating report…');
   const pr = attProject();
-  const plan = pr.plan;
-  const wdpw = plan.workDaysPerWeek||5;
-  const holidays = plan.holidays||[];
+  const holidays = pr.plan.holidays||[];
   const att = pr.attendance||{};
 
   const dateSet = new Set(Object.keys(att).filter(k=>k.startsWith(name+'_')).map(k=>k.replace(name+'_','')));
@@ -3893,11 +4086,12 @@ async function generateWorkerReport(name){
 
   function getDayType(dateStr){
     const d = new Date(dateStr);
-    const dow = d.getDay();
+    const dayN = DAY_NAMES[d.getDay()];
     const hol = holidays.find(h=>h.enabled&&h.date===dateStr);
     if(hol) return {type:'holiday', label:'Public Holiday — '+hol.name};
-    const isRest = (wdpw===5&&(dow===0||dow===6))||(wdpw===6&&dow===0);
-    if(isRest) return {type:'rest', label:'Rest Day — '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dow]};
+    const sc = (pr.workHours&&pr.workHours.schedule&&pr.workHours.schedule[dayN]);
+    const isR = sc ? !sc.on : (dayN==='Sun');
+    if(isR) return {type:'rest', label:'Rest Day — '+dayN};
     return {type:'work', label:'Working Day'};
   }
 
@@ -3905,7 +4099,8 @@ async function generateWorkerReport(name){
   const rows = dates.map((date,i)=>{
     const rec = att[name+'_'+date]||{};
     const dayInfo = getDayType(date);
-    const lateMin = calcLate(rec.clockIn);
+    const isOTRec = dayInfo.type!=='work' || !!rec.overtimeStatus;
+    const lateMin = isOTRec ? 0 : calcLate(rec.clockIn);
     const hours = calcHours(rec.clockIn,rec.clockOut);
     const lateStr = lateMin>0?Math.floor(lateMin/60)+'h '+String(lateMin%60).padStart(2,'0')+'m':'';
     let status='—', statusColor='#134E4A', statusBg='#F0FDFA';
@@ -3917,8 +4112,12 @@ async function generateWorkerReport(name){
         else{ onTimeCnt++; status='On Time'; statusColor='#0D9488'; statusBg='#CCFBF1'; }
         if(hours>0) totalHours+=hours;
       } else { absentCnt++; status='Absent'; statusColor='#DC2626'; statusBg='#FEE2E2'; }
-    } else if(rec.overtimeStatus==='approved'&&rec.clockIn){
-      otCnt++; status='OT Approved'; statusColor='#0D9488'; statusBg='#CCFBF1';
+    } else if(rec.clockIn){
+      const otStat = rec.overtimeStatus||'unapproved';
+      if(otStat==='approved'){ otCnt++; status='OT Approved'+(rec.overtimeApprovedBy?' by '+rec.overtimeApprovedBy:''); statusColor='#0D9488'; statusBg='#CCFBF1'; }
+      else if(otStat==='pending'){ status='OT Pending'; statusColor='#D97706'; statusBg='#FEF9C3'; }
+      else if(otStat==='rejected'){ status='OT Rejected'; statusColor='#DC2626'; statusBg='#FEE2E2'; }
+      else { status='OT'; statusColor='#0D9488'; statusBg='#CCFBF1'; }
       if(hours>0) totalHours+=hours;
     }
     const rowBg = dayInfo.type!=='work'?(dayInfo.type==='holiday'?'#F5F3FF':'#F0F8FF'):i%2===0?'#FFFFFF':'#F8FFFE';
@@ -3928,7 +4127,7 @@ async function generateWorkerReport(name){
       <td style="padding:7px 10px;font-size:12px;font-weight:600;color:#134E4A;white-space:nowrap">${date}</td>
       <td style="padding:7px 10px"><span style="padding:2px 7px;border-radius:8px;background:${dtBg};color:${dtColor};font-size:10px;font-weight:600">${dayInfo.label}</span></td>
       <td style="padding:7px 10px;font-family:monospace;font-size:12px;color:#134E4A">${rec.clockIn||'—'}</td>
-      <td style="padding:7px 10px;font-family:monospace;font-size:12px;color:#134E4A">${rec.clockOut||'—'}</td>
+      <td style="padding:7px 10px;font-family:monospace;font-size:12px;color:#134E4A">${rec.clockOut||'—'}${(rec.overnight||isOvernightClockout(rec.clockIn,rec.clockOut))?' <b style="color:#D97706;font-size:10px">(+1d)</b>':''}</td>
       <td style="padding:7px 10px;font-family:monospace;font-size:12px;color:#0D9488;text-align:center">${rec.clockIn&&rec.clockOut?hours.toFixed(1)+'h':'—'}</td>
       <td style="padding:7px 10px;text-align:center">${status!=='—'?`<span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:${statusBg};color:${statusColor}">${status}</span>`:'<span style="color:#bbb">—</span>'}</td>
       <td style="padding:7px 10px;font-size:11px;color:#5A8A78">${escH(rec.reason||rec.overtimeReason||'')}</td>
