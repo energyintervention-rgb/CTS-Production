@@ -1,0 +1,930 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CTS Production — Device Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta name="theme-color" content="#070B14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #070B14;
+    --bg-2: #0A1020;
+    --bg-3: #0E1628;
+    --line: rgba(0, 212, 255, 0.07);
+    --line-2: rgba(0, 212, 255, 0.14);
+    --line-strong: rgba(0, 212, 255, 0.26);
+    --cyan: #00D4FF;
+    --cyan-soft: rgba(0, 212, 255, 0.6);
+    --text: #E8F0FA;
+    --text-dim: #B8C5D6;
+    --muted: #6E7C92;
+    --muted-2: #3F4A5E;
+    --card: rgba(11, 17, 30, 0.78);
+    --ok: #4ADE80;
+    --warn: #F59E0B;
+    --danger: #FF5577;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{
+    min-height:100vh;background-color:var(--bg);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(0,212,255,0.18) 1px, transparent 1.5px),
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px),
+      radial-gradient(1100px 600px at 88% -12%, rgba(0,212,255,0.10), transparent 60%),
+      radial-gradient(900px 600px at -10% 110%, rgba(0,212,255,0.06), transparent 60%);
+    background-size: 56px 56px, 56px 56px, 56px 56px, 100% 100%, 100% 100%;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;
+    background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0 1px, transparent 1px 3px);
+    z-index:0;
+  }
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit}
+  .mono{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;letter-spacing:0.04em}
+
+  .shell{position:relative;z-index:1;max-width:1320px;margin:0 auto;padding:24px 36px 84px}
+
+  /* UBAR */
+  .ubar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0 22px;border-bottom:1px solid var(--line-2)}
+  .back{
+    display:inline-flex;align-items:center;gap:10px;
+    color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.10em;text-transform:uppercase;
+    padding:9px 14px;border:1px solid var(--line-2);border-radius:6px;
+    background:linear-gradient(180deg, rgba(0,212,255,0.04), rgba(0,212,255,0.01));
+    transition:all .18s ease;
+  }
+  .back:hover{color:var(--cyan);border-color:var(--cyan);background:rgba(0,212,255,0.08)}
+  .back .arr{transition:transform .2s ease;display:inline-block}
+  .back:hover .arr{transform:translateX(-3px)}
+  .ubar-r{display:flex;align-items:center;gap:14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.10em;text-transform:uppercase}
+  .ubar-r .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok);display:inline-block;margin-right:8px;animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+  .ubar-r .sep{width:1px;height:13px;background:var(--line-2)}
+  .ubar-r b{color:var(--cyan);font-weight:600}
+
+  /* HEADER STRIP */
+  .topnav{
+    display:flex;align-items:center;gap:18px;margin-top:22px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;
+  }
+  .topnav .brand{display:flex;align-items:center;gap:12px}
+  .topnav .logo{
+    width:38px;height:38px;border-radius:8px;
+    display:grid;place-items:center;overflow:hidden;
+    background:#0B1220;
+    box-shadow: 0 0 0 1px rgba(0,212,255,0.45), 0 8px 22px rgba(0,212,255,0.25);
+  }
+  .topnav .logo img{width:100%;height:100%;object-fit:contain;display:block}
+  .topnav .co{color:var(--text);letter-spacing:.18em;font-weight:500}
+  .topnav .crumb-sep{color:var(--muted-2)}
+  .topnav .pg{color:var(--cyan)}
+
+  /* HERO */
+  .hero{
+    position:relative;margin-top:18px;border:1px solid var(--line-2);border-radius:14px;overflow:hidden;
+    background:
+      radial-gradient(700px 320px at 75% 0%, rgba(0,212,255,0.12), transparent 60%),
+      linear-gradient(180deg, rgba(0,212,255,0.04), rgba(0,212,255,0.01)),
+      var(--bg-2);
+    display:grid;grid-template-columns:1.4fr 1fr;
+  }
+  @media (max-width: 980px){.hero{grid-template-columns:1fr}}
+  .hero::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg, transparent, var(--cyan), transparent);opacity:.6}
+
+  .hero-l{padding:36px 36px 32px;position:relative;z-index:1}
+  .pill{
+    display:inline-flex;align-items:center;gap:8px;
+    border:1px solid var(--cyan-soft);border-radius:999px;
+    padding:5px 12px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--cyan);letter-spacing:.16em;text-transform:uppercase;
+    background:rgba(0,212,255,0.06);
+  }
+  .pill .dt{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+
+  .hero h1{
+    margin:18px 0 12px;font-size:50px;line-height:0.98;letter-spacing:-0.025em;font-weight:700;
+  }
+  .hero h1 em{font-style:normal;color:var(--cyan);display:block;font-size:24px;letter-spacing:.06em;font-weight:500;margin-top:8px;font-family:'JetBrains Mono',monospace;text-transform:uppercase}
+  .hero p.lede{margin:8px 0 0;font-size:15.5px;line-height:1.6;color:var(--text-dim);max-width:48ch}
+
+  .hero-meta{
+    margin-top:24px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;
+    border-top:1px dashed var(--line-2);padding-top:18px;
+  }
+  .hmg{display:flex;flex-direction:column;gap:3px}
+  .hmg .k{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.16em;text-transform:uppercase}
+  .hmg .v{font-family:'JetBrains Mono',monospace;font-size:13.5px;color:var(--text);letter-spacing:.03em}
+  .hmg .v b{color:var(--cyan);font-weight:600}
+
+  .hero-cta{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}
+  .btn-primary{
+    display:inline-flex;align-items:center;gap:10px;
+    background:var(--cyan);color:var(--bg);border:1px solid var(--cyan);border-radius:8px;
+    padding:13px 20px;font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;cursor:pointer;
+    transition:all .18s ease;
+    box-shadow:0 8px 24px rgba(0,212,255,0.30);
+  }
+  .btn-primary:hover{background:#5DE3FF;border-color:#5DE3FF;transform:translateY(-1px);box-shadow:0 12px 28px rgba(0,212,255,0.40)}
+  .btn-primary svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .btn-outline{
+    display:inline-flex;align-items:center;gap:10px;
+    background:transparent;color:var(--cyan);border:1px solid var(--cyan);border-radius:8px;
+    padding:13px 20px;font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;
+    transition:all .18s ease;
+  }
+  .btn-outline:hover{background:rgba(0,212,255,0.08)}
+  .btn-outline svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+  /* RIGHT — DEVICE SCHEMATIC */
+  .hero-r{
+    position:relative;padding:36px;display:flex;align-items:center;justify-content:center;
+    border-left:1px solid var(--line-2);
+    background:
+      radial-gradient(closest-side, rgba(0,212,255,0.10), transparent 70%);
+    min-height:380px;
+  }
+  .schematic{width:100%;max-width:380px;aspect-ratio:1/1;position:relative}
+  .schematic .crosshair{position:absolute;inset:0;pointer-events:none}
+  .schematic .ax{position:absolute;background:rgba(0,212,255,0.18)}
+  .schematic .ax.h{left:0;right:0;height:1px;top:50%}
+  .schematic .ax.v{top:0;bottom:0;width:1px;left:50%}
+  .schematic svg{width:100%;height:100%}
+  .schematic .tick{position:absolute;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.10em}
+  .schematic .tick.tl{top:8px;left:8px}
+  .schematic .tick.tr{top:8px;right:8px}
+  .schematic .tick.bl{bottom:8px;left:8px}
+  .schematic .tick.br{bottom:8px;right:8px}
+  .schematic .corner{position:absolute;width:14px;height:14px;border-color:var(--cyan-soft)}
+  .schematic .corner.tl{top:0;left:0;border-top:1px solid;border-left:1px solid}
+  .schematic .corner.tr{top:0;right:0;border-top:1px solid;border-right:1px solid}
+  .schematic .corner.bl{bottom:0;left:0;border-bottom:1px solid;border-left:1px solid}
+  .schematic .corner.br{bottom:0;right:0;border-bottom:1px solid;border-right:1px solid}
+  .schematic .lbl{
+    position:absolute;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--cyan);letter-spacing:.10em;text-transform:uppercase;
+    background:rgba(7,11,20,0.85);border:1px solid var(--cyan-soft);padding:3px 8px;border-radius:4px;
+  }
+
+  /* SECTION TITLES */
+  .section{margin-top:48px}
+  .section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line-2)}
+  .section-head .l{display:flex;align-items:center;gap:14px}
+  .section-head .num{
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan);letter-spacing:.18em;
+    border:1px solid var(--cyan-soft);padding:5px 10px;border-radius:6px;
+    background:rgba(0,212,255,0.06);
+  }
+  .section-head h2{margin:0;font-size:22px;letter-spacing:-0.01em;font-weight:600}
+  .section-head .sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+
+  /* CHAPTER GRID */
+  .chapters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+  @media (max-width: 980px){.chapters{grid-template-columns:1fr}}
+  .chapters .ch{
+    position:relative;border:1px solid var(--line-2);border-radius:12px;
+    background:linear-gradient(180deg, rgba(0,212,255,0.025), rgba(0,212,255,0) 50%), var(--card);
+    padding:22px 22px 18px;cursor:pointer;overflow:hidden;
+    display:flex;flex-direction:column;gap:12px;min-height:170px;
+    transition:border-color .22s ease, transform .22s ease, box-shadow .25s ease;
+  }
+  .chapters .ch::before{
+    content:"";position:absolute;left:0;right:0;top:0;height:1px;
+    background:linear-gradient(90deg, transparent, var(--cyan-soft), transparent);opacity:.4;transition:opacity .25s ease;
+  }
+  .chapters .ch:hover{border-color:var(--cyan);transform:translateY(-2px);box-shadow:0 14px 36px rgba(0,212,255,0.10)}
+  .chapters .ch:hover::before{opacity:1}
+  .ch-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .ch-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.16em;text-transform:uppercase}
+  .ch-num b{color:var(--cyan)}
+  .ch-pg{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px}
+  .ch-pg::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+  .chapters .ch h3{margin:2px 0 4px;font-size:18px;font-weight:600;letter-spacing:-0.005em;color:var(--text)}
+  .chapters .ch p{margin:0;font-size:13.5px;line-height:1.55;color:var(--text-dim)}
+  .ch-foot{
+    margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding-top:12px;border-top:1px dashed var(--line-2);
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan);letter-spacing:.14em;text-transform:uppercase;
+  }
+  .ch-foot .arr{transition:transform .2s ease;display:inline-block}
+  .chapters .ch:hover .ch-foot .arr{transform:translateX(3px)}
+
+  /* SAFETY CALLOUT */
+  .safety{
+    margin-top:20px;padding:16px 20px;border:1px solid rgba(255,85,119,0.30);border-radius:10px;
+    background:linear-gradient(90deg, rgba(255,85,119,0.06), transparent);
+    display:flex;align-items:flex-start;gap:14px;
+  }
+  .safety .ic{
+    width:30px;height:30px;border-radius:7px;flex-shrink:0;display:grid;place-items:center;
+    background:rgba(255,85,119,0.12);border:1px solid rgba(255,85,119,0.4);color:var(--danger);
+  }
+  .safety .ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .safety .body{flex:1;min-width:0}
+  .safety .body .lbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--danger);letter-spacing:.18em;text-transform:uppercase;margin-bottom:4px}
+  .safety .body p{margin:0;font-size:13px;line-height:1.55;color:var(--text-dim)}
+
+  /* TWO-COL: WORKFLOW + COMMANDS */
+  .split{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;margin-top:18px}
+  @media (max-width: 980px){.split{grid-template-columns:1fr}}
+
+  .panel{
+    border:1px solid var(--line-2);border-radius:12px;
+    background:linear-gradient(180deg, rgba(0,212,255,0.025), rgba(0,212,255,0) 60%), var(--card);
+    padding:24px;
+  }
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+  .panel-head h3{margin:0;font-size:16px;font-weight:600;letter-spacing:-0.005em}
+  .panel-head .tg{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);letter-spacing:.16em;text-transform:uppercase}
+
+  /* workflow steps */
+  .steps{display:flex;flex-direction:column;gap:0;position:relative}
+  .steps::before{
+    content:"";position:absolute;left:17px;top:18px;bottom:18px;width:1px;
+    background:linear-gradient(180deg, var(--cyan-soft), transparent);
+  }
+  .step{display:flex;gap:14px;padding:10px 0;position:relative}
+  .step .n{
+    width:34px;height:34px;border-radius:50%;border:1px solid var(--cyan-soft);
+    background:rgba(7,11,20,0.95);color:var(--cyan);flex-shrink:0;
+    display:grid;place-items:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.04em;
+    z-index:1;
+    transition:all .18s ease;
+  }
+  .step:hover .n{background:var(--cyan);color:var(--bg);box-shadow:0 0 0 4px rgba(0,212,255,0.18)}
+  .step .b{flex:1;min-width:0;padding-top:6px}
+  .step .b .t{font-size:14px;color:var(--text);font-weight:500;margin-bottom:2px}
+  .step .b .d{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+
+  /* commands list */
+  .cmds{display:flex;flex-direction:column;gap:8px}
+  .cmd{
+    display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;
+    padding:10px 14px;border:1px solid var(--line-2);border-radius:8px;
+    background:rgba(7,11,20,0.6);
+  }
+  .cmd:hover{border-color:var(--cyan-soft)}
+  .cmd code{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--cyan);letter-spacing:.04em}
+  .cmd code .arg{color:var(--text-dim)}
+  .cmd .desc{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;text-align:right}
+  .cmd .cp{
+    background:transparent;border:1px solid var(--line-2);color:var(--muted);width:28px;height:28px;border-radius:6px;
+    display:grid;place-items:center;cursor:pointer;flex-shrink:0;transition:all .18s ease;
+  }
+  .cmd .cp:hover{color:var(--cyan);border-color:var(--cyan)}
+  .cmd .cp svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+  /* SPECS TABLE */
+  .specs-table{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid var(--line-2);border-radius:12px;overflow:hidden}
+  @media (max-width: 760px){.specs-table{grid-template-columns:1fr}}
+  .specs-table .row{
+    display:grid;grid-template-columns:1.2fr 1fr;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line-2);
+    align-items:center;
+  }
+  .specs-table .row:nth-child(odd){background:rgba(0,212,255,0.025)}
+  .specs-table .row .k{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+  .specs-table .row .v{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);letter-spacing:.03em}
+  .specs-table .row .v b{color:var(--cyan);font-weight:600}
+
+  /* DOWNLOAD CARD (large) */
+  .dl-card{
+    border:1px solid var(--cyan);border-radius:14px;
+    background:linear-gradient(135deg, rgba(0,212,255,0.10), rgba(0,212,255,0.02) 60%), var(--bg-2);
+    padding:24px;display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;
+    box-shadow:0 18px 50px rgba(0,212,255,0.15);
+    position:relative;overflow:hidden;
+  }
+  @media (max-width: 760px){.dl-card{grid-template-columns:1fr;text-align:center}}
+  .dl-card::after{content:"";position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:radial-gradient(closest-side, rgba(0,212,255,0.18), transparent);pointer-events:none}
+  .dl-cover{
+    width:84px;height:108px;border:1px solid var(--cyan);border-radius:6px;
+    background:linear-gradient(180deg, rgba(0,212,255,0.20), rgba(0,212,255,0.02));
+    position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:10px;
+    box-shadow:0 8px 26px rgba(0,212,255,0.20);
+  }
+  .dl-cover::before{
+    content:"";position:absolute;left:10px;right:10px;top:36px;height:2px;background:rgba(0,212,255,0.45);
+    box-shadow:0 4px 0 rgba(0,212,255,0.45), 0 8px 0 rgba(0,212,255,0.45), 0 12px 0 rgba(0,212,255,0.45), 0 16px 0 rgba(0,212,255,0.45), 0 20px 0 rgba(0,212,255,0.45), 0 24px 0 rgba(0,212,255,0.45), 0 28px 0 rgba(0,212,255,0.30), 0 32px 0 rgba(0,212,255,0.30);
+  }
+  .dl-cover .tl{font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--cyan);letter-spacing:.14em}
+  .dl-cover .no{font-family:'JetBrains Mono',monospace;font-size:7.5px;color:var(--cyan);letter-spacing:.14em;align-self:flex-end}
+  .dl-body{position:relative;z-index:1}
+  .dl-body .k{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--cyan);letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px}
+  .dl-body h3{margin:0;font-size:22px;font-weight:600;letter-spacing:-0.01em}
+  .dl-body p{margin:6px 0 10px;color:var(--text-dim);font-size:13.5px;line-height:1.5}
+  .dl-body .meta{display:flex;gap:14px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);letter-spacing:.10em;text-transform:uppercase}
+  .dl-body .meta b{color:var(--text);font-weight:500}
+
+  /* FOOTER */
+  .footer{
+    margin-top:48px;padding:24px 0 4px;border-top:1px solid var(--line-2);
+    display:grid;grid-template-columns:1fr auto auto;gap:18px;align-items:start;
+  }
+  @media (max-width: 760px){.footer{grid-template-columns:1fr}}
+  .foot-brand{display:flex;align-items:flex-start;gap:14px}
+  .foot-brand .lg{
+    width:38px;height:38px;border-radius:7px;flex-shrink:0;
+    display:grid;place-items:center;overflow:hidden;
+    background:#0B1220;
+    box-shadow:0 0 0 1px rgba(0,212,255,0.4);
+  }
+  .foot-brand .lg img{width:100%;height:100%;object-fit:contain;display:block}
+  .foot-brand .ft{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.06em;line-height:1.6}
+  .foot-brand .ft .co{color:var(--text);text-transform:uppercase;letter-spacing:.14em;font-weight:500;margin-bottom:2px;display:block}
+  .foot-col{display:flex;flex-direction:column;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.10em;text-transform:uppercase}
+  .foot-col .h{color:var(--cyan);margin-bottom:6px;font-size:10px;letter-spacing:.18em}
+  .foot-col a{color:var(--muted)}
+  .foot-col a:hover{color:var(--cyan)}
+  .signoff{
+    grid-column:1/-1;margin-top:18px;padding-top:14px;border-top:1px dashed var(--line-2);
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);letter-spacing:.10em;text-transform:uppercase;
+  }
+  .signoff .seq{color:var(--muted-2)}
+
+  /* TOAST */
+  .toast{
+    position:fixed;left:50%;bottom:46px;transform:translate(-50%, 20px);
+    background:rgba(7,11,20,0.95);border:1px solid var(--cyan);border-radius:10px;
+    padding:13px 18px;display:flex;align-items:center;gap:12px;
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);letter-spacing:.05em;
+    box-shadow:0 18px 50px rgba(0,212,255,0.20);
+    opacity:0;pointer-events:none;transition:all .25s ease;z-index:50;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+  .toast .ic{width:18px;height:18px;color:var(--cyan)}
+  .toast .ic svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .toast .clo{color:var(--muted);cursor:pointer;margin-left:6px;font-size:11px}
+
+  /* TICKER */
+  .ticker{
+    position:fixed;left:0;right:0;bottom:0;height:26px;
+    background:rgba(7,11,20,0.85);border-top:1px solid var(--line-2);
+    display:flex;align-items:center;
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;
+    overflow:hidden;white-space:nowrap;z-index:20;backdrop-filter:blur(6px);
+  }
+  .ticker .lbl{display:inline-flex;align-items:center;gap:8px;padding:0 14px;color:var(--cyan);border-right:1px solid var(--line-2);height:100%}
+  .ticker .lbl .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 6px var(--cyan);animation:pulse 1.4s ease-in-out infinite}
+  .ticker .scroll{display:inline-flex;gap:32px;animation:tk 60s linear infinite;padding-left:24px}
+  @keyframes tk{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .ticker .scroll span b{color:var(--text-dim);font-weight:500}
+  /* PDF VIEWER MODAL */
+  .viewer{
+    position:fixed;inset:0;z-index:100;
+    background:rgba(7,11,20,0.92);backdrop-filter:blur(8px);
+    display:none;align-items:center;justify-content:center;padding:24px;
+  }
+  .viewer.open{display:flex}
+  .viewer-inner{
+    position:relative;width:100%;max-width:1100px;height:calc(100vh - 48px);
+    background:#0B1220;border:1px solid var(--cyan);border-radius:12px;
+    box-shadow:0 30px 80px rgba(0,212,255,0.30);
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+  .viewer-head{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    padding:14px 18px;border-bottom:1px solid var(--line-2);
+    background:linear-gradient(180deg, rgba(0,212,255,0.06), transparent);
+  }
+  .viewer-head .ttl{display:flex;align-items:center;gap:12px}
+  .viewer-head .ic{
+    width:28px;height:28px;border-radius:6px;border:1px solid var(--cyan-soft);
+    background:rgba(0,212,255,0.10);color:var(--cyan);display:grid;place-items:center;
+  }
+  .viewer-head .ic svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .viewer-head h4{margin:0;font-size:14px;font-weight:600;letter-spacing:-0.005em}
+  .viewer-head .sub{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+  .viewer-head .actions{display:flex;gap:8px;align-items:center}
+  .viewer-head .v-btn{
+    background:transparent;border:1px solid var(--line-2);color:var(--text-dim);
+    padding:8px 12px;border-radius:6px;cursor:pointer;
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    transition:all .18s ease;display:inline-flex;align-items:center;gap:8px;
+  }
+  .viewer-head .v-btn:hover{color:var(--cyan);border-color:var(--cyan)}
+  .viewer-head .v-btn.primary{color:var(--cyan);border-color:var(--cyan);background:rgba(0,212,255,0.06)}
+  .viewer-head .v-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .viewer-frame{flex:1;background:#0a0e18;overflow:auto;padding:18px 0}
+  .viewer-frame .pages{display:flex;flex-direction:column;align-items:center;gap:14px}
+  .viewer-frame canvas{max-width:calc(100% - 24px);height:auto;display:block;box-shadow:0 8px 24px rgba(0,0,0,0.4);border-radius:4px}
+  .viewer-frame .loading{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:60px 20px;text-align:center}
+  .viewer-frame .loading .bar{width:200px;height:2px;background:var(--line-2);margin:14px auto 0;border-radius:2px;overflow:hidden}
+  .viewer-frame .loading .bar i{display:block;height:100%;background:var(--cyan);width:0;transition:width .2s ease}
+  .viewer-foot{
+    padding:8px 18px;border-top:1px solid var(--line-2);
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);letter-spacing:.10em;text-transform:uppercase;
+  }
+
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- UTILITY BAR -->
+  <div class="ubar">
+    <a href="index.html" class="back" aria-label="Back to dashboard">
+      <span class="arr">←</span><span>Back to Dashboard</span>
+    </a>
+    <div class="ubar-r">
+      <span><span class="dot"></span>SYSTEM ONLINE</span>
+      <span class="sep"></span>
+      <span>NODES&nbsp;<b>1,284</b></span>
+      <span class="sep"></span>
+      <span>UPTIME&nbsp;<b>99.98%</b></span>
+      <span class="sep"></span>
+      <span>EU-WEST-1</span>
+    </div>
+  </div>
+
+  <!-- TOP NAV / BREADCRUMB -->
+  <div class="topnav">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <img src="cts-logo.png" alt="CTS Production" />
+      </div>
+      <span class="co">CTS Production Manual</span>
+    </div>
+    <span class="crumb-sep">/</span>
+    <span>Devices</span>
+    <span class="crumb-sep">/</span>
+    <span class="pg">Defrost on Demand</span>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-l">
+      <span class="pill"><span class="dt"></span>Stable · v0.2A · DOD-MV2</span>
+      <h1>
+        Defrost on Demand
+        <em>Installation &amp; User Manual</em>
+      </h1>
+      <p class="lede">Master/slave controller that initiates defrost cycles only when airflow drops — preventing ice buildup on evaporator coils and cutting energy waste in industrial refrigerators and freezer rooms.</p>
+
+      <div class="hero-meta">
+        <div class="hmg"><span class="k">Doc Rev</span><span class="v"><b>v0.2A</b></span></div>
+        <div class="hmg"><span class="k">Pages</span><span class="v">19</span></div>
+        <div class="hmg"><span class="k">Size</span><span class="v">1.4 MB</span></div>
+        <div class="hmg"><span class="k">Updated</span><span class="v"><b>3d ago</b></span></div>
+        <div class="hmg"><span class="k">Protocol</span><span class="v">Modbus RTU</span></div>
+        <div class="hmg"><span class="k">Power</span><span class="v">220 VAC / 24 VDC</span></div>
+        <div class="hmg"><span class="k">Locale</span><span class="v">EN · MS · ZH</span></div>
+        <div class="hmg"><span class="k">Region</span><span class="v">EU-WEST-1</span></div>
+      </div>
+
+      <div class="hero-cta">
+        <button class="btn-primary" data-dl="Defrost on Demand v0.2A" data-file="DoD_InstallationManual_v0.2A.pdf">
+          <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+          Download full PDF
+        </button>
+        <button class="btn-outline" data-view="DoD_InstallationManual_v0.2A.pdf">
+          <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          Read online
+        </button>
+      </div>
+    </div>
+
+    <!-- RIGHT: schematic -->
+    <div class="hero-r">
+      <div class="schematic">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <div class="crosshair"><span class="ax h"></span><span class="ax v"></span></div>
+        <span class="tick tl">X·001</span>
+        <span class="tick tr">Y·001</span>
+        <span class="tick bl">DOD-MV2 · 380 × 380 mm</span>
+        <span class="tick br">SCALE 1:4</span>
+
+        <svg viewBox="0 0 380 380" fill="none" stroke="#00D4FF" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <!-- enclosure -->
+          <rect x="60" y="70" width="260" height="240" rx="6" stroke-opacity="0.85"/>
+          <rect x="68" y="78" width="244" height="224" rx="3" stroke-opacity="0.25" stroke-dasharray="3 3"/>
+
+          <!-- top label panel -->
+          <rect x="80" y="92" width="220" height="38" rx="3" stroke-opacity="0.5"/>
+          <text x="92" y="116" fill="#00D4FF" stroke="none" font-family="JetBrains Mono" font-size="11" letter-spacing="2">DOD · MASTER</text>
+          <circle cx="290" cy="111" r="4" fill="#4ADE80" stroke="none"/>
+          <circle cx="290" cy="111" r="7" stroke-opacity="0.5"/>
+
+          <!-- toggle switch -->
+          <rect x="92" y="148" width="40" height="16" rx="2" stroke-opacity="0.7"/>
+          <rect x="118" y="150" width="12" height="12" rx="1" fill="#00D4FF" stroke="none"/>
+          <text x="92" y="180" fill="#6E7C92" stroke="none" font-family="JetBrains Mono" font-size="8" letter-spacing="1.4">24VDC PWR</text>
+
+          <!-- terminal block -->
+          <rect x="160" y="146" width="140" height="22" rx="2" stroke-opacity="0.7"/>
+          <line x1="170" y1="146" x2="170" y2="168" stroke-opacity="0.5"/>
+          <line x1="184" y1="146" x2="184" y2="168" stroke-opacity="0.5"/>
+          <line x1="198" y1="146" x2="198" y2="168" stroke-opacity="0.5"/>
+          <line x1="212" y1="146" x2="212" y2="168" stroke-opacity="0.5"/>
+          <line x1="226" y1="146" x2="226" y2="168" stroke-opacity="0.5"/>
+          <line x1="240" y1="146" x2="240" y2="168" stroke-opacity="0.5"/>
+          <line x1="254" y1="146" x2="254" y2="168" stroke-opacity="0.5"/>
+          <line x1="268" y1="146" x2="268" y2="168" stroke-opacity="0.5"/>
+          <line x1="282" y1="146" x2="282" y2="168" stroke-opacity="0.5"/>
+          <text x="160" y="182" fill="#6E7C92" stroke="none" font-family="JetBrains Mono" font-size="8" letter-spacing="1.4">MODBUS TB-08</text>
+
+          <!-- RJ45 ports -->
+          <g transform="translate(80,210)">
+            <rect width="220" height="40" rx="3" stroke-opacity="0.6"/>
+            <g stroke-opacity="0.7">
+              <rect x="10" y="8" width="20" height="24" rx="1.5"/>
+              <rect x="38" y="8" width="20" height="24" rx="1.5"/>
+              <rect x="66" y="8" width="20" height="24" rx="1.5"/>
+              <rect x="94" y="8" width="20" height="24" rx="1.5"/>
+              <rect x="122" y="8" width="20" height="24" rx="1.5"/>
+              <rect x="150" y="8" width="20" height="24" rx="1.5"/>
+              <rect x="178" y="8" width="20" height="24" rx="1.5"/>
+            </g>
+            <text x="0" y="-4" fill="#6E7C92" stroke="none" font-family="JetBrains Mono" font-size="8" letter-spacing="1.4">RJ45 · 7CH (CAT5e)</text>
+          </g>
+
+          <!-- bottom -->
+          <rect x="80" y="262" width="80" height="32" rx="2" stroke-opacity="0.7"/>
+          <text x="92" y="282" fill="#00D4FF" stroke="none" font-family="JetBrains Mono" font-size="9" letter-spacing="1.6">220VAC IN</text>
+          <rect x="180" y="262" width="120" height="32" rx="2" stroke-opacity="0.7"/>
+          <text x="192" y="282" fill="#00D4FF" stroke="none" font-family="JetBrains Mono" font-size="9" letter-spacing="1.6">RELAY OUT · DI</text>
+
+          <!-- callout lines + labels -->
+          <line x1="60" y1="120" x2="20" y2="120" stroke-opacity="0.4" stroke-dasharray="2 3"/>
+          <line x1="320" y1="230" x2="360" y2="230" stroke-opacity="0.4" stroke-dasharray="2 3"/>
+        </svg>
+        <span class="lbl" style="top:104px;left:-10px">STATUS LED</span>
+        <span class="lbl" style="top:222px;right:-10px">SLAVE BUS</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAFETY CALLOUT -->
+  <div class="safety">
+    <div class="ic">
+      <svg viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/><path d="M12 10v5"/><circle cx="12" cy="17.5" r="0.8" fill="currentColor"/></svg>
+    </div>
+    <div class="body">
+      <div class="lbl">⚠ Important · High Voltage</div>
+      <p>The device must be installed by a qualified technician only. High voltage is present inside the enclosure — do not touch components with bare hands. Disconnect 220 VAC before opening the unit.</p>
+    </div>
+  </div>
+
+  <!-- CHAPTERS -->
+  <div class="section">
+    <div class="section-head">
+      <div class="l">
+        <span class="num">01</span>
+        <h2>Manual chapters</h2>
+      </div>
+      <span class="sub">07 sections · 19 pages</span>
+    </div>
+    <div class="chapters">
+      <a class="ch" href="DoD_InstallationManual_v0.2A.pdf" data-pages="4-6" data-title="01 · Safety — Before using the device"><div class="ch-head"><span class="ch-num"><b>01</b> · Safety</span><span class="ch-pg">PG 4–6</span></div>
+        <h3>Before using the device</h3>
+        <p>Electrical, fire, explosion and radiation safety measures. Child safety and general handling.</p>
+        <span class="ch-foot">Read chapter <span class="arr">→</span></span>
+      </a>
+      <a class="ch" href="DoD_InstallationManual_v0.2A.pdf" data-pages="7-8" data-title="02 · Device — Description & characteristics"><div class="ch-head"><span class="ch-num"><b>02</b> · Device</span><span class="ch-pg">PG 7–8</span></div>
+        <h3>Description &amp; characteristics</h3>
+        <p>Anatomy of the DoD unit — terminals, relay outputs and key efficiency benefits.</p>
+        <span class="ch-foot">Read chapter <span class="arr">→</span></span>
+      </a>
+      <a class="ch" href="DoD_InstallationManual_v0.2A.pdf" data-pages="9-12" data-title="03 · Install — Assembly & installation"><div class="ch-head"><span class="ch-num"><b>03</b> · Install</span><span class="ch-pg">PG 9–12</span></div>
+        <h3>Assembly &amp; installation</h3>
+        <p>Mounting the unit, wiring 220 VAC / 24 VDC, sensor placement and Cat-5 termination.</p>
+        <span class="ch-foot">Read chapter <span class="arr">→</span></span>
+      </a>
+      <a class="ch" href="DoD_InstallationManual_v0.2A.pdf" data-pages="13-16" data-title="04 · Operate — Device operation"><div class="ch-head"><span class="ch-num"><b>04</b> · Operate</span><span class="ch-pg">PG 13–16</span></div>
+        <h3>Device operation</h3>
+        <p>Assigning the Master Modbus ID, Carel Boss integration, parameters and airflow tests.</p>
+        <span class="ch-foot">Read chapter <span class="arr">→</span></span>
+      </a>
+      <a class="ch" href="DoD_InstallationManual_v0.2A.pdf" data-pages="17" data-title="05 · Fix — Troubleshooting"><div class="ch-head"><span class="ch-num"><b>05</b> · Fix</span><span class="ch-pg">PG 17</span></div>
+        <h3>Troubleshooting</h3>
+        <p>What to check when there is no airflow — cabling, sensors, master/slave comms.</p>
+        <span class="ch-foot">Read chapter <span class="arr">→</span></span>
+      </a>
+      <a class="ch" href="DoD_InstallationManual_v0.2A.pdf" data-pages="18-19" data-title="06 · Specs — Technical specs & disposal"><div class="ch-head"><span class="ch-num"><b>06</b> · Specs</span><span class="ch-pg">PG 18–19</span></div>
+        <h3>Technical specs &amp; disposal</h3>
+        <p>Full electrical specifications, packaging disposal and regional compliance notes.</p>
+        <span class="ch-foot">Read chapter <span class="arr">→</span></span>
+      </a>
+    </div>
+  </div>
+
+  <!-- WORKFLOW + COMMANDS -->
+  <div class="section">
+    <div class="section-head">
+      <div class="l">
+        <span class="num">02</span>
+        <h2>Quick reference</h2>
+      </div>
+      <span class="sub">Workflow &amp; serial commands</span>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Typical installation workflow</h3>
+          <span class="tg">5 STEPS</span>
+        </div>
+        <div class="steps">
+          <div class="step"><div class="n">01</div><div class="b"><div class="t">Confirm device location</div><div class="d">As per premise needs · mount accessible</div></div></div>
+          <div class="step"><div class="n">02</div><div class="b"><div class="t">Lay conduits &amp; cables</div><div class="d">Cat-5e · 220 VAC supply · 24 VDC return</div></div></div>
+          <div class="step"><div class="n">03</div><div class="b"><div class="t">Install sensors &amp; power</div><div class="d">Airflow sensor behind evaporator · verify</div></div></div>
+          <div class="step"><div class="n">04</div><div class="b"><div class="t">Configure Master DoD</div><div class="d">MSA 10 · add device in Carel Boss</div></div></div>
+          <div class="step"><div class="n">05</div><div class="b"><div class="t">Test run &amp; commission</div><div class="d">AirTest · set value-a · log baseline</div></div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Important commands</h3>
+          <span class="tg">SERIAL · PUTTY</span>
+        </div>
+        <div class="cmds">
+          <div class="cmd"><code>MSA <span class="arg">10</span></code><span class="desc">Set Modbus addr</span></div>
+          <div class="cmd"><code>drain <span class="arg">5</span></code><span class="desc">Drain time (min)</span></div>
+          <div class="cmd"><code>sensormodel <span class="arg">600</span></code><span class="desc">Sensor length</span></div>
+          <div class="cmd"><code>deftime <span class="arg">15</span></code><span class="desc">Defrost cycle (s)</span></div>
+          <div class="cmd"><code>airtest <span class="arg">1</span></code><span class="desc">Run sensor-1</span></div>
+          <div class="cmd"><code>data <span class="arg">1</span></code><span class="desc">Data-stream on</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPECS -->
+  <div class="section">
+    <div class="section-head">
+      <div class="l">
+        <span class="num">03</span>
+        <h2>Technical specifications</h2>
+      </div>
+      <span class="sub">DOD-MV2 · Master Controller</span>
+    </div>
+    <div class="specs-table">
+      <div class="row"><span class="k">Model</span><span class="v"><b>DOD-MV2</b> · CTS-DOD-A</span></div>
+      <div class="row"><span class="k">Power input</span><span class="v">220 VAC · 50/60 Hz</span></div>
+      <div class="row"><span class="k">Control output</span><span class="v">24 VDC relay · DI point</span></div>
+      <div class="row"><span class="k">Bus</span><span class="v">Modbus RTU · RS-485</span></div>
+      <div class="row"><span class="k">Sensor channels</span><span class="v">Up to 7 (Cat5e RJ45)</span></div>
+      <div class="row"><span class="k">Airflow sensor</span><span class="v">300 mm / 600 mm strip</span></div>
+      <div class="row"><span class="k">Polling interval</span><span class="v">15 min (default)</span></div>
+      <div class="row"><span class="k">Defrost cycle</span><span class="v">15 s (configurable)</span></div>
+      <div class="row"><span class="k">Drain time</span><span class="v">2 min default · max 5 min</span></div>
+      <div class="row"><span class="k">Ambient temp</span><span class="v">≤ 50°C · keep from sunlight</span></div>
+      <div class="row"><span class="k">Enclosure</span><span class="v">IP54 · DIN-rail compatible</span></div>
+      <div class="row"><span class="k">Compliance</span><span class="v">CE · FCC Pt.15 · RoHS</span></div>
+    </div>
+  </div>
+
+  <!-- BIG DOWNLOAD -->
+  <div class="section">
+    <div class="dl-card">
+      <div class="dl-cover" aria-hidden="true">
+        <span class="tl">DoD · v0.2A</span>
+        <span class="no">19 PG</span>
+      </div>
+      <div class="dl-body">
+        <div class="k">Download · PDF</div>
+        <h3>Defrost on Demand — Installation &amp; User Manual</h3>
+        <p>Full 19-page reference including safety, mechanical drawings, wiring, Carel Boss commissioning, serial commands and disposal notes.</p>
+        <div class="meta">
+          <span>PG&nbsp;<b>19</b></span>
+          <span>1.4&nbsp;MB</span>
+          <span>EN&nbsp;<b>v0.2A</b></span>
+          <span>SHA&nbsp;<b>4f2a…c81e</b></span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;position:relative;z-index:1">
+        <button class="btn-primary" data-dl="DoD-MV2 — Installation Manual" data-file="DoD_InstallationManual_v0.2A.pdf">
+          <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+          Download&nbsp;PDF
+        </button>
+        <button class="btn-outline">Email me a copy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="foot-brand">
+      <div class="lg" aria-hidden="true">
+        <img src="cts-logo.png" alt="CTS" />
+      </div>
+      <div class="ft">
+        <span class="co">City Technical Solutions</span>
+        <span>Unit A-9-2 &amp; A-9-3, Level 9, Tower A Menara UOA Bangsar<br>No. 5 Jalan Bangsar Utama 1, 59000 Kuala Lumpur, Malaysia</span>
+      </div>
+    </div>
+    <div class="foot-col">
+      <span class="h">Resources</span>
+      <a href="#">Live Dashboard</a>
+      <a href="#">Status Page</a>
+      <a href="#">Changelog</a>
+      <a href="#">API Reference</a>
+    </div>
+    <div class="foot-col">
+      <span class="h">Support</span>
+      <a href="#">Open a ticket</a>
+      <a href="#"><span class="__cf_email__" data-cfemail="56333827233f243f3325783e3d3116353f222f3e393a323f3831257837253f37">[email&#160;protected]</span></a>
+      <a href="#">+852 3708 5400</a>
+    </div>
+    <div class="signoff">
+      <span>CTS Production © 2026 — Live Dashboard</span>
+      <span class="seq">SEQ&nbsp;0x4F2A · BUILD&nbsp;26.05.12-rc3</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- PDF VIEWER MODAL -->
+<div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="Manual viewer">
+  <div class="viewer-inner">
+    <div class="viewer-head">
+      <div class="ttl">
+        <span class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></span>
+        <div>
+          <h4 id="v-title">Defrost on Demand — Installation &amp; User Manual</h4>
+          <span class="sub">DoD · v0.2A · 19 PG · 1.4 MB</span>
+        </div>
+      </div>
+      <div class="actions">
+        <a class="v-btn primary" id="v-dl" href="DoD_InstallationManual_v0.2A.pdf" download>
+          <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+          Download
+        </a>
+        <a class="v-btn" id="v-open" href="DoD_InstallationManual_v0.2A.pdf" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M10 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
+          Open
+        </a>
+        <button class="v-btn" id="v-close" aria-label="Close">✕ Close [ESC]</button>
+      </div>
+    </div>
+    <div class="viewer-frame" id="v-frame">
+      <div class="loading" id="v-load">Loading manual…<div class="bar"><i id="v-prog"></i></div></div>
+      <div class="pages" id="v-pages"></div>
+    </div>
+    <div class="viewer-foot">
+      <span>SOURCE · DoD_InstallationManual_v0.2A.pdf</span>
+      <span>SHA <b style="color:var(--text)">4f2a…c81e</b></span>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span class="ic">
+    <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+  </span>
+  <span id="toast-msg">Manual download queued.</span>
+  <span class="clo" id="toast-close">[ESC]</span>
+</div>
+
+<!-- TICKER -->
+<div class="ticker" aria-hidden="true">
+  <span class="lbl"><span class="dot"></span>LIVE</span>
+  <span class="scroll" id="tk-scroll"></span>
+</div>
+
+<script>
+  // Toast
+  const toast = document.getElementById('toast');
+  const toastMsg = document.getElementById('toast-msg');
+  let toastTimer;
+  function showToast(msg){
+    toastMsg.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>toast.classList.remove('show'), 3200);
+  }
+  document.getElementById('toast-close').onclick = ()=>toast.classList.remove('show');
+  // PDF viewer (rendered with PDF.js)
+  const viewer = document.getElementById('viewer');
+  const vPages = document.getElementById('v-pages');
+  const vLoad = document.getElementById('v-load');
+  const vProg = document.getElementById('v-prog');
+  let pdfjsReady = null;
+  function loadPdfJs(){
+    if(pdfjsReady) return pdfjsReady;
+    pdfjsReady = new Promise((resolve, reject)=>{
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.onload = ()=>{
+        window['pdfjs-dist/build/pdf'].GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        resolve(window['pdfjs-dist/build/pdf']);
+      };
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+    return pdfjsReady;
+  }
+  const vTitle = document.getElementById('v-title');
+  const defaultTitle = vTitle ? vTitle.textContent : '';
+  async function openViewer(src, opts){
+    opts = opts || {};
+    viewer.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    vPages.innerHTML = '';
+    vLoad.style.display = 'block';
+    vProg.style.width = '0%';
+    if(vTitle) vTitle.textContent = opts.title || defaultTitle;
+    try {
+      const pdfjs = await loadPdfJs();
+      const pdf = await pdfjs.getDocument(src).promise;
+      let start = 1, end = pdf.numPages;
+      if(opts.pages){
+        const m = String(opts.pages).split('-').map(n=>parseInt(n,10));
+        start = Math.max(1, m[0]);
+        end = Math.min(pdf.numPages, m[1] || m[0]);
+      }
+      const N = end - start + 1;
+      const scale = Math.min(2, (window.devicePixelRatio || 1) * 1.3);
+      for(let p=start; p<=end; p++){
+        const page = await pdf.getPage(p);
+        const viewport = page.getViewport({scale});
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        canvas.style.width = (viewport.width/scale*1.0) + 'px';
+        await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
+        vPages.appendChild(canvas);
+        vProg.style.width = (((p-start+1)/N)*100) + '%';
+      }
+      vLoad.style.display = 'none';
+    } catch(err){
+      vLoad.innerHTML = 'Could not load PDF — <a href="'+src+'" target="_blank" style="color:var(--cyan)">open in new tab</a>';
+      console.error(err);
+    }
+  }
+  function closeViewer(){
+    viewer.classList.remove('open');
+    vPages.innerHTML = '';
+    document.body.style.overflow = '';
+  }
+  document.getElementById('v-close').onclick = closeViewer;
+  viewer.addEventListener('click', e=>{ if(e.target===viewer) closeViewer(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && viewer.classList.contains('open')) closeViewer(); });
+
+  document.addEventListener('click', e=>{
+    // chapter links / read-online buttons → open viewer instead of new tab
+    const ch = e.target.closest('a.ch, [data-view]');
+    if(ch){
+      e.preventDefault();
+      const src = ch.dataset.view || ch.getAttribute('href');
+      if(src && /\.pdf$/i.test(src)) openViewer(src, {pages: ch.dataset.pages, title: ch.dataset.title});
+      return;
+    }
+    const view = e.target.closest('[data-readonline]');
+    if(view){
+      openViewer(view.dataset.readonline);
+      return;
+    }
+    const b = e.target.closest('[data-dl]');
+    if(!b) return;
+    const file = b.dataset.file;
+    if(file){
+      const a = document.createElement('a');
+      a.href = file;
+      a.download = file;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showToast(`↓ ${b.dataset.dl} — downloading…`);
+    } else {
+      showToast(`↓ ${b.dataset.dl} — manual.pdf  •  queued`);
+    }
+  });
+
+  // Copy command
+  document.querySelectorAll('.cmd').forEach(c=>{
+    const code = c.querySelector('code');
+    c.addEventListener('click', ()=>{
+      const txt = code.textContent.trim();
+      navigator.clipboard?.writeText(txt);
+      showToast(`📋 Copied: ${txt}`);
+    });
+    c.style.cursor='pointer';
+  });
+
+  // Ticker
+  const tickerItems = [
+    'CTS PRODUCTION · LIVE DASHBOARD · v3.0',
+    'ENERGY EYE GSM · IoT ENERGY MONITOR · PENINSULAR MALAYSIA',
+    'FIREBASE SYNC · asia-southeast1 · NOMINAL',
+    'TNB TARIFF · PEAK / OFF-PEAK · SUPPORTED',
+    'ATTENDANCE · CLOCK IN/OUT · ACTIVE',
+    'ASSEMBLY · PARTS TRACKING · ACTIVE',
+    'SYNC · '+new Date().toISOString().replace('T',' ').substring(0,19)+' UTC',
+    'CTS DASHBOARD · ENERGYINTERVENTION.COM · © 2026'
+  ];
+  const tkScroll = document.getElementById('tk-scroll');
+  const html = tickerItems.map(t=>`<span>· ${t.replace(/(\w+) (\S+)$/, '<b>$1</b> $2')}</span>`).join('');
+  tkScroll.innerHTML = html + html;
+</script>
+</body>
+</html>
