@@ -662,6 +662,11 @@ header{
         <button class="login-role-btn" onclick="loginAsRole('supervisor')">👁 Supervisor</button>
         <button class="login-role-btn" onclick="loginAsRole('admin')">⚙ Admin</button>
       </div>
+      <div style="margin-top:8px;">
+        <button class="login-role-btn" onclick="loginAsGuest()" style="width:100%;color:var(--text-dim);border-color:var(--border);opacity:0.7;">
+          📖 Guest — View Manual Only
+        </button>
+      </div>
     </div>
 
     <!-- Step 2: PIN entry -->
@@ -1448,6 +1453,11 @@ function selectWorkerLogin(name, projectId){
   document.getElementById('rememberRow').style.display='flex';
   // Check if worker has a PIN set — if default 0000, show change prompt after login
   showPinStep();
+}
+
+function loginAsGuest(){
+  // Open manual in new tab — no login required
+  window.open('manual.html', '_blank');
 }
 
 function loginAsRole(role){
