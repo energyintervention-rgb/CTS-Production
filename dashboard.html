@@ -2575,7 +2575,7 @@ function renderAttendance(){
           ${initials}
         </div>
         <div style="flex:1;min-width:0;">
-          <div class="worker-name">${escH(name)}${isWorkerHidden(name)?'<span style="font-family:var(--font-mono);font-size:0.55rem;color:var(--amber);border:1px solid var(--amber);border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:middle">FLEX</span>':''}</div>
+          <div class="worker-name">${escH(name)}${isFlexWorker(name)?'<span style="font-family:var(--font-mono);font-size:0.55rem;color:var(--amber);border:1px solid var(--amber);border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:middle">⚡ FLEX</span>':''}</div>
           ${isOTDay&&rec.clockIn?`
             <div style="color:var(--green);font-family:var(--font-mono);font-size:0.65rem;font-weight:700;">
               ${rec.overtimeStatus==='approved'?'✓ OT APPROVED'+(rec.overtimeApprovedBy?' by '+rec.overtimeApprovedBy:'')
@@ -3134,7 +3134,7 @@ function renderWorkersConfig(){
           <input class="admin-input" type="number" placeholder="${autoTarget}" value="${customTarget}" style="width:60px;flex:none" onchange="setWorkerTarget('${escH(w)}',this.value)">
         </div>
         <label style="display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);cursor:pointer;">
-          <input type="checkbox" ${hidden?'checked':''} onchange="toggleWorkerHide('${escH(w)}')" style="cursor:pointer;">Hide
+          <input type="checkbox" ${hidden?'checked':''} onchange="toggleWorkerHide('${escH(w)}')" style="cursor:pointer;">📊 Hide Report
         </label>
         <label style="display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.6rem;color:var(--amber);cursor:pointer;border:1px solid var(--amber)33;border-radius:4px;padding:2px 6px;">
           <input type="checkbox" ${flex?'checked':''} onchange="toggleFlexWorker('${escH(w)}')" style="cursor:pointer;accent-color:var(--amber);">⚡ Flex
