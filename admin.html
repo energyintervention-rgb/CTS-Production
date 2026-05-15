@@ -234,21 +234,27 @@ body.light-mode .topbar-title h1{
 
 
 @media(max-width:600px){
-  .topbar{padding:8px 12px}
+  .topbar{padding:7px 10px;gap:5px}
   .main{padding:14px 12px 48px}
   .user-grid{grid-template-columns:1fr}
-  .pin-tbl .tbl-head,.pin-tbl .tbl-row{grid-template-columns:1fr 80px 80px}
+  .pin-tbl .tbl-head,.pin-tbl .tbl-row{grid-template-columns:1fr 90px 50px 80px}
   .pin-tbl .tbl-head span:nth-child(4),
-  .pin-tbl .tbl-row span:nth-child(4),
-  .pin-tbl .tbl-head span:nth-child(5),
-  .pin-tbl .tbl-row span:nth-child(5){display:none}
-  .topbar-title h1{font-size:13px}
+  .pin-tbl .tbl-row span:nth-child(4){display:none}
+  .topbar-title h1{font-size:14px}
   .topbar-title .sub{display:none}
-  .tab-bar .tab{padding:9px 10px;font-size:9px}
+  .tab-bar .tab{padding:8px 9px;font-size:9px;letter-spacing:0}
   .s-input,.s-select{max-width:100%;min-width:0;width:100%}
-  .worker-tbl .tbl-head,.worker-tbl .tbl-row{grid-template-columns:1fr 80px 90px}
+  .worker-tbl .tbl-head,.worker-tbl .tbl-row{grid-template-columns:1fr 90px 90px}
   .worker-tbl .tbl-head span:nth-child(2),
   .worker-tbl .tbl-row span:nth-child(2){display:none}
+  .nav-btn{font-size:9.5px;padding:6px 10px;gap:4px}
+  .role-pill{font-size:8.5px;padding:4px 8px}
+  .theme-btn{padding:5px 8px;font-size:14px}
+  .topbar-right{gap:5px}
+}
+@media(max-width:400px){
+  .nav-btn{font-size:9px;padding:5px 8px}
+  .topbar-title h1{font-size:12px}
 }
 
 
