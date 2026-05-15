@@ -440,7 +440,7 @@ header{
   /* Charts */
   .stat-cards{grid-template-columns:repeat(2,1fr);}
   .stat-card .val{font-size:1.2rem;}
-  .donut-wrap{min-width:140px;}
+  .donut-wrap{min-width:180px;}
   .hbar-label{width:70px;font-size:0.68rem;}
 
   /* Activity log */
@@ -515,7 +515,7 @@ header{
 .donut-wrap.donut-active{border-color:var(--cyan);box-shadow:0 0 12px var(--cyan-dim);}
 .donut-proj-name{font-family:var(--font-mono);font-size:0.65rem;color:var(--cyan);letter-spacing:1px;
   text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
-.donut-canvas-wrap{position:relative;width:120px;height:120px;flex-shrink:0;}
+.donut-canvas-wrap{position:relative;width:180px;height:180px;flex-shrink:0;}
 .donut-legend{display:flex;flex-direction:column;gap:5px;width:100%;}
 .donut-leg{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:0.65rem;color:var(--text-dim);white-space:nowrap;}
 .donut-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
@@ -3344,7 +3344,7 @@ function renderCharts(){
     const cid = 'donut_'+pr.id;
     return `<div class="donut-wrap${pr.id===cp.id?' donut-active':''}">
       <div class="donut-proj-name">${escH(pr.name)}</div>
-      <canvas id="${cid}" width="120" height="120"></canvas>
+      <canvas id="${cid}" width="180" height="180"></canvas>
       <div class="donut-legend">
         <div class="donut-leg"><span class="donut-dot" style="background:var(--green)"></span>Done: ${pc} part${pc!==1?'s':''}</div>
         <div class="donut-leg"><span class="donut-dot" style="background:var(--amber)"></span>In Prog: ${pip}</div>
@@ -3368,7 +3368,7 @@ function renderCharts(){
     const xc = xp>=100?'var(--green)':xp>0?'var(--amber)':'var(--red)';
     return `<div class="hbar-row">
       <div class="hbar-label">${escH(x.name)}</div>
-      <div class="hbar-track"><div class="hbar-fill" style="width:${xp}%;background:${xc};min-width:${xp>0?'24px':'0'};box-shadow:0 0 8px ${xc}40">${xp>5?xp+'%':''}</div></div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${xp}%;background:${xc};min-width:${xp>0?'28px':'0'};box-shadow:0 0 8px ${xc}40">${xp>5?x.updated+'':''}</div></div>
       <div class="hbar-pct" style="color:${xc}">${xp}%</div>
     </div>`;
   }).join('');
@@ -3384,8 +3384,8 @@ function drawDonut(canvasId, updated, remaining, complete, inProgress, notStarte
   const canvas = document.getElementById(canvasId);
   if(!canvas) return;
   const ctx = canvas.getContext('2d');
-  const cx=60,cy=60,r=46,lw=14;
-  ctx.clearRect(0,0,120,120);
+  const cx=90,cy=90,r=72,lw=18;
+  ctx.clearRect(0,0,180,180);
   const total = updated+remaining||1;
   const isLight = document.body.classList.contains('light-mode');
   // Theme-aware colours
@@ -3407,10 +3407,10 @@ function drawDonut(canvasId, updated, remaining, complete, inProgress, notStarte
     start+=angle;
   });
   ctx.beginPath();ctx.arc(cx,cy,r-lw,0,2*Math.PI);ctx.fillStyle=bgColor;ctx.fill();
-  ctx.fillStyle=textColor;ctx.font='bold 14px Rajdhani,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(Math.round(updated/total*100)+'%',cx,cy-6);
-  ctx.font='9px JetBrains Mono,monospace';ctx.fillStyle=dimColor;
-  ctx.fillText('DONE',cx,cy+8);
+  ctx.fillStyle=textColor;ctx.font='bold 20px Rajdhani,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(Math.round(updated/total*100)+'%',cx,cy-8);
+  ctx.font='11px JetBrains Mono,monospace';ctx.fillStyle=dimColor;
+  ctx.fillText('DONE',cx,cy+10);
 }
 
 // ── Working days helpers ──
