@@ -27,11 +27,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 
 body{
   min-height:100vh;
+  background-color:var(--bg);
   background-image:
-    linear-gradient(var(--border) 1px,transparent 1px),
-    linear-gradient(90deg,var(--border) 1px,transparent 1px),
-    radial-gradient(ellipse 80% 60% at 50% -10%,rgba(0,212,255,0.08),transparent 70%);
-  background-size:48px 48px,48px 48px,100% 100%;
+    linear-gradient(rgba(0,212,255,0.20) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,212,255,0.20) 1px,transparent 1px),
+    radial-gradient(ellipse 100% 70% at 50% 0%,rgba(0,212,255,0.13),transparent 65%),
+    radial-gradient(ellipse 50% 50% at 85% 90%,rgba(0,80,255,0.07),transparent 60%);
+  background-size:48px 48px,48px 48px,100% 100%,100% 100%;
   display:flex;align-items:center;justify-content:center;
   padding:20px;
 }
@@ -412,8 +414,10 @@ function buildWorkerList(){
     _S.projects.forEach(pr=>{
       if(pr.workers){
         pr.workers.forEach(w=>{
-          if(!workers.find(x=>x.name===w.name)){
-            workers.push({name:w.name, projectId:pr.id, projectName:pr.name});
+          // workers can be strings or objects {name:...}
+          const wname = (typeof w === 'string') ? w : (w.name || w);
+          if(wname && !workers.find(x=>x.name===wname)){
+            workers.push({name:wname, projectId:pr.id, projectName:pr.name});
           }
         });
       }
