@@ -1729,6 +1729,82 @@ function bridgeFromLanding(){
   return true;
 }
 
+
+// ══════════════════════════════════════════
+// FLEX WORKER SYSTEM
+// ══════════════════════════════════════════
+function isFlexWorker(name){
+  const pr = attProject();
+  return !!(pr.flexWorkers && pr.flexWorkers.includes(name));
+}
+function toggleFlexWorker(name){
+  const pr = attProject();
+  if(!pr.flexWorkers) pr.flexWorkers=[];
+  const idx = pr.flexWorkers.indexOf(name);
+  if(idx>=0) pr.flexWorkers.splice(idx,1);
+  else pr.flexWorkers.push(name);
+  saveState();
+  renderAttendance();
+}
+function getFlexSessions(name){
+  const pr = attProject();
+  const key = attKey(name);
+  if(!pr.flexAttendance) pr.flexAttendance={};
+  if(!pr.flexAttendance[key]) pr.flexAttendance[key]=[];
+  return pr.flexAttendance[key];
+}
+function setFlexSessions(name, sessions){
+  const pr = attProject();
+  const key = attKey(name);
+  if(!pr.flexAttendance) pr.flexAttendance={};
+  pr.flexAttendance[key]=sessions;
+}
+function flexTotalMins(sessions){
+  return sessions.reduce((sum,s)=>{
+    if(!s.clockIn) return sum;
+    const h = calcHours(s.clockIn, s.clockOut||nowHMS());
+    return sum + Math.round(h*60);
+  },0);
+}
+function minsToHHMM(mins){
+  const h = Math.floor(mins/60);
+  const m = mins%60;
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+}
+function activeFlexSession(sessions){
+  return sessions.find(s=>s.clockIn&&!s.clockOut);
+}
+async function flexClockIn(name){
+  const sessions = getFlexSessions(name);
+  if(sessions.length>=4){ showToast('Max 4 sessions reached','warn'); return; }
+  if(activeFlexSession(sessions)){ showToast('Already clocked in','warn'); return; }
+  const timeStr = nowHMS();
+  const gps = await getGPS();
+  sessions.push({clockIn:timeStr, clockOut:'', gps_in:gps, overnight:false});
+  setFlexSessions(name, sessions);
+  // Update main attendance record for compatibility
+  const rec = getAttRecord(name);
+  if(!rec.clockIn) setAttRecord(name,{...rec, clockIn:timeStr, gps_in:gps, status:'present', lateMin:0});
+  saveState(); renderAttendance();
+  showToast('✓ '+name+' flex session #'+sessions.length+' started');
+}
+async function flexClockOut(name){
+  const sessions = getFlexSessions(name);
+  const active = activeFlexSession(sessions);
+  if(!active){ showToast('Not clocked in','warn'); return; }
+  const timeStr = nowHMS();
+  const gps = await getGPS();
+  active.clockOut = timeStr;
+  active.gps_out = gps;
+  active.overnight = isOvernightClockout(active.clockIn, timeStr);
+  setFlexSessions(name, sessions);
+  // Update main record clockOut for last session
+  const rec = getAttRecord(name);
+  const totalMins = flexTotalMins(sessions);
+  setAttRecord(name,{...rec, clockOut:timeStr, gps_out:gps});
+  saveState(); renderAttendance();
+  showToast('✓ '+name+' session ended · Total: '+minsToHHMM(totalMins));
+}
 function startRealtimeSync(){
   if(!DOC_REF){
     // Firebase not available — use local data only
@@ -2405,7 +2481,11 @@ function renderAttendance(){
     const isOTDay = !!(dayOff) || !!(rec.overtimeStatus);
     const status = isOTDay ? (rec.clockIn?'ot':'absent') : getClockStatus(rec.clockIn);
     const lateMin = isOTDay ? 0 : calcLate(rec.clockIn);
-    const hours = calcHours(rec.clockIn, rec.clockOut);
+    const isFlex = isFlexWorker(name);
+    const flexSessions = isFlex ? getFlexSessions(name) : [];
+    const flexActive = isFlex ? activeFlexSession(flexSessions) : null;
+    const flexTotalM = isFlex ? flexTotalMins(flexSessions) : 0;
+    const hours = isFlex ? flexTotalM/60 : calcHours(rec.clockIn, rec.clockOut);
     const lateStr = lateMin>0 ? Math.floor(lateMin/60)+'h '+String(lateMin%60).padStart(2,'0')+'m late' : '';
     const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
     const colors = {onTime:'var(--green)',late:'var(--amber)',tooEarly:'var(--cyan)',absent:'var(--text-dim)',ot:'var(--green)'};
@@ -2516,6 +2596,32 @@ function renderAttendance(){
 
       ${unitsHtml}
       ${reasonHtml}
+      ${isFlex&&flexSessions.length>0?`
+        <div style="margin:10px 0 4px;border-top:1px solid var(--border);padding-top:8px;">
+          <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:5px;display:flex;justify-content:space-between;">
+            <span>SESSIONS TODAY</span>
+            <span style="color:${flexTotalM>0?'var(--cyan)':'var(--text-dim)'}">${minsToHHMM(flexTotalM)} total</span>
+          </div>
+          ${flexSessions.map((s,i)=>`
+            <div style="display:grid;grid-template-columns:24px 70px 70px 50px 1fr;gap:4px;align-items:center;font-family:var(--font-mono);font-size:0.62rem;padding:3px 0;border-bottom:1px solid var(--border)20;">
+              <span style="color:var(--text-dim)">#${i+1}</span>
+              <span style="color:var(--green)">IN ${s.clockIn}</span>
+              <span style="color:${s.clockOut?'var(--cyan)':'var(--amber)'}">OUT ${s.clockOut||'—'}</span>
+              <span style="color:var(--text)">${s.clockOut?minsToHHMM(Math.round(calcHours(s.clockIn,s.clockOut)*60)):'active'}</span>
+              ${s.overnight?'<span style="color:var(--amber);font-size:0.58rem">+1d</span>':'<span></span>'}
+            </div>`).join('')}
+        </div>`:''
+      }
+      ${S.adminMode?`
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding:6px 8px;background:var(--border)33;border-radius:6px;">
+          <span style="font-family:var(--font-mono);font-size:0.6rem;color:var(--amber);letter-spacing:.5px;">⚡ FLEX WORKER</span>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <span style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim)">${isFlexWorker(name)?'ON':'OFF'}</span>
+            <input type="checkbox" ${isFlexWorker(name)?'checked':''} onchange="toggleFlexWorker('${escH(name)}')"
+              style="width:14px;height:14px;accent-color:var(--amber);cursor:pointer;">
+          </label>
+        </div>`:''
+      }
 
       <div class="worker-actions">
         ${actionBtn}
@@ -4166,11 +4272,50 @@ async function generateWorkerReport(name){
   }
 
   let totalDays=0,present=0,onTimeCnt=0,lateCnt=0,absentCnt=0,otCnt=0,totalHours=0;
+  const isFlex = isFlexWorker(name);
+  const flexAtt = pr.flexAttendance||{};
   const rows = dates.map((date,i)=>{
     const rec = att[name+'_'+date]||{};
     const dayInfo = getDayType(date);
     const isOTRec = dayInfo.type!=='work' || !!rec.overtimeStatus;
     const lateMin = isOTRec ? 0 : calcLate(rec.clockIn);
+    const rowBg = dayInfo.type!=='work'?(dayInfo.type==='holiday'?'#F5F3FF':'#F0F8FF'):i%2===0?'#FFFFFF':'#F8FFFE';
+    const dtColor = dayInfo.type==='holiday'?'#534AB7':dayInfo.type==='rest'?'#185FA5':'#0F766E';
+    const dtBg    = dayInfo.type==='holiday'?'#EEEDFE':dayInfo.type==='rest'?'#E6F1FB':'#F0FDFA';
+
+    if(isFlex){
+      // FLEX worker row
+      const fKey = name+'_'+date;
+      const sessions = flexAtt[fKey]||[];
+      const dayTotalMins = sessions.reduce((s,x)=>{
+        if(!x.clockIn) return s;
+        return s+Math.round(calcHours(x.clockIn,x.clockOut||x.clockIn)*60);
+      },0);
+      const hhMM = minsToHHMM(dayTotalMins);
+      if(dayTotalMins>0) totalHours+=dayTotalMins/60;
+      if(dayInfo.type==='work'){
+        totalDays++;
+        if(sessions.length>0){ present++; onTimeCnt++; }
+        else absentCnt++;
+      }
+      const sessHtml = sessions.map((s,si)=>`
+        <div style="display:grid;grid-template-columns:20px 60px 60px 50px;gap:4px;font-size:10px;font-family:monospace;padding:1px 0;color:#444">
+          <span style="color:#888">#${si+1}</span>
+          <span style="color:#0D9488">IN ${s.clockIn}</span>
+          <span style="color:#185FA5">OUT ${s.clockOut||'—'}${s.overnight?' <b style="color:#D97706">(+1d)</b>':''}</span>
+          <span>${s.clockOut?minsToHHMM(Math.round(calcHours(s.clockIn,s.clockOut)*60)):'active'}</span>
+        </div>`).join('');
+      return `<tr style="background:${rowBg}">
+        <td style="padding:7px 10px;font-size:12px;font-weight:600;color:#134E4A;white-space:nowrap">${date}</td>
+        <td style="padding:7px 10px"><span style="padding:2px 7px;border-radius:8px;background:${dtBg};color:${dtColor};font-size:10px;font-weight:600">${dayInfo.label}</span></td>
+        <td style="padding:7px 10px" colspan="2">${sessHtml||'<span style="color:#bbb;font-size:11px">No sessions</span>'}</td>
+        <td style="padding:7px 10px;font-family:monospace;font-size:13px;font-weight:700;color:#0D9488;text-align:center">${dayTotalMins>0?hhMM:'—'}</td>
+        <td style="padding:7px 10px;text-align:center">${sessions.length>0?`<span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:#CCFBF1;color:#0D9488">FLEX ${sessions.length}/4</span>`:'<span style="color:#bbb">—</span>'}</td>
+        <td style="padding:7px 10px;font-size:11px;color:#5A8A78"></td>
+      </tr>`;
+    }
+
+    // Standard worker row
     const hours = calcHours(rec.clockIn,rec.clockOut);
     const lateStr = lateMin>0?Math.floor(lateMin/60)+'h '+String(lateMin%60).padStart(2,'0')+'m':'';
     let status='—', statusColor='#134E4A', statusBg='#F0FDFA';
@@ -4190,9 +4335,6 @@ async function generateWorkerReport(name){
       else { status='OT'; statusColor='#0D9488'; statusBg='#CCFBF1'; }
       if(hours>0) totalHours+=hours;
     }
-    const rowBg = dayInfo.type!=='work'?(dayInfo.type==='holiday'?'#F5F3FF':'#F0F8FF'):i%2===0?'#FFFFFF':'#F8FFFE';
-    const dtColor = dayInfo.type==='holiday'?'#534AB7':dayInfo.type==='rest'?'#185FA5':'#0F766E';
-    const dtBg    = dayInfo.type==='holiday'?'#EEEDFE':dayInfo.type==='rest'?'#E6F1FB':'#F0FDFA';
     return `<tr style="background:${rowBg}">
       <td style="padding:7px 10px;font-size:12px;font-weight:600;color:#134E4A;white-space:nowrap">${date}</td>
       <td style="padding:7px 10px"><span style="padding:2px 7px;border-radius:8px;background:${dtBg};color:${dtColor};font-size:10px;font-weight:600">${dayInfo.label}</span></td>
@@ -4214,13 +4356,13 @@ async function generateWorkerReport(name){
         <div style="width:52px;height:52px;border-radius:50%;background:#CCFBF1;color:#0D9488;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.2rem">${initials}</div>
         <div>
           <div style="font-size:11px;letter-spacing:2px;color:#0F766E;margin-bottom:2px">INDIVIDUAL ATTENDANCE REPORT</div>
-          <div style="font-size:24px;font-weight:700;color:#134E4A">${escH(name)}</div>
+          <div style="font-size:24px;font-weight:700;color:#134E4A">${escH(name)}${isFlex?' <span style="font-size:11px;font-weight:700;background:#FEF9C3;color:#D97706;padding:2px 8px;border-radius:4px;vertical-align:middle">⚡ FLEX</span>':''}</div>
           <div style="font-size:12px;color:#0F766E;margin-top:2px">${escH(pr.name)} · ${dates[0]||''} to ${dates[dates.length-1]||''}</div>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center">
         <div style="background:#CCFBF1;border-radius:8px;padding:10px 14px"><div style="font-size:22px;font-weight:700;color:#0D9488">${attendRate}%</div><div style="font-size:10px;color:#0F766E;letter-spacing:1px">ATTENDANCE</div></div>
-        <div style="background:#F0FDFA;border:1px solid #5EEAD4;border-radius:8px;padding:10px 14px"><div style="font-size:22px;font-weight:700;color:#0D9488">${totalHours.toFixed(1)}h</div><div style="font-size:10px;color:#0F766E;letter-spacing:1px">TOTAL HOURS</div></div>
+        <div style="background:#F0FDFA;border:1px solid #5EEAD4;border-radius:8px;padding:10px 14px"><div style="font-size:22px;font-weight:700;color:#0D9488">${isFlex?minsToHHMM(Math.round(totalHours*60)):totalHours.toFixed(1)+'h'}</div><div style="font-size:10px;color:#0F766E;letter-spacing:1px">TOTAL HOURS</div></div>
         <div style="background:#FEF9C3;border-radius:8px;padding:8px 12px"><div style="font-size:18px;font-weight:700;color:#D97706">${lateCnt}</div><div style="font-size:10px;color:#92400E;letter-spacing:1px">LATE</div></div>
         <div style="background:#FEE2E2;border-radius:8px;padding:8px 12px"><div style="font-size:18px;font-weight:700;color:#DC2626">${absentCnt}</div><div style="font-size:10px;color:#991B1B;letter-spacing:1px">ABSENT</div></div>
       </div>
