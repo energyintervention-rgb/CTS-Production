@@ -3117,6 +3117,7 @@ function renderWorkersConfig(){
   const parts = pr.parts||[];
   document.getElementById('workersConfig').innerHTML = (pr.workers||[]).map((w,i)=>{
     const hidden = isWorkerHidden(w);
+    const flex = isFlexWorker(w);
     const customTarget = pr.workerTargets&&pr.workerTargets[w]!==undefined ? pr.workerTargets[w] : '';
     const assigned = (pr.workerAssignments&&pr.workerAssignments[w])||[];
     const partChecks = parts.map(p=>`
@@ -3134,6 +3135,9 @@ function renderWorkersConfig(){
         </div>
         <label style="display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);cursor:pointer;">
           <input type="checkbox" ${hidden?'checked':''} onchange="toggleWorkerHide('${escH(w)}')" style="cursor:pointer;">Hide
+        </label>
+        <label style="display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.6rem;color:var(--amber);cursor:pointer;border:1px solid var(--amber)33;border-radius:4px;padding:2px 6px;">
+          <input type="checkbox" ${flex?'checked':''} onchange="toggleFlexWorker('${escH(w)}')" style="cursor:pointer;accent-color:var(--amber);">⚡ Flex
         </label>
         <button class="btn-remove" onclick="removeWorker(${i})">×</button>
       </div>
