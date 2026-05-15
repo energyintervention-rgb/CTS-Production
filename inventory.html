@@ -27,6 +27,12 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
+/* Hide all scrollbars */
+::-webkit-scrollbar{display:none}
+*{-ms-overflow-style:none;scrollbar-width:none}
+/* Prevent body overflow */
+html{overflow:hidden}
+body{overflow-y:auto}
 body{
   background-color:var(--bg);
   background-image:
