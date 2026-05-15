@@ -257,12 +257,18 @@ body.light-mode .topbar-title h1{
   .outbound-tbl .tbl-head span:nth-child(6),
   .outbound-tbl .tbl-row>span:nth-child(6){display:none}
 }
+@media(max-width:600px){
+  .nav-btn{font-size:9.5px;padding:6px 10px;gap:4px}
+  .role-pill{font-size:8.5px;padding:4px 8px}
+  .theme-btn{padding:5px 8px;font-size:14px}
+  .topbar-right{gap:5px}
+  .topbar{padding:7px 10px;gap:5px}
+  .topbar-title .sub{display:none}
+}
 @media(max-width:480px){
   .summary-row{grid-template-columns:1fr 1fr}
   .main{padding:12px 10px 48px}
-  .topbar{padding:8px 10px}
   .topbar-title h1{font-size:13px}
-  .topbar-title .sub{display:none}
   .stock-tbl .tbl-head,.stock-tbl .tbl-row{grid-template-columns:50px 1fr 60px 70px}
   .stock-tbl .tbl-head span:nth-child(3),
   .stock-tbl .tbl-row>span:nth-child(3),
@@ -273,6 +279,7 @@ body.light-mode .topbar-title h1{
   .tab-bar .tab{padding:8px 10px;font-size:9px}
   .scard .v{font-size:22px}
   .scard .k{font-size:7px}
+  .nav-btn{font-size:9px;padding:5px 8px}
 }
 
 
