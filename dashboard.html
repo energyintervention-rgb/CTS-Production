@@ -1122,23 +1122,54 @@ img,svg,table{max-width:100%}
 </div>
 
 <!-- Clock Confirm Modal -->
-<div class="modal-overlay" id="clockConfirmModal">
+<!-- ── CLOCK IN MODAL ── -->
+<div class="modal-overlay" id="clockInModal">
   <div class="modal">
-    <div style="text-align:center;margin-bottom:12px;font-size:2rem;" id="clockConfirmIcon">▶</div>
-    <h3 style="text-align:center;" id="clockConfirmTitle">Confirm Clock In</h3>
-    <p style="text-align:center;line-height:1.6;margin:10px 0 16px;font-size:0.85rem;" id="clockConfirmMsg"></p>
-    <label style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:1px;display:block;margin-bottom:6px;" id="clockReasonLabel">REASON / NOTE (OPTIONAL)</label>
-    <input class="modal-input" id="clockConfirmReason" placeholder="e.g. Traffic, MC leave, Early shift…" style="margin-bottom:4px;"
-      onkeydown="if(event.key==='Enter')confirmClockAction()">
-    <div id="clockReasonHint" style="font-family:var(--font-mono);font-size:0.65rem;color:var(--red);margin-bottom:10px;display:none;">
-      ⚠ Please provide a reason for being late.
-    </div>
-    <p style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-dim);margin-bottom:16px;line-height:1.5;">
-      This record is final once submitted.<br>Only Admin can make changes after this.
-    </p>
+    <div style="text-align:center;margin-bottom:8px;font-size:2rem;">▶</div>
+    <h3 style="text-align:center;">Confirm Clock In</h3>
+    <p style="text-align:center;line-height:1.6;margin:10px 0 14px;font-size:0.85rem;" id="clockInMsg"></p>
+    <label style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:1px;display:block;margin-bottom:6px;" id="clockInReasonLabel">REASON / NOTE (OPTIONAL)</label>
+    <input class="modal-input" id="clockInReason" placeholder="e.g. Traffic, MC, Early shift…" style="margin-bottom:4px;" onkeydown="if(event.key==='Enter')confirmClockIn()">
+    <div id="clockInHint" style="font-family:var(--font-mono);font-size:0.65rem;color:var(--red);margin-bottom:8px;display:none;">⚠ Please provide a reason for being late.</div>
+    <p style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);margin-bottom:14px;line-height:1.5;">This record is final once submitted.<br>Only Admin can make changes after this.</p>
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('clockConfirmModal')">Not Yet</button>
-      <button class="btn-confirm" id="clockConfirmBtn" onclick="confirmClockAction()">Confirm</button>
+      <button class="btn-cancel" onclick="closeModal('clockInModal')">Not Yet</button>
+      <button class="btn-confirm" id="clockInBtn" onclick="confirmClockIn()">Yes, Clock In</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CLOCK OUT STEP 1: Job update check ── -->
+<div class="modal-overlay" id="jobUpdateModal">
+  <div class="modal">
+    <div style="text-align:center;margin-bottom:8px;font-size:2rem;">📋</div>
+    <h3 style="text-align:center;">Before You Clock Out</h3>
+    <p style="text-align:center;line-height:1.6;margin:10px 0 16px;font-size:0.85rem;" id="jobUpdateName"></p>
+    <div style="background:var(--cyan-dim);border:1px solid var(--cyan);border-radius:10px;padding:16px;margin-bottom:18px;text-align:center;">
+      <div style="font-size:1.5rem;margin-bottom:8px;">✅</div>
+      <div style="font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan);font-weight:700;letter-spacing:1px;">DID YOU UPDATE TODAY'S JOB?</div>
+      <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-dim);margin-top:6px;line-height:1.5;">Make sure your parts count is updated<br>before clocking out.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('jobUpdateModal')">Go Update First</button>
+      <button class="btn-confirm" onclick="proceedToClockOut()">Yes, Already Updated ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CLOCK OUT STEP 2: Reason ── -->
+<div class="modal-overlay" id="clockOutModal">
+  <div class="modal">
+    <div style="text-align:center;margin-bottom:8px;font-size:2rem;">⏹</div>
+    <h3 style="text-align:center;" id="clockOutTitle">Confirm Clock Out</h3>
+    <p style="text-align:center;line-height:1.6;margin:10px 0 14px;font-size:0.85rem;" id="clockOutMsg"></p>
+    <label style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:1px;display:block;margin-bottom:6px;" id="clockOutReasonLabel">REASON / NOTE (OPTIONAL)</label>
+    <input class="modal-input" id="clockOutReason" placeholder="e.g. Shift complete, Early leave…" style="margin-bottom:4px;" onkeydown="if(event.key==='Enter')confirmClockOut()">
+    <div id="clockOutHint" style="font-family:var(--font-mono);font-size:0.65rem;color:var(--red);margin-bottom:8px;display:none;">⚠ Please provide a reason for leaving early.</div>
+    <p style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);margin-bottom:14px;line-height:1.5;">This record is final once submitted.<br>Only Admin can make changes after this.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('clockOutModal')">Not Yet</button>
+      <button class="btn-confirm" id="clockOutBtn" onclick="confirmClockOut()">Yes, Clock Out</button>
     </div>
   </div>
 </div>
@@ -2996,8 +3027,8 @@ function requestClockin(name){
   hint.style.display = 'none';
   document.getElementById('clockConfirmReason').value = '';
   document.getElementById('clockConfirmBtn').textContent = 'Yes, Clock In';
-  document.getElementById('clockConfirmModal').classList.add('show');
-  setTimeout(()=>document.getElementById('clockConfirmReason').focus(),200);
+  document.getElementById('clockInModal').classList.add('show');
+  setTimeout(()=>document.getElementById('clockInReason').focus(),200);
 }
 
 function requestClockOut(name){
@@ -3019,32 +3050,70 @@ function requestClockOut(name){
   hint.style.display = 'none';
   document.getElementById('clockConfirmReason').value = rec.reason||'';
   document.getElementById('clockConfirmBtn').textContent = early ? 'Confirm Early Leave' : 'Yes, Clock Out';
-  document.getElementById('clockConfirmModal').classList.add('show');
-  setTimeout(()=>document.getElementById('clockConfirmReason').focus(),200);
+  document.getElementById('jobUpdateName').innerHTML=`Clocking out for <strong>${escH(name)}</strong>.`;
+  document.getElementById('jobUpdateModal').classList.add('show');
+}
+
+// Legacy stub — new flow uses confirmClockIn / confirmClockOut / proceedToClockOut
+
+function confirmClockIn(){
+  const {name, isLate} = pendingClockAction||{};
+  if(!name) return;
+  const reason = document.getElementById('clockInReason').value.trim();
+  if(isLate && !reason){
+    document.getElementById('clockInHint').textContent='⚠ Please provide a reason for being late.';
+    document.getElementById('clockInHint').style.display='block';
+    document.getElementById('clockInReason').focus();
+    return;
+  }
+  closeModal('clockInModal');
+  const pa = pendingClockAction; pendingClockAction=null;
+  doClockin(name, reason);
+}
+
+function proceedToClockOut(){
+  closeModal('jobUpdateModal');
+  const {name} = pendingClockAction||{};
+  if(!name) return;
+  const isEarly = isEarlyLeave(nowHMS());
+  pendingClockAction = {...pendingClockAction, isEarly};
+  const rec = getAttRecord(name);
+  const pr = attProject();
+  const sched = getTodaySchedule(pr);
+  document.getElementById('clockOutTitle').textContent = isEarly ? 'Leaving Early?' : 'Confirm Clock Out';
+  document.getElementById('clockOutMsg').innerHTML =
+    `Clocking out for <strong>${escH(name)}</strong>.`+
+    (isEarly?`<br><span style="color:var(--amber);font-family:var(--font-mono);font-size:0.8rem;">⚠ Leaving before ${sched.end}. A reason is required.</span>`:'');
+  const lbl = document.getElementById('clockOutReasonLabel');
+  lbl.textContent = isEarly ? 'REASON FOR LEAVING EARLY (REQUIRED)' : 'REASON / NOTE (OPTIONAL)';
+  lbl.style.color = isEarly ? 'var(--amber)' : 'var(--text-dim)';
+  document.getElementById('clockOutHint').style.display='none';
+  document.getElementById('clockOutReason').value = rec.reason||'';
+  document.getElementById('clockOutBtn').textContent = isEarly ? 'Confirm Early Leave' : 'Yes, Clock Out';
+  document.getElementById('clockOutModal').classList.add('show');
+  setTimeout(()=>document.getElementById('clockOutReason').focus(),200);
+}
+
+function confirmClockOut(){
+  const {name, isEarly} = pendingClockAction||{};
+  if(!name) return;
+  const reason = document.getElementById('clockOutReason').value.trim();
+  if(isEarly && !reason){
+    document.getElementById('clockOutHint').textContent='⚠ Please provide a reason for leaving early.';
+    document.getElementById('clockOutHint').style.display='block';
+    document.getElementById('clockOutReason').focus();
+    return;
+  }
+  closeModal('clockOutModal');
+  pendingClockAction=null;
+  doClockout(name, reason);
 }
 
 async function confirmClockAction(){
   if(!pendingClockAction) return;
-  const {name, type, isLate, isEarly} = pendingClockAction;
-  const reason = document.getElementById('clockConfirmReason').value.trim();
-  // Block if late clock-in and no reason
-  if(type==='in' && isLate && !reason){
-    document.getElementById('clockReasonHint').textContent='⚠ Please provide a reason for being late.';
-    document.getElementById('clockReasonHint').style.display='block';
-    document.getElementById('clockConfirmReason').focus();
-    return;
-  }
-  // Block if early clock-out and no reason
-  if(type==='out' && isEarly && !reason){
-    document.getElementById('clockReasonHint').textContent='⚠ Please provide a reason for leaving early.';
-    document.getElementById('clockReasonHint').style.display='block';
-    document.getElementById('clockConfirmReason').focus();
-    return;
-  }
-  closeModal('clockConfirmModal');
-  pendingClockAction = null;
-  if(type==='in') await doClockin(name, reason);
-  else             await doClockout(name, reason);
+  const {type} = pendingClockAction;
+  if(type==='in') confirmClockIn();
+  else proceedToClockOut();
 }
 
 async function doClockin(name, reason=''){
@@ -4309,13 +4378,16 @@ async function generateWorkerReport(name){
           <span style="color:#185FA5">OUT ${s.clockOut||'—'}${s.overnight?' <b style="color:#D97706">(+1d)</b>':''}</span>
           <span>${s.clockOut?minsToHHMM(Math.round(calcHours(s.clockIn,s.clockOut)*60)):'active'}</span>
         </div>`).join('');
+      const flexSessHtml = sessions.map((s,si)=>
+        `<span class="sess">#${si+1} &nbsp;IN ${s.clockIn} → OUT ${s.clockOut||'—'} &nbsp;${s.clockOut?minsToHHMM(Math.round(calcHours(s.clockIn,s.clockOut)*60)):'active'}${s.overnight?' <span class="on">(+1d)</span>':''}</span>`
+      ).join('');
       return `<tr style="background:${rowBg}">
-        <td style="padding:7px 10px;font-size:12px;font-weight:600;color:#134E4A;white-space:nowrap">${date}</td>
-        <td style="padding:7px 10px"><span style="padding:2px 7px;border-radius:8px;background:${dtBg};color:${dtColor};font-size:10px;font-weight:600">${dayInfo.label}</span></td>
-        <td style="padding:7px 10px" colspan="2">${sessHtml||'<span style="color:#bbb;font-size:11px">No sessions</span>'}</td>
-        <td style="padding:7px 10px;font-family:monospace;font-size:13px;font-weight:700;color:#0D9488;text-align:center">${dayTotalMins>0?hhMM:'—'}</td>
-        <td style="padding:7px 10px;text-align:center">${sessions.length>0?`<span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:#CCFBF1;color:#0D9488">FLEX ${sessions.length}/4</span>`:'<span style="color:#bbb">—</span>'}</td>
-        <td style="padding:7px 10px;font-size:11px;color:#5A8A78"></td>
+        <td class="nw" style="font-family:monospace;font-size:10px;font-weight:600">${date.slice(8,10)+'/'+date.slice(5,7)}<br><span style="font-size:8px;color:#888;font-weight:400">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(date).getDay()]}</span></td>
+        <td><span class="badge" style="background:${dtBg};color:${dtColor}">${dayInfo.type==='holiday'?'Holiday':dayInfo.type==='rest'?'Rest':'Working'}</span></td>
+        <td>${flexSessHtml||'<span style="color:#aaa;font-size:9px">No sessions</span>'}</td>
+        <td style="font-size:9px;color:#888">—</td>
+        <td class="hrs">${dayTotalMins>0?hhMM:'—'}</td>
+        <td><span class="badge" style="background:#CCFBF1;color:#0D9488">${sessions.length>0?'Flex '+sessions.length+'/4':'—'}</span></td>
       </tr>`;
     }
 
@@ -4339,54 +4411,98 @@ async function generateWorkerReport(name){
       else { status='OT'; statusColor='#0D9488'; statusBg='#CCFBF1'; }
       if(hours>0) totalHours+=hours;
     }
+    const sessionHtml = rec.clockIn
+      ? `<span class="sess">IN ${rec.clockIn} → OUT ${rec.clockOut||'—'}${(rec.overnight||isOvernightClockout(rec.clockIn,rec.clockOut))?' <span class="on">(+1d)</span>':''} ${rec.clockIn&&rec.clockOut?'· '+minsToHHMM(Math.round(hours*60)):''}</span>`
+      : '';
+    const hrsStr = rec.clockIn&&rec.clockOut ? minsToHHMM(Math.round(hours*60)) : '—';
     return `<tr style="background:${rowBg}">
-      <td style="padding:7px 10px;font-size:12px;font-weight:600;color:#134E4A;white-space:nowrap">${date}</td>
-      <td style="padding:7px 10px"><span style="padding:2px 7px;border-radius:8px;background:${dtBg};color:${dtColor};font-size:10px;font-weight:600">${dayInfo.label}</span></td>
-      <td style="padding:7px 10px;font-family:monospace;font-size:12px;color:#134E4A">${rec.clockIn||'—'}</td>
-      <td style="padding:7px 10px;font-family:monospace;font-size:12px;color:#134E4A">${rec.clockOut||'—'}${(rec.overnight||isOvernightClockout(rec.clockIn,rec.clockOut))?' <b style="color:#D97706;font-size:10px">(+1d)</b>':''}</td>
-      <td style="padding:7px 10px;font-family:monospace;font-size:12px;color:#0D9488;text-align:center">${rec.clockIn&&rec.clockOut?hours.toFixed(1)+'h':'—'}</td>
-      <td style="padding:7px 10px;text-align:center">${status!=='—'?`<span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:${statusBg};color:${statusColor}">${status}</span>`:'<span style="color:#bbb">—</span>'}</td>
-      <td style="padding:7px 10px;font-size:11px;color:#5A8A78">${escH(rec.reason||rec.overtimeReason||'')}</td>
+      <td class="nw" style="font-family:monospace;font-size:10px;font-weight:600">${date.slice(8,10)+'/'+date.slice(5,7)}<br><span style="font-size:8px;color:#888;font-weight:400">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(date).getDay()]}</span></td>
+      <td><span class="badge" style="background:${dtBg};color:${dtColor}">${dayInfo.type==='holiday'?'Holiday':dayInfo.type==='rest'?'Rest':'Working'}</span></td>
+      <td>${sessionHtml||'<span style="color:#aaa;font-size:9px">No sessions</span>'}</td>
+      <td style="font-size:9px;color:${statusColor==='#D97706'?'#D97706':'#888'}">${escH(rec.reason||rec.overtimeReason||'—')}</td>
+      <td class="hrs">${hrsStr}</td>
+      <td><span class="badge" style="background:${statusBg};color:${statusColor}">${status==='—'?'—':status}</span></td>
     </tr>`;
   }).join('');
 
   const attendRate = totalDays>0?Math.round(present/totalDays*100):0;
   const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  const totalMinsAll = isFlex ? Math.round(totalHours*60) : 0;
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,Helvetica,sans-serif;background:#fff;color:#134E4A;padding:28px;}@page{size:A4;margin:15mm;}</style>
-  </head><body>
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid #0D9488">
-      <div style="display:flex;align-items:center;gap:14px">
-        <div style="width:52px;height:52px;border-radius:50%;background:#CCFBF1;color:#0D9488;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.2rem">${initials}</div>
-        <div>
-          <div style="font-size:11px;letter-spacing:2px;color:#0F766E;margin-bottom:2px">INDIVIDUAL ATTENDANCE REPORT</div>
-          <div style="font-size:24px;font-weight:700;color:#134E4A">${escH(name)}${isFlex?' <span style="font-size:11px;font-weight:700;background:#FEF9C3;color:#D97706;padding:2px 8px;border-radius:4px;vertical-align:middle">⚡ FLEX</span>':''}</div>
-          <div style="font-size:12px;color:#0F766E;margin-top:2px">${escH(pr.name)} · ${dates[0]||''} to ${dates[dates.length-1]||''}</div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center">
-        <div style="background:#CCFBF1;border-radius:8px;padding:10px 14px"><div style="font-size:22px;font-weight:700;color:#0D9488">${attendRate}%</div><div style="font-size:10px;color:#0F766E;letter-spacing:1px">ATTENDANCE</div></div>
-        <div style="background:#F0FDFA;border:1px solid #5EEAD4;border-radius:8px;padding:10px 14px"><div style="font-size:22px;font-weight:700;color:#0D9488">${isFlex?minsToHHMM(Math.round(totalHours*60)):totalHours.toFixed(1)+'h'}</div><div style="font-size:10px;color:#0F766E;letter-spacing:1px">TOTAL HOURS</div></div>
-        <div style="background:#FEF9C3;border-radius:8px;padding:8px 12px"><div style="font-size:18px;font-weight:700;color:#D97706">${lateCnt}</div><div style="font-size:10px;color:#92400E;letter-spacing:1px">LATE</div></div>
-        <div style="background:#FEE2E2;border-radius:8px;padding:8px 12px"><div style="font-size:18px;font-weight:700;color:#DC2626">${absentCnt}</div><div style="font-size:10px;color:#991B1B;letter-spacing:1px">ABSENT</div></div>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#fff;color:#134E4A;font-size:11px}
+    @page{size:A4;margin:12mm}
+    .hdr{background:#0D9488;padding:12px 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+    .av{width:40px;height:40px;border-radius:50%;background:#CCFBF1;color:#0D9488;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+    .sum{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 12px}
+    .sc{border-radius:5px;padding:8px 10px;text-align:center}
+    .sc .k{font-size:8px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;font-weight:600}
+    .sc .v{font-size:18px;font-weight:700;line-height:1}
+    .s1{background:#CCFBF1}.s1 .k{color:#0F766E}.s1 .v{color:#0D9488}
+    .s2{background:#DCFCE7}.s2 .k{color:#14532D}.s2 .v{color:#16A34A}
+    .s3{background:#FEF9C3}.s3 .k{color:#92400E}.s3 .v{color:#D97706}
+    .s4{background:#FEE2E2}.s4 .k{color:#991B1B}.s4 .v{color:#DC2626}
+    .sec{background:#F0FDFA;border:1px solid #5EEAD4;border-radius:3px;padding:4px 8px;font-size:8.5px;font-weight:700;color:#0D9488;text-transform:uppercase;letter-spacing:.06em;margin:8px 12px 6px}
+    table{width:100%;border-collapse:collapse;table-layout:fixed}
+    th{background:#0D9488;color:#fff;padding:5px 5px;text-align:left;font-size:8px;font-weight:600;white-space:nowrap}
+    td{padding:5px 5px;border-bottom:1px solid #E2E8F0;font-size:10px;vertical-align:top;word-wrap:break-word;overflow-wrap:break-word;white-space:normal}
+    td.nw{white-space:nowrap;overflow:hidden}
+    tr:nth-child(even) td{background:#F8FFFE}
+    tr.rest td{background:#EFF6FF}
+    .badge{display:inline-block;font-size:8px;padding:2px 5px;border-radius:3px;font-weight:600;word-wrap:break-word;white-space:normal;line-height:1.4}
+    .bp{background:#DCFCE7;color:#166534}.bl{background:#FEF9C3;color:#854D0E}
+    .ba{background:#FEE2E2;color:#991B1B}.bo{background:#CCFBF1;color:#0F766E}
+    .br{background:#DBEAFE;color:#1E40AF}.bh{background:#EDE9FE;color:#5B21B6}
+    .sess{font-size:9px;font-family:monospace;color:#333;display:block;line-height:1.6;white-space:nowrap}
+    .on{color:#D97706;font-size:8px;font-weight:700}
+    .hrs{font-family:monospace;font-weight:700;color:#0D9488;font-size:9px;white-space:nowrap}
+    .tot td{background:#CCFBF1!important;font-weight:700;color:#0D9488}
+    .footer{background:#0D9488;padding:4px 12px;display:flex;justify-content:space-between;font-size:8.5px;color:rgba(255,255,255,0.85);margin-top:8px}
+    .body{padding:0 0 0 0}
+    .tbl-wrap{padding:0 12px}
+  </style></head><body>
+  <div class="hdr">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="av">${initials}</div>
+      <div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.7);letter-spacing:2px;margin-bottom:1px">ATTENDANCE REPORT</div>
+        <div style="color:#fff;font-size:15px;font-weight:700">${escH(name)}${isFlex?' <span style="font-size:9px;background:#FEF9C3;color:#D97706;border-radius:3px;padding:1px 6px;vertical-align:middle;font-weight:700">⚡ FLEX</span>':''}</div>
+        <div style="color:rgba(255,255,255,0.75);font-size:9px;margin-top:2px">${escH(pr.name)} · ${dates[0]||''} to ${dates[dates.length-1]||''}</div>
       </div>
     </div>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
-      <thead><tr style="background:#0D9488">
-        <th style="padding:10px;text-align:left;color:#fff;font-size:11px">DATE</th>
-        <th style="padding:10px;text-align:left;color:#fff;font-size:11px">DAY TYPE</th>
-        <th style="padding:10px;text-align:left;color:#fff;font-size:11px">CLOCK IN</th>
-        <th style="padding:10px;text-align:left;color:#fff;font-size:11px">CLOCK OUT</th>
-        <th style="padding:10px;text-align:center;color:#fff;font-size:11px">HOURS</th>
-        <th style="padding:10px;text-align:center;color:#fff;font-size:11px">STATUS</th>
-        <th style="padding:10px;text-align:left;color:#fff;font-size:11px">REASON</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <div style="padding-top:12px;border-top:1px solid #CCFBF1;font-size:11px;color:#0F766E;display:flex;justify-content:space-between">
-      <span>CTS Dashboard — Printed ${new Date().toLocaleString('en-MY')}</span>
-      <span>${escH(name)} · ${escH(pr.name)}</span>
-    </div>
+    <div style="text-align:right;font-size:9px;color:rgba(255,255,255,0.8);line-height:1.7">Generated: ${new Date().toLocaleDateString('en-MY')}<br>By: ${escH(SESSION&&SESSION.name||'Admin')}</div>
+  </div>
+  <div class="sum">
+    <div class="sc s1"><div class="k">Attendance</div><div class="v">${attendRate}%</div></div>
+    <div class="sc s2"><div class="k">Total Hours</div><div class="v">${isFlex?minsToHHMM(Math.round(totalHours*60)):totalHours.toFixed(1)+'h'}</div></div>
+    <div class="sc s3"><div class="k">Late</div><div class="v">${lateCnt}</div></div>
+    <div class="sc s4"><div class="k">Absent</div><div class="v">${absentCnt}</div></div>
+  </div>
+  <div class="sec">Daily Attendance</div>
+  <div class="tbl-wrap">
+  <table>
+    <colgroup>
+      <col style="width:9%"><col style="width:12%"><col style="width:40%">
+      <col style="width:20%"><col style="width:8%"><col style="width:11%">
+    </colgroup>
+    <thead><tr>
+      <th>Date</th><th>Day Type</th><th>Sessions</th>
+      <th>Clock In Reason</th><th>Hrs</th><th>Status</th>
+    </tr></thead>
+    <tbody>${rows}
+    <tr class="tot">
+      <td colspan="4" style="font-size:10px">TOTAL — ${totalDays} days · ${present} present</td>
+      <td class="hrs" style="font-size:11px">${isFlex?minsToHHMM(Math.round(totalHours*60)):totalHours.toFixed(1)+'h'}</td>
+      <td></td>
+    </tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="footer">
+    <span>CTS Production · Generated ${new Date().toLocaleDateString('en-MY')}</span>
+    <span>${escH(name)} · ${escH(pr.name)} · Page 1 of 1</span>
+  </div>
   </body></html>`;
 
   const win = window.open('','_blank','width=900,height=700');
