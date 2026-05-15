@@ -1381,8 +1381,12 @@ function logout(){
   logActivity('LOGOUT','Logged out', SESSION?SESSION.name:'unknown');
   SESSION = null;
   localStorage.removeItem('cts_session');
+  sessionStorage.removeItem('cts_role');
+  sessionStorage.removeItem('cts_name');
+  sessionStorage.removeItem('cts_project');
   _pinAttempts = 0;
-  showLoginScreen();
+  // Go back to landing page
+  window.location.href = 'index.html';
 }
 
 // ── Show/hide login ──
@@ -1408,6 +1412,12 @@ function updateSessionBanner(){
   nm.textContent = roleLabel+' '+SESSION.name;
   // Show admin button only for admin role
   document.getElementById('adminBtn').style.display = SESSION.role==='admin'?'':'none';
+  // Wire admin panel link
+  const adminBtn = document.getElementById('adminBtn');
+  if(adminBtn && !adminBtn._panelWired){
+    adminBtn._panelWired = true;
+    adminBtn.addEventListener('dblclick', ()=>{ window.location.href='admin.html'; });
+  }
   if(SESSION.role==='admin' && S.adminMode){
     document.getElementById('adminBtn').classList.add('active');
     document.getElementById('adminBtn').textContent='⚙ ADMIN ON';
@@ -1685,6 +1695,34 @@ function saveState(){
 
 // ── Real-time listener — updates all devices instantly ──
 let _firstLoad = true;
+
+// ══════════════════════════════════════════
+// LANDING PAGE SESSION BRIDGE
+// If user came from landing.html, auto-login using sessionStorage
+// ══════════════════════════════════════════
+function bridgeFromLanding(){
+  const role = sessionStorage.getItem('cts_role');
+  const name = sessionStorage.getItem('cts_name');
+  const projectId = sessionStorage.getItem('cts_project') || null;
+  if(!role || !name) return false;
+  if(role === 'guest'){
+    // Guest shouldn't be here — redirect to manual
+    window.location.href = 'manual.html';
+    return true;
+  }
+  // Build session object matching production format
+  const sess = {
+    role: role,
+    name: name,
+    projectId: projectId
+  };
+  SESSION = sess;
+  // Save to localStorage so refresh works
+  saveSession(sess, false);
+  logActivity('LOGIN', `${role} login via landing page: ${name}`, name);
+  return true;
+}
+
 function startRealtimeSync(){
   if(!DOC_REF){
     // Firebase not available — use local data only
@@ -1694,6 +1732,7 @@ function startRealtimeSync(){
     _firstLoad = false;
     loadTheme();
     if(restoreSession()) onLoginSuccess();
+    else if(bridgeFromLanding()) onLoginSuccess();
     else showLoginScreen();
     return;
   }
@@ -1714,6 +1753,8 @@ function startRealtimeSync(){
       loadTheme();
       // Check for remembered session
       if(restoreSession()){
+        onLoginSuccess();
+      } else if(bridgeFromLanding()){
         onLoginSuccess();
       } else {
         showLoginScreen();
@@ -1739,6 +1780,7 @@ function startRealtimeSync(){
       _firstLoad=false;
       loadTheme();
       if(restoreSession()) onLoginSuccess();
+      else if(bridgeFromLanding()) onLoginSuccess();
       else showLoginScreen();
     }
   });
