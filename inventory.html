@@ -9,6 +9,8 @@
 <title>CTS Inventory</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiB2aWV3Qm94PSIwIDAgMTkyIDE5MiI+CiAgPHJlY3Qgd2lkdGg9IjE5MiIgaGVpZ2h0PSIxOTIiIHJ4PSI0MiIgZmlsbD0iIzBEMTIyMCIvPgogIDxyZWN0IHg9IjE0IiB5PSIxNCIgd2lkdGg9IjE2NCIgaGVpZ2h0PSIxNjQiIHJ4PSIzMyIgZmlsbD0iIzEzMUMyRSIgc3Ryb2tlPSIjMDBENEZGIiBzdHJva2Utd2lkdGg9IjQiLz4KICA8dGV4dCB4PSI5NiIgeT0iODgiIGZvbnQtZmFtaWx5PSJBcmlhbCxzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjQ4IiBmaWxsPSIjMDBENEZGIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5DVFM8L3RleHQ+CiAgPHRleHQgeD0iOTYiIHk9IjEzMCIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI2MDAiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiM3QThCQTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIzIj5QUk9EVUNUSU9OPC90ZXh0Pgo8L3N2Zz4=">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Exo+2:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
@@ -287,6 +289,14 @@ body{
     <button class="tab" onclick="switchTab(this,'inbound')">🚚 Inbound PO</button>
     <button class="tab" onclick="switchTab(this,'outbound')">📤 Outbound</button>
     <button class="tab" id="tab-products" onclick="switchTab(this,'products')">🏭 Products</button>
+  </div>
+
+  <!-- REPORT BUTTONS -->
+  <div id="report-bar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+    <button class="add-btn" style="background:var(--green-dim);border-color:rgba(0,255,136,0.3);color:var(--green)" onclick="genReport('stock')">📄 Stock Report</button>
+    <button class="add-btn" style="background:rgba(0,212,255,0.08);border-color:rgba(0,212,255,0.3);color:var(--cyan)" onclick="genReport('inbound')">📄 Inbound PO</button>
+    <button class="add-btn" style="background:var(--amber-dim);border-color:rgba(255,184,0,0.3);color:var(--amber)" onclick="genReport('outbound')">📄 Outbound</button>
+    <button class="add-btn" style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.15);color:var(--text)" onclick="genReport('full')">📄 Full Report</button>
   </div>
 
   <!-- ═══ STOCK ═══ -->
@@ -1210,6 +1220,234 @@ function viewPart(idx){
 function doLogout(){
   sessionStorage.clear();
   window.location.href='index.html';
+}
+
+// ══════════════════════════════════════════
+// PDF REPORT GENERATION
+// ══════════════════════════════════════════
+function genReport(type){
+  const {jsPDF} = window.jspdf;
+  if(!jsPDF){ toast('PDF library not loaded','err'); return; }
+  const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const company = (_S.systemSettings && _S.systemSettings.company) || 'City Technical Solutions';
+  const now = new Date();
+  const myt = new Date(now.getTime()+(8*60-now.getTimezoneOffset())*60000);
+  const dateStr = myt.toISOString().slice(8,10)+'/'+myt.toISOString().slice(5,7)+'/'+myt.toISOString().slice(0,4);
+  const timeStr = myt.toISOString().slice(11,16)+' MYT';
+  const byStr = _name || 'Admin';
+  const W = doc.internal.pageSize.getWidth();
+  let y = 15;
+
+  function addHeader(subtitle){
+    // Dark header bar
+    doc.setFillColor(7,11,20);
+    doc.rect(0,0,W,28,'F');
+    doc.setFontSize(16); doc.setFont('helvetica','bold');
+    doc.setTextColor(0,212,255);
+    doc.text('CTS PRODUCTION', 14, 11);
+    doc.setFontSize(9); doc.setFont('helvetica','normal');
+    doc.setTextColor(122,139,160);
+    doc.text(company, 14, 17);
+    doc.text(subtitle, 14, 22);
+    doc.setTextColor(122,139,160);
+    doc.setFontSize(8);
+    doc.text('Generated: '+dateStr+' '+timeStr, W-14, 11, {align:'right'});
+    doc.text('By: '+byStr, W-14, 16, {align:'right'});
+    y = 34;
+  }
+
+  function addSectionTitle(title){
+    doc.setFillColor(19,28,46);
+    doc.rect(10,y-4,W-20,7,'F');
+    doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.setTextColor(0,212,255);
+    doc.text(title.toUpperCase(), 14, y+0.5);
+    y += 8;
+  }
+
+  function addSummaryRow(items){
+    const bw = (W-20)/items.length;
+    items.forEach((item,i)=>{
+      const x = 10 + i*bw;
+      doc.setFillColor(13,18,32);
+      doc.rect(x,y-4,bw-2,12,'F');
+      doc.setFontSize(7); doc.setFont('helvetica','normal');
+      doc.setTextColor(122,139,160);
+      doc.text(item.label, x+4, y+1);
+      doc.setFontSize(14); doc.setFont('helvetica','bold');
+      doc.setTextColor(...(item.color||[226,232,240]));
+      doc.text(String(item.value), x+4, y+7);
+    });
+    y += 16;
+  }
+
+  function checkPage(){
+    if(y > 270){ doc.addPage(); addHeader('(continued)'); y=34; }
+  }
+
+  const parts = _S.inventory.parts || [];
+  const inboundPOs = _S.inventory.inboundPO || [];
+  const outboundPOs = _S.inventory.outboundPO || [];
+  const products = _S.inventory.products || [];
+
+  // ── STOCK REPORT ──
+  if(type==='stock'||type==='full'){
+    addHeader('Inventory Stock Report');
+    const total=parts.length;
+    const ok=parts.filter(p=>p.qty>0&&p.qty>=p.min).length;
+    const low=parts.filter(p=>p.qty>0&&p.qty<p.min).length;
+    const out=parts.filter(p=>p.qty===0).length;
+    addSummaryRow([
+      {label:'TOTAL PARTS',value:total,color:[0,212,255]},
+      {label:'IN STOCK OK',value:ok,color:[0,255,136]},
+      {label:'LOW STOCK',value:low,color:[255,184,0]},
+      {label:'OUT OF STOCK',value:out,color:[255,68,102]},
+    ]);
+
+    products.filter(p=>p.status!=='inactive').forEach(prod=>{
+      const prodParts = parts.filter(p=>p.product===prod.code);
+      if(prodParts.length===0) return;
+      checkPage();
+      addSectionTitle(prod.name);
+      doc.autoTable({
+        startY: y,
+        margin:{left:10,right:10},
+        head:[['Ref','Part Name','Category','Source','Stock','Min','Status']],
+        body: prodParts.map(p=>[
+          p.ref||'—', p.name, p.cat||'—',
+          p.src==='inhouse'?'In-house':'Vendor',
+          p.qty, p.min,
+          p.qty===0?'OUT':p.qty<p.min?'LOW':'OK'
+        ]),
+        headStyles:{fillColor:[7,11,20],textColor:[0,212,255],fontSize:7,fontStyle:'bold'},
+        bodyStyles:{fontSize:8,textColor:[226,232,240],fillColor:[13,18,32]},
+        alternateRowStyles:{fillColor:[19,28,46]},
+        columnStyles:{
+          0:{cellWidth:16},1:{cellWidth:50},2:{cellWidth:22},
+          3:{cellWidth:20},4:{cellWidth:14,halign:'center'},
+          5:{cellWidth:14,halign:'center'},6:{cellWidth:14,halign:'center'}
+        },
+        didDrawCell:(data)=>{
+          if(data.section==='body'&&data.column.index===6){
+            const v=data.cell.raw;
+            const c = v==='OK'?[0,255,136]:v==='LOW'?[255,184,0]:[255,68,102];
+            doc.setTextColor(...c);
+            doc.setFontSize(8); doc.setFont('helvetica','bold');
+            doc.text(v, data.cell.x+data.cell.width/2, data.cell.y+data.cell.height/2+0.5,{align:'center'});
+          }
+        },
+        theme:'grid',
+      });
+      y = doc.lastAutoTable.finalY + 6;
+    });
+
+    if(type==='stock'){
+      addFooter(doc,dateStr,byStr);
+      doc.save('CTS_Stock_Report_'+dateStr.replace(/\//g,'-')+'.pdf');
+      toast('✓ Stock report downloaded','ok'); return;
+    }
+  }
+
+  // ── INBOUND PO ──
+  if(type==='inbound'||type==='full'){
+    if(type==='inbound') addHeader('Inbound Purchase Orders');
+    else { checkPage(); addSectionTitle('Inbound Purchase Orders'); }
+
+    const t=inboundPOs.length,r=inboundPOs.filter(p=>p.status==='received').length,
+          pe=inboundPOs.filter(p=>p.status==='pending').length,pa=inboundPOs.filter(p=>p.status==='partial').length;
+    if(type==='inbound') addSummaryRow([
+      {label:'TOTAL PO',value:t,color:[0,212,255]},
+      {label:'RECEIVED',value:r,color:[0,255,136]},
+      {label:'PENDING',value:pe,color:[255,184,0]},
+      {label:'PARTIAL',value:pa,color:[255,68,102]},
+    ]);
+
+    if(inboundPOs.length===0){
+      doc.setFontSize(9); doc.setTextColor(122,139,160);
+      doc.text('No purchase orders recorded.', 14, y); y+=8;
+    } else {
+      doc.autoTable({
+        startY:y, margin:{left:10,right:10},
+        head:[['PO Number','Vendor','Part / Item','Qty','Date','Status','Notes']],
+        body:inboundPOs.map(po=>[
+          po.poNum||'—',po.vendor||'—',po.part||'—',po.qty||0,
+          fmtDate(po.date),(po.status||'pending').toUpperCase(),po.notes||''
+        ]),
+        headStyles:{fillColor:[7,11,20],textColor:[0,212,255],fontSize:7,fontStyle:'bold'},
+        bodyStyles:{fontSize:8,textColor:[226,232,240],fillColor:[13,18,32]},
+        alternateRowStyles:{fillColor:[19,28,46]},
+        columnStyles:{0:{cellWidth:26},1:{cellWidth:30},2:{cellWidth:36},3:{cellWidth:12,halign:'center'},4:{cellWidth:20},5:{cellWidth:20,halign:'center'},6:{cellWidth:36}},
+        theme:'grid',
+      });
+      y = doc.lastAutoTable.finalY + 6;
+    }
+    if(type==='inbound'){
+      addFooter(doc,dateStr,byStr);
+      doc.save('CTS_Inbound_PO_'+dateStr.replace(/\//g,'-')+'.pdf');
+      toast('✓ Inbound PO report downloaded','ok'); return;
+    }
+  }
+
+  // ── OUTBOUND ──
+  if(type==='outbound'||type==='full'){
+    if(type==='outbound') addHeader('Customer Orders — Outbound');
+    else { checkPage(); addSectionTitle('Customer Orders — Outbound'); }
+
+    const t=outboundPOs.length,s=outboundPOs.filter(p=>p.status==='shipped').length,
+          pr=outboundPOs.filter(p=>p.status==='processing').length,h=outboundPOs.filter(p=>p.status==='onhold').length;
+    if(type==='outbound') addSummaryRow([
+      {label:'TOTAL ORDERS',value:t,color:[0,212,255]},
+      {label:'SHIPPED',value:s,color:[0,255,136]},
+      {label:'PROCESSING',value:pr,color:[255,184,0]},
+      {label:'ON HOLD',value:h,color:[255,68,102]},
+    ]);
+
+    if(outboundPOs.length===0){
+      doc.setFontSize(9); doc.setTextColor(122,139,160);
+      doc.text('No customer orders recorded.', 14, y); y+=8;
+    } else {
+      doc.autoTable({
+        startY:y, margin:{left:10,right:10},
+        head:[['Cust PO','Customer','Product','Units','Date','Payment','Status']],
+        body:outboundPOs.map(po=>[
+          po.poNum||'—',po.customer||'—',po.product||'—',po.units||0,
+          fmtDate(po.date),(po.payment||'pending').toUpperCase(),(po.status||'processing').toUpperCase()
+        ]),
+        headStyles:{fillColor:[7,11,20],textColor:[0,212,255],fontSize:7,fontStyle:'bold'},
+        bodyStyles:{fontSize:8,textColor:[226,232,240],fillColor:[13,18,32]},
+        alternateRowStyles:{fillColor:[19,28,46]},
+        columnStyles:{0:{cellWidth:24},1:{cellWidth:36},2:{cellWidth:24},3:{cellWidth:14,halign:'center'},4:{cellWidth:20},5:{cellWidth:18,halign:'center'},6:{cellWidth:22,halign:'center'}},
+        theme:'grid',
+      });
+      y = doc.lastAutoTable.finalY + 6;
+    }
+    if(type==='outbound'){
+      addFooter(doc,dateStr,byStr);
+      doc.save('CTS_Outbound_'+dateStr.replace(/\//g,'-')+'.pdf');
+      toast('✓ Outbound report downloaded','ok'); return;
+    }
+  }
+
+  // ── FULL REPORT — footer ──
+  if(type==='full'){
+    addFooter(doc,dateStr,byStr);
+    doc.save('CTS_Full_Inventory_Report_'+dateStr.replace(/\//g,'-')+'.pdf');
+    toast('✓ Full report downloaded','ok');
+  }
+}
+
+function addFooter(doc,dateStr,byStr){
+  const W=doc.internal.pageSize.getWidth();
+  const H=doc.internal.pageSize.getHeight();
+  const pages=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++){
+    doc.setPage(i);
+    doc.setFillColor(7,11,20);
+    doc.rect(0,H-10,W,10,'F');
+    doc.setFontSize(7); doc.setTextColor(122,139,160);
+    doc.text('CTS Production · '+dateStr+' · Generated by '+byStr, 14, H-4);
+    doc.text('Page '+i+' of '+pages, W-14, H-4, {align:'right'});
+  }
 }
 
 // ── Close modal on bg click ──
