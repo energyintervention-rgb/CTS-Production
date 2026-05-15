@@ -1343,46 +1343,62 @@ function genReport(type){
   let y = 15;
 
   function addHeader(subtitle){
-    // Dark header bar
-    doc.setFillColor(7,11,20);
-    doc.rect(0,0,W,28,'F');
-    doc.setFontSize(16); doc.setFont('helvetica','bold');
-    doc.setTextColor(0,212,255);
-    doc.text('CTS PRODUCTION', 14, 11);
+    // White header with teal accent bar
+    doc.setFillColor(13,148,136);
+    doc.rect(0,0,W,30,'F');
+    doc.setFontSize(18); doc.setFont('helvetica','bold');
+    doc.setTextColor(255,255,255);
+    doc.text('CTS PRODUCTION', 14, 13);
     doc.setFontSize(9); doc.setFont('helvetica','normal');
-    doc.setTextColor(122,139,160);
-    doc.text(company, 14, 17);
-    doc.text(subtitle, 14, 22);
-    doc.setTextColor(122,139,160);
+    doc.setTextColor(204,251,241);
+    doc.text(company, 14, 20);
+    doc.text(subtitle, 14, 26);
     doc.setFontSize(8);
-    doc.text('Generated: '+dateStr+' '+timeStr, W-14, 11, {align:'right'});
-    doc.text('By: '+byStr, W-14, 16, {align:'right'});
-    y = 34;
+    doc.text('Generated: '+dateStr+' '+timeStr, W-14, 13, {align:'right'});
+    doc.text('By: '+byStr, W-14, 20, {align:'right'});
+    // White body background
+    doc.setFillColor(255,255,255);
+    doc.rect(0,30,W,doc.internal.pageSize.getHeight()-30,'F');
+    y = 38;
   }
 
   function addSectionTitle(title){
-    doc.setFillColor(19,28,46);
-    doc.rect(10,y-4,W-20,7,'F');
-    doc.setFontSize(9); doc.setFont('helvetica','bold');
-    doc.setTextColor(0,212,255);
-    doc.text(title.toUpperCase(), 14, y+0.5);
-    y += 8;
+    doc.setFillColor(240,253,250);
+    doc.rect(10,y-4,W-20,8,'F');
+    doc.setDrawColor(13,148,136);
+    doc.setLineWidth(0.5);
+    doc.rect(10,y-4,W-20,8,'S');
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.setTextColor(13,148,136);
+    doc.text(title.toUpperCase(), 14, y+1);
+    y += 10;
   }
 
   function addSummaryRow(items){
     const bw = (W-20)/items.length;
     items.forEach((item,i)=>{
       const x = 10 + i*bw;
-      doc.setFillColor(13,18,32);
-      doc.rect(x,y-4,bw-2,12,'F');
+      doc.setFillColor(240,253,250);
+      doc.setDrawColor(94,234,212);
+      doc.setLineWidth(0.5);
+      doc.rect(x,y-4,bw-3,14,'FD');
       doc.setFontSize(7); doc.setFont('helvetica','normal');
-      doc.setTextColor(122,139,160);
-      doc.text(item.label, x+4, y+1);
-      doc.setFontSize(14); doc.setFont('helvetica','bold');
-      doc.setTextColor(...(item.color||[226,232,240]));
-      doc.text(String(item.value), x+4, y+7);
+      doc.setTextColor(100,100,100);
+      doc.text(item.label, x+4, y+2);
+      doc.setFontSize(16); doc.setFont('helvetica','bold');
+      // Use dark versions of colors for white bg
+      const colorMap = {
+        '0,212,255': [13,148,136],
+        '0,255,136': [22,163,74],
+        '255,184,0': [180,100,0],
+        '255,68,102': [185,28,28],
+      };
+      const ck = (item.color||[0,0,0]).join(',');
+      const c = colorMap[ck] || [30,30,30];
+      doc.setTextColor(...c);
+      doc.text(String(item.value), x+4, y+10);
     });
-    y += 16;
+    y += 20;
   }
 
   function checkPage(){
@@ -1423,9 +1439,9 @@ function genReport(type){
           p.qty, p.min,
           p.qty===0?'OUT':p.qty<p.min?'LOW':'OK'
         ]),
-        headStyles:{fillColor:[7,11,20],textColor:[0,212,255],fontSize:7,fontStyle:'bold'},
-        bodyStyles:{fontSize:8,textColor:[226,232,240],fillColor:[13,18,32]},
-        alternateRowStyles:{fillColor:[19,28,46]},
+        headStyles:{fillColor:[13,148,136],textColor:[255,255,255],fontSize:8,fontStyle:'bold'},
+        bodyStyles:{fontSize:9,textColor:[30,30,30],fillColor:[255,255,255]},
+        alternateRowStyles:{fillColor:[240,253,250]},
         columnStyles:{
           0:{cellWidth:16},1:{cellWidth:50},2:{cellWidth:22},
           3:{cellWidth:20},4:{cellWidth:14,halign:'center'},
@@ -1434,7 +1450,7 @@ function genReport(type){
         didDrawCell:(data)=>{
           if(data.section==='body'&&data.column.index===6){
             const v=data.cell.raw;
-            const c = v==='OK'?[0,255,136]:v==='LOW'?[255,184,0]:[255,68,102];
+            const c = v==='OK'?[22,163,74]:v==='LOW'?[180,100,0]:[185,28,28];
             doc.setTextColor(...c);
             doc.setFontSize(8); doc.setFont('helvetica','bold');
             doc.text(v, data.cell.x+data.cell.width/2, data.cell.y+data.cell.height/2+0.5,{align:'center'});
@@ -1467,7 +1483,7 @@ function genReport(type){
     ]);
 
     if(inboundPOs.length===0){
-      doc.setFontSize(9); doc.setTextColor(122,139,160);
+      doc.setFontSize(9); doc.setTextColor(100,100,100);
       doc.text('No purchase orders recorded.', 14, y); y+=8;
     } else {
       doc.autoTable({
@@ -1477,9 +1493,9 @@ function genReport(type){
           po.poNum||'—',po.vendor||'—',po.part||'—',po.qty||0,
           fmtDate(po.date),(po.status||'pending').toUpperCase(),po.notes||''
         ]),
-        headStyles:{fillColor:[7,11,20],textColor:[0,212,255],fontSize:7,fontStyle:'bold'},
-        bodyStyles:{fontSize:8,textColor:[226,232,240],fillColor:[13,18,32]},
-        alternateRowStyles:{fillColor:[19,28,46]},
+        headStyles:{fillColor:[13,148,136],textColor:[255,255,255],fontSize:8,fontStyle:'bold'},
+        bodyStyles:{fontSize:9,textColor:[30,30,30],fillColor:[255,255,255]},
+        alternateRowStyles:{fillColor:[240,253,250]},
         columnStyles:{0:{cellWidth:26},1:{cellWidth:30},2:{cellWidth:36},3:{cellWidth:12,halign:'center'},4:{cellWidth:20},5:{cellWidth:20,halign:'center'},6:{cellWidth:36}},
         theme:'grid',
       });
@@ -1507,7 +1523,7 @@ function genReport(type){
     ]);
 
     if(outboundPOs.length===0){
-      doc.setFontSize(9); doc.setTextColor(122,139,160);
+      doc.setFontSize(9); doc.setTextColor(100,100,100);
       doc.text('No customer orders recorded.', 14, y); y+=8;
     } else {
       doc.autoTable({
@@ -1517,9 +1533,9 @@ function genReport(type){
           po.poNum||'—',po.customer||'—',po.product||'—',po.units||0,
           fmtDate(po.date),(po.payment||'pending').toUpperCase(),(po.status||'processing').toUpperCase()
         ]),
-        headStyles:{fillColor:[7,11,20],textColor:[0,212,255],fontSize:7,fontStyle:'bold'},
-        bodyStyles:{fontSize:8,textColor:[226,232,240],fillColor:[13,18,32]},
-        alternateRowStyles:{fillColor:[19,28,46]},
+        headStyles:{fillColor:[13,148,136],textColor:[255,255,255],fontSize:8,fontStyle:'bold'},
+        bodyStyles:{fontSize:9,textColor:[30,30,30],fillColor:[255,255,255]},
+        alternateRowStyles:{fillColor:[240,253,250]},
         columnStyles:{0:{cellWidth:24},1:{cellWidth:36},2:{cellWidth:24},3:{cellWidth:14,halign:'center'},4:{cellWidth:20},5:{cellWidth:18,halign:'center'},6:{cellWidth:22,halign:'center'}},
         theme:'grid',
       });
@@ -1546,9 +1562,9 @@ function addFooter(doc,dateStr,byStr){
   const pages=doc.internal.getNumberOfPages();
   for(let i=1;i<=pages;i++){
     doc.setPage(i);
-    doc.setFillColor(7,11,20);
+    doc.setFillColor(13,148,136);
     doc.rect(0,H-10,W,10,'F');
-    doc.setFontSize(7); doc.setTextColor(122,139,160);
+    doc.setFontSize(7); doc.setTextColor(255,255,255);
     doc.text('CTS Production · '+dateStr+' · Generated by '+byStr, 14, H-4);
     doc.text('Page '+i+' of '+pages, W-14, H-4, {align:'right'});
   }
