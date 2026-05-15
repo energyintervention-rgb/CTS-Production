@@ -22,7 +22,7 @@
   --font-head:'Exo 2',sans-serif;--font-mono:'JetBrains Mono',monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--font-head);-webkit-font-smoothing:antialiased}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--font-head);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
 body{
   background-color:var(--bg);
   background-image:
@@ -564,7 +564,30 @@ function checkAccess(){
   _role = sessionStorage.getItem('cts_role');
   _name = sessionStorage.getItem('cts_name') || _role;
 
+  // Fallback to localStorage remember me
+  if(!_role){
+    try{
+      const rm = localStorage.getItem('cts_remember');
+      if(rm){
+        const d = JSON.parse(rm);
+        if(d.role && d.role !== 'guest'){
+          sessionStorage.setItem('cts_role', d.role);
+          sessionStorage.setItem('cts_name', d.name || d.role);
+          if(d.project) sessionStorage.setItem('cts_project', d.project);
+          _role = d.role;
+          _name = d.name || d.role;
+        }
+      }
+    }catch(e){}
+  }
+
   if(!_role || _role==='guest'){
+    document.getElementById('access-denied').style.display='block';
+    return false;
+  }
+
+  // Worker — no inventory access
+  if(_role==='worker'){
     document.getElementById('access-denied').style.display='block';
     return false;
   }
