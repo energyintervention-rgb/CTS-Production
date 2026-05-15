@@ -440,7 +440,8 @@ header{
   /* Charts */
   .stat-cards{grid-template-columns:repeat(2,1fr);}
   .stat-card .val{font-size:1.2rem;}
-  .donut-wrap{min-width:180px;}
+  .donut-wrap{min-width:0 !important;}
+  .donut-canvas-wrap{width:110px !important;height:110px !important;}
   .hbar-label{width:70px;font-size:0.68rem;}
 
   /* Activity log */
@@ -3356,6 +3357,11 @@ function renderCharts(){
   S.projects.forEach(pr=>{
     const pu = pr.parts.reduce((a,x)=>a+x.updated,0);
     const pb = pr.parts.reduce((a,x)=>a+x.total,0);
+    // Set canvas size based on screen width
+    const isMob = window.innerWidth < 600;
+    const cSize = isMob ? 110 : 180;
+    const c = document.getElementById('donut_'+pr.id);
+    if(c){ c.width=cSize; c.height=cSize; }
     drawDonut('donut_'+pr.id, pu, pb-pu, 0, 0, 0, pr.name);
   });
 
@@ -3384,20 +3390,18 @@ function drawDonut(canvasId, updated, remaining, complete, inProgress, notStarte
   const canvas = document.getElementById(canvasId);
   if(!canvas) return;
   const ctx = canvas.getContext('2d');
-  const cx=90,cy=90,r=72,lw=18;
-  ctx.clearRect(0,0,180,180);
+  const size = canvas.width; // responsive based on actual canvas size
+  const cx=size/2, cy=size/2;
+  const r=size*0.82/2, lw=size*0.10;
+  ctx.clearRect(0,0,size,size);
   const total = updated+remaining||1;
   const isLight = document.body.classList.contains('light-mode');
-  // Theme-aware colours
-  const fillColor    = isLight ? '#0D9488' : '#00FF88';
-  const emptyColor   = isLight ? '#CCFBF1' : '#1E2D45';
-  const bgColor      = isLight ? '#FFFFFF' : '#0D1220';
-  const textColor    = isLight ? '#134E4A' : '#E2E8F0';
-  const dimColor     = isLight ? '#0F766E' : '#7A8BA0';
-  const data = [
-    {v:updated,   c:fillColor},
-    {v:remaining, c:emptyColor}
-  ];
+  const fillColor  = isLight ? '#0D9488' : '#00FF88';
+  const emptyColor = isLight ? '#CCFBF1' : '#1E2D45';
+  const bgColor    = isLight ? '#FFFFFF' : '#0D1220';
+  const textColor  = isLight ? '#134E4A' : '#E2E8F0';
+  const dimColor   = isLight ? '#0F766E' : '#7A8BA0';
+  const data = [{v:updated,c:fillColor},{v:remaining,c:emptyColor}];
   let start=-Math.PI/2;
   data.forEach(d=>{
     const angle=(d.v/total)*2*Math.PI;
@@ -3407,10 +3411,13 @@ function drawDonut(canvasId, updated, remaining, complete, inProgress, notStarte
     start+=angle;
   });
   ctx.beginPath();ctx.arc(cx,cy,r-lw,0,2*Math.PI);ctx.fillStyle=bgColor;ctx.fill();
-  ctx.fillStyle=textColor;ctx.font='bold 20px Rajdhani,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(Math.round(updated/total*100)+'%',cx,cy-8);
-  ctx.font='11px JetBrains Mono,monospace';ctx.fillStyle=dimColor;
-  ctx.fillText('DONE',cx,cy+10);
+  const pctFs = Math.max(11,size*0.13);
+  const lblFs = Math.max(8,size*0.07);
+  ctx.fillStyle=textColor;ctx.font='bold '+pctFs+'px Rajdhani,sans-serif';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(Math.round(updated/total*100)+'%',cx,cy-size*0.06);
+  ctx.font=lblFs+'px JetBrains Mono,monospace';ctx.fillStyle=dimColor;
+  ctx.fillText('DONE',cx,cy+size*0.08);
 }
 
 // ── Working days helpers ──
