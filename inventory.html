@@ -23,6 +23,10 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--font-head);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+/* Hide number input spin buttons */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
 body{
   background-color:var(--bg);
   background-image:
@@ -874,7 +878,7 @@ function openModal(type, idx=null){
       document.getElementById('p-cat').value=p.cat||'Bracket';
       document.getElementById('p-src').value=p.src||'vendor';
       document.getElementById('p-qty').value=p.qty||0;
-      document.getElementById('p-min').value=p.min||5;
+      document.getElementById('p-min').value=(p.min!=null?p.min:5);
       document.getElementById('p-vendor').value=p.vendor||'';
       sel.value=p.product||'';
     } else {
@@ -882,7 +886,7 @@ function openModal(type, idx=null){
       document.getElementById('p-ref').value='';
       document.getElementById('p-name').value='';
       document.getElementById('p-qty').value=0;
-      document.getElementById('p-min').value=5;
+      document.getElementById('p-min').value=0;
       document.getElementById('p-vendor').value='';
       if(_currentProduct) sel.value=_currentProduct;
     }
@@ -967,7 +971,7 @@ function savePart(){
     cat:document.getElementById('p-cat').value,
     src:document.getElementById('p-src').value,
     qty:parseInt(document.getElementById('p-qty').value)||0,
-    min:parseInt(document.getElementById('p-min').value)||5,
+    min:parseInt(document.getElementById('p-min').value)||0,
     vendor:document.getElementById('p-vendor').value.trim(),
     product:document.getElementById('p-product').value,
   };
