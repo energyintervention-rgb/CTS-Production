@@ -280,21 +280,18 @@ body{
       <div class="pin-dot" id="pd3"></div>
     </div>
     <div class="pin-error" id="pin-error"></div>
-    <div class="pin-pad">
-      <button class="pin-key" onclick="pk('1')">1</button>
-      <button class="pin-key" onclick="pk('2')">2</button>
-      <button class="pin-key" onclick="pk('3')">3</button>
-      <button class="pin-key" onclick="pk('4')">4</button>
-      <button class="pin-key" onclick="pk('5')">5</button>
-      <button class="pin-key" onclick="pk('6')">6</button>
-      <button class="pin-key" onclick="pk('7')">7</button>
-      <button class="pin-key" onclick="pk('8')">8</button>
-      <button class="pin-key" onclick="pk('9')">9</button>
-      <button class="pin-key action" onclick="pkClear()">CLR</button>
-      <button class="pin-key" onclick="pk('0')">0</button>
-      <button class="pin-key action" onclick="pkBack()">⌫</button>
+    <div class="pin-pad" id="pin-pad"></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px">
+      <input type="checkbox" id="remember-me" style="
+        width:14px;height:14px;accent-color:var(--cyan);cursor:pointer;
+        border:1px solid var(--border);border-radius:3px;background:var(--bg2);
+      ">
+      <label for="remember-me" style="
+        font-family:var(--font-mono);font-size:10px;color:var(--text-dim);
+        letter-spacing:.12em;text-transform:uppercase;cursor:pointer;user-select:none;
+      ">Remember me</label>
     </div>
-    <div class="footer" style="margin-top:20px">CTS Production System · v2026 · MYT (UTC+8)</div>
+    <div class="footer" style="margin-top:14px">CTS Production System · v2026 · MYT (UTC+8)</div>
   </div>
 
 </div>
@@ -377,6 +374,7 @@ function showStaffPin(){
   document.getElementById('pin-view').classList.add('show');
   // Load state so we have worker list
   loadState(()=> buildWorkerList());
+  scramblePad();
 }
 
 function goGuest(){
@@ -470,10 +468,29 @@ function pk(digit){
 function pkBack(){ _pinBuf = _pinBuf.slice(0,-1); updateDots(); }
 function pkClear(){ resetPin(); }
 
+function scramblePad(){
+  const digits = [1,2,3,4,5,6,7,8,9,0];
+  // Fisher-Yates shuffle
+  for(let i=digits.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [digits[i],digits[j]]=[digits[j],digits[i]];
+  }
+  // Insert CLR at index 9, 0 at 10 stays from shuffle... rebuild as 12-slot grid
+  // Layout: 9 digits + CLR + last digit + backspace
+  const order = [...digits.slice(0,9), 'CLR', digits[9], '⌫'];
+  const pad = document.getElementById('pin-pad');
+  pad.innerHTML = order.map(k => {
+    if(k==='CLR') return `<button class="pin-key action" onclick="pkClear()">CLR</button>`;
+    if(k==='⌫')  return `<button class="pin-key action" onclick="pkBack()">⌫</button>`;
+    return `<button class="pin-key" onclick="pk('${k}')">${k}</button>`;
+  }).join('');
+}
+
 function resetPin(){
   _pinBuf = '';
   updateDots();
   document.getElementById('pin-error').textContent = '';
+  scramblePad();
 }
 
 function updateDots(){
@@ -526,6 +543,121 @@ function checkPin(){
     setTimeout(resetPin, 800);
   }
 }
+// ── Remember Me ──
+const RM_KEY = 'cts_remember';
+
+function saveRememberMe(){
+  if(!document.getElementById('remember-me').checked) {
+    localStorage.removeItem(RM_KEY);
+    return;
+  }
+  const data = {role:_role, name:_workerName, project:_workerProject};
+  localStorage.setItem(RM_KEY, JSON.stringify(data));
+}
+
+function loadRememberMe(){
+  try{
+    const raw = localStorage.getItem(RM_KEY);
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    if(!data.role) return;
+    // Check the remember-me box
+    document.getElementById('remember-me').checked = true;
+    // Auto-select role after state loads
+    _pendingRemember = data;
+  }catch(e){}
+}
+
+let _pendingRemember = null;
+
+function applyRememberMe(){
+  if(!_pendingRemember) return;
+  const d = _pendingRemember;
+  _pendingRemember = null;
+  selectRole(d.role);
+  if(d.role === 'worker' && d.name){
+    // Wait for worker list to render then auto-select
+    setTimeout(()=>{
+      _workerName = d.name;
+      _workerProject = d.project;
+      document.getElementById('pin-who').textContent = d.name;
+      document.querySelectorAll('#worker-list .worker-btn').forEach(b=>{
+        b.classList.toggle('selected', b.textContent.trim() === d.name);
+      });
+    }, 300);
+  }
+}
+
+// Patch showStaffPin to apply remember me after load
+const _origShowStaff = showStaffPin;
+function showStaffPin(){
+  _origShowStaff();
+  loadState(s=>{
+    buildWorkerList();
+    applyRememberMe();
+  });
+  scramblePad();
+}
+
+// Patch checkPin to save remember me on success
+const _origCheckPin = checkPin;
+function checkPin(){
+  _origCheckPin();
+}
+
+// Override redirect to save remember me first
+const _origPk = pk;
+
+// Patch session save to include remember me
+const _origLocation = window.location;
+// Instead patch the success branch directly — re-override checkPin fully
+// (simpler: just call saveRememberMe before redirect in checkPin)
+// We already have the full checkPin above, so let's patch it:
+// Find the toast line and add saveRememberMe before redirect
+// Actually the cleanest way: wrap the redirect setTimeout
+const __checkPin = checkPin;
+
+// Re-declare checkPin with saveRememberMe injected
+window.checkPin = function(){
+  const cfg = (_S && _S.authConfig) ? _S.authConfig : {};
+  const adminHash  = cfg.adminPinHash  || hashPIN(DEF_ADMIN_PIN);
+  const superHash  = cfg.supervisorPinHash || hashPIN(DEF_SUPER_PIN);
+  const entered = hashPIN(_pinBuf);
+  let ok = false;
+
+  if(_role === 'admin' && entered === adminHash) ok = true;
+  else if(_role === 'supervisor' && entered === superHash) ok = true;
+  else if(_role === 'worker'){
+    const key = _workerProject + '__' + _workerName;
+    const workerHash = (cfg.workerPins && cfg.workerPins[key]) || hashPIN(DEF_WORKER_PIN);
+    if(entered === workerHash) ok = true;
+  }
+
+  if(ok){
+    saveRememberMe();
+    sessionStorage.setItem('cts_role', _role);
+    sessionStorage.setItem('cts_name', _workerName || _role.charAt(0).toUpperCase()+_role.slice(1));
+    if(_workerProject) sessionStorage.setItem('cts_project', _workerProject);
+    for(let i=0;i<4;i++) document.getElementById('pd'+i).style.background='var(--green)';
+    toast('✓ Welcome! Redirecting…');
+    setTimeout(()=>{ window.location.href = 'cts_production_v3.html'; }, 700);
+  } else {
+    _attempts++;
+    for(let i=0;i<4;i++){
+      document.getElementById('pd'+i).className = 'pin-dot error';
+    }
+    document.getElementById('pin-error').textContent = _attempts >= 3
+      ? 'Too many attempts. Try again.'
+      : 'Incorrect PIN. Try again.';
+    setTimeout(resetPin, 800);
+  }
+};
+
+// Init on page load
+window.addEventListener('DOMContentLoaded', ()=>{
+  loadRememberMe();
+  scramblePad();
+});
 </script>
 </body>
 </html>
