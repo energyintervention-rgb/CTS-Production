@@ -516,7 +516,10 @@ function checkPin(){
     if(_workerProject) sessionStorage.setItem('cts_project',_workerProject);
     for(let i=0;i<4;i++) document.getElementById('pd'+i).style.background='var(--green)';
     toast('✓ Welcome! Redirecting…');
-    setTimeout(()=>{ window.location.href='dashboard.html'; },700);
+    setTimeout(()=>{
+      if(_role==='admin') window.location.href='admin.html';
+      else window.location.href='dashboard.html';
+    },700);
   } else {
     _attempts++;
     for(let i=0;i<4;i++) document.getElementById('pd'+i).className='pin-dot error';
