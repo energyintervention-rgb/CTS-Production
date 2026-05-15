@@ -510,6 +510,59 @@ body{
   </div>
 </div>
 
+
+<!-- Stock Movement Modal -->
+<div class="modal-bg" id="modal-movement">
+  <div class="modal">
+    <h3 id="modal-mv-title">Stock Movement</h3>
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-bottom:14px" id="mv-part-info"></div>
+    <div class="field-row">
+      <div class="field"><label>Action</label>
+        <select id="mv-action" onchange="mvActionChange()">
+          <option value="in">Stock In</option>
+          <option value="out">Stock Out</option>
+          <option value="adjust">Adjustment</option>
+          <option value="damage">Damaged / Lost</option>
+          <option value="return">Return</option>
+        </select>
+      </div>
+      <div class="field"><label>Qty</label>
+        <input id="mv-qty" type="number" min="1" value="1">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Date</label>
+        <input id="mv-date" type="date">
+      </div>
+      <div class="field"><label>Reference (PO / Order #)</label>
+        <input id="mv-ref" placeholder="e.g. PO-2026-001">
+      </div>
+    </div>
+    <div class="field" id="mv-to-field">
+      <label>To / Recipient</label>
+      <input id="mv-to" placeholder="e.g. Customer name, department">
+    </div>
+    <div class="field"><label>Notes</label>
+      <textarea id="mv-notes" placeholder="Reason, details…"></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn cancel" onclick="closeModal('modal-movement')">Cancel</button>
+      <button class="mbtn confirm" onclick="saveMovement()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Movement History Modal -->
+<div class="modal-bg" id="modal-history">
+  <div class="modal" style="max-width:560px">
+    <h3 id="modal-hist-title">Movement History</h3>
+    <div id="hist-body" style="max-height:400px;overflow-y:auto"></div>
+    <div class="modal-btns" style="margin-top:12px">
+      <button class="mbtn cancel" onclick="closeModal('modal-history')">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -730,8 +783,9 @@ function renderStock(){
       <span><span class="badge ${status==='ok'?'b-ok':status==='low'?'b-low':'b-out'}">${status==='ok'?'OK':status==='low'?'Low':'Out'}</span></span>
       <div class="act-btns">
         ${_canEdit?`<button class="act-btn" onclick="openModal('edit-part',${globalIdx})">Edit</button>
-        <button class="act-btn green" onclick="adjustQty(${globalIdx},1)">+</button>
-        <button class="act-btn warn" onclick="adjustQty(${globalIdx},-1)">−</button>
+        <button class="act-btn green" onclick="openMovement(${globalIdx},'in')">+ In</button>
+        <button class="act-btn warn" onclick="openMovement(${globalIdx},'out')">− Out</button>
+        <button class="act-btn" onclick="openHistory(${globalIdx})">📋 Log</button>
         <button class="act-btn del" onclick="confirmDelete('part',${globalIdx})">Del</button>`
         :`<button class="act-btn" onclick="viewPart(${globalIdx})">View</button>`}
       </div>
@@ -739,10 +793,99 @@ function renderStock(){
   }).join('');
 }
 
-function adjustQty(idx, delta){
-  const p=_S.inventory.parts[idx];
-  p.qty=Math.max(0,(p.qty||0)+delta);
-  saveData(()=>{ renderStock(); updateSummary(); });
+// ── Stock Movement ──
+let _mvIdx = null;
+
+function openMovement(idx, action){
+  _mvIdx = idx;
+  const p = _S.inventory.parts[idx];
+  document.getElementById('modal-mv-title').textContent = action==='in' ? 'Stock In' : 'Stock Out';
+  document.getElementById('mv-part-info').textContent = (p.ref||'')+(p.ref?' — ':'')+p.name+' · Current stock: '+p.qty;
+  document.getElementById('mv-action').value = action;
+  document.getElementById('mv-qty').value = 1;
+  document.getElementById('mv-date').value = todayStr();
+  document.getElementById('mv-ref').value = '';
+  document.getElementById('mv-to').value = '';
+  document.getElementById('mv-notes').value = '';
+  mvActionChange();
+  document.getElementById('modal-movement').classList.add('show');
+}
+
+function mvActionChange(){
+  const action = document.getElementById('mv-action').value;
+  const toField = document.getElementById('mv-to-field');
+  // Show "To" field only for out/damage/return
+  toField.style.display = (action==='out'||action==='damage'||action==='return') ? 'block' : 'none';
+  const toLabel = toField.querySelector('label');
+  if(action==='out') toLabel.textContent='To / Recipient';
+  else if(action==='return') toLabel.textContent='Returned from';
+  else toLabel.textContent='Location / Note';
+}
+
+function saveMovement(){
+  const qty = parseInt(document.getElementById('mv-qty').value)||0;
+  if(qty<=0){ toast('Qty must be at least 1','err'); return; }
+
+  const p = _S.inventory.parts[_mvIdx];
+  const action = document.getElementById('mv-action').value;
+  const date = document.getElementById('mv-date').value;
+  const ref = document.getElementById('mv-ref').value.trim();
+  const to = document.getElementById('mv-to').value.trim();
+  const notes = document.getElementById('mv-notes').value.trim();
+
+  // Build movement record
+  const mv = {
+    id: uid(),
+    action, qty, date, ref, to, notes,
+    by: _name || 'Unknown',
+    ts: Date.now()
+  };
+
+  // Update stock qty
+  if(action==='in'||action==='return'){
+    p.qty = (p.qty||0) + qty;
+  } else {
+    p.qty = Math.max(0,(p.qty||0) - qty);
+  }
+
+  // Save movement to history
+  if(!p.movements) p.movements = [];
+  p.movements.unshift(mv); // newest first
+
+  saveData(()=>{
+    renderStock();
+    updateSummary();
+    closeModal('modal-movement');
+    toast('✓ Movement saved','ok');
+  });
+}
+
+function openHistory(idx){
+  const p = _S.inventory.parts[idx];
+  document.getElementById('modal-hist-title').textContent = (p.ref?p.ref+' — ':'')+p.name+' · History';
+
+  const mvs = p.movements || [];
+  const body = document.getElementById('hist-body');
+
+  if(mvs.length===0){
+    body.innerHTML='<div style="font-family:var(--font-mono);font-size:10px;color:var(--text-mute);padding:20px;text-align:center">No movement history yet.</div>';
+  } else {
+    const actionLabel = {in:'Stock In',out:'Stock Out',adjust:'Adjustment',damage:'Damaged',return:'Return'};
+    const actionColor = {in:'var(--green)',out:'var(--amber)',adjust:'var(--cyan)',damage:'var(--red)',return:'var(--cyan)'};
+    body.innerHTML = mvs.map(mv=>`
+      <div style="padding:10px 0;border-bottom:1px solid rgba(0,212,255,0.08);display:grid;grid-template-columns:80px 80px 1fr;gap:8px;align-items:start">
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-mute)">${fmtDate(mv.date)}</div>
+        <div style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:${actionColor[mv.action]||'var(--text)'}">${mv.action==='in'||mv.action==='return'?'+':'-'}${mv.qty} ${actionLabel[mv.action]||mv.action}</div>
+        <div>
+          ${mv.ref?`<div style="font-family:var(--font-mono);font-size:9px;color:var(--cyan)">${escH(mv.ref)}</div>`:''}
+          ${mv.to?`<div style="font-size:11px;color:var(--text-dim)">→ ${escH(mv.to)}</div>`:''}
+          ${mv.notes?`<div style="font-size:11px;color:var(--text-dim)">${escH(mv.notes)}</div>`:''}
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-mute);margin-top:2px">by ${escH(mv.by)}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  document.getElementById('modal-history').classList.add('show');
 }
 
 // ── INBOUND PO ──
