@@ -724,6 +724,7 @@ header{
     <button class="btn-admin" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
     <button class="btn-admin" id="adminBtn" onclick="toggleAdminLogin()" style="display:none">⚙ ADMIN</button>
     <a class="btn-admin" id="adminPanelBtn" href="admin.html" style="display:none;text-decoration:none">🛠 PANEL</a>
+    <a class="btn-admin" id="inventoryBtn" href="inventory.html" style="display:none;text-decoration:none">📦 INVENTORY</a>
   </div>
 </header>
 
@@ -1414,6 +1415,7 @@ function updateSessionBanner(){
   // Show admin button only for admin role
   document.getElementById('adminBtn').style.display = SESSION.role==='admin'?'':'none';
   const _pb=document.getElementById('adminPanelBtn'); if(_pb) _pb.style.display=SESSION.role==='admin'?'':'none';
+  const _ib=document.getElementById('inventoryBtn'); if(_ib) _ib.style.display=(SESSION.role==='admin'||SESSION.role==='supervisor')?'':'none';
   // Wire admin panel link
 
   if(SESSION.role==='admin' && S.adminMode){
