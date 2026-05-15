@@ -1396,6 +1396,8 @@ function showLoginScreen(){
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('sessionBanner').classList.add('hidden');
   document.getElementById('adminBtn').style.display='none';
+  const _pb2=document.getElementById('adminPanelBtn'); if(_pb2) _pb2.style.display='none';
+  const _ib2=document.getElementById('inventoryBtn'); if(_ib2) _ib2.style.display='none';
   showLoginStep1();
 }
 
@@ -1407,7 +1409,7 @@ function hideLoginScreen(){
 function updateSessionBanner(){
   const ban = document.getElementById('sessionBanner');
   const nm  = document.getElementById('sessionName');
-  if(!SESSION){ ban.classList.add('hidden'); return; }
+  if(!SESSION || !ban || !nm){ if(ban) ban.classList.add('hidden'); return; }
   ban.classList.remove('hidden','supervisor');
   if(SESSION.role==='supervisor') ban.classList.add('supervisor');
   const roleLabel = SESSION.role==='admin'?'⚙ Admin':SESSION.role==='supervisor'?'👁 Supervisor':'👤';
@@ -1655,7 +1657,7 @@ try{
 // ── Merge loaded data into full shape ──
 function mergeState(loaded){
   const def = defaultState();
-  const merged = {...def, ...loaded, adminMode:false};
+  const merged = {...def, ...loaded, adminMode: loaded.adminMode || false};
   merged.projects = (merged.projects||[def.projects[0]]).map(pr=>{
     const dpr = makeProject(pr.id||'proj_'+Date.now(), pr.name||'Project');
     return {...dpr, ...pr,
@@ -1742,8 +1744,8 @@ function startRealtimeSync(){
     if(!remote) return;
     // Don't overwrite if we just saved (within 2s)
     const merged = mergeState(remote);
-    // Preserve local adminMode
-    merged.adminMode = S.adminMode;
+    // Preserve local adminMode and SESSION
+    merged.adminMode = S.adminMode || false;
     S = merged;
     localStorage.setItem('cts_state_v3', JSON.stringify(S));
     if(_firstLoad){
@@ -3086,20 +3088,23 @@ function confirmAddWorker(){
 let _adminModeOnly = false;
 
 function toggleAdminLogin(){
+  if(!SESSION){ showToast('⚠ Not logged in','warn'); return; }
   if(S.adminMode){
     S.adminMode=false; saveState();
-    document.getElementById('adminBtn').classList.remove('active');
-    document.getElementById('adminBtn').textContent='⚙ ADMIN';
+    const ab=document.getElementById('adminBtn');
+    if(ab){ ab.classList.remove('active'); ab.textContent='⚙ ADMIN'; }
     // Hide all admin panels
     document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('show'));
     // Re-render current active page
-    const activePage = document.querySelector('.page.active');
-    if(activePage){
-      const id = activePage.id.replace('page-','');
-      if(id==='assembly')   renderAssembly();
-      else if(id==='attendance') renderAttendance();
-      else if(id==='charts')    renderCharts();
-    }
+    try{
+      const activePage = document.querySelector('.page.active');
+      if(activePage){
+        const id = activePage.id.replace('page-','');
+        if(id==='assembly')        renderAssembly();
+        else if(id==='attendance') renderAttendance();
+        else if(id==='charts')     renderCharts();
+      }
+    }catch(e){ console.warn('Render error:', e); }
     logActivity('ADMIN_OFF','Admin mode turned off');
     showToast('Admin mode off');
     return;
@@ -3118,20 +3123,23 @@ function confirmAdmin(){
 }
 
 function _activateAdminMode(){
+  if(!SESSION){ showToast('⚠ Session lost — please log in again','warn'); showLoginScreen(); return; }
   S.adminMode=true; saveState();
-  document.getElementById('adminBtn').classList.add('active');
-  document.getElementById('adminBtn').textContent='⚙ ADMIN ON';
+  const ab=document.getElementById('adminBtn');
+  if(ab){ ab.classList.add('active'); ab.textContent='⚙ ADMIN ON'; }
   logActivity('ADMIN_ON','Admin mode enabled');
   // Re-render current active page to show edit controls
-  const activePage = document.querySelector('.page.active');
-  if(activePage){
-    const id = activePage.id.replace('page-','');
-    if(id==='assembly')   renderAssembly();
-    else if(id==='attendance') renderAttendance();
-    else if(id==='charts')    renderCharts();
-  } else {
-    renderAttendance();
-  }
+  try{
+    const activePage = document.querySelector('.page.active');
+    if(activePage){
+      const id = activePage.id.replace('page-','');
+      if(id==='assembly')        renderAssembly();
+      else if(id==='attendance') renderAttendance();
+      else if(id==='charts')     renderCharts();
+    } else {
+      renderAttendance();
+    }
+  }catch(e){ console.warn('Render error after admin mode:', e); }
   showToast('✓ Admin mode ON — editing unlocked');
 }
 
