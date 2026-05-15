@@ -723,6 +723,7 @@ header{
     <span id="syncIndicator" style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;">⏳</span>
     <button class="btn-admin" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
     <button class="btn-admin" id="adminBtn" onclick="toggleAdminLogin()" style="display:none">⚙ ADMIN</button>
+    <a class="btn-admin" id="adminPanelBtn" href="admin.html" style="display:none;text-decoration:none">🛠 PANEL</a>
   </div>
 </header>
 
@@ -1412,12 +1413,9 @@ function updateSessionBanner(){
   nm.textContent = roleLabel+' '+SESSION.name;
   // Show admin button only for admin role
   document.getElementById('adminBtn').style.display = SESSION.role==='admin'?'':'none';
+  const _pb=document.getElementById('adminPanelBtn'); if(_pb) _pb.style.display=SESSION.role==='admin'?'':'none';
   // Wire admin panel link
-  const adminBtn = document.getElementById('adminBtn');
-  if(adminBtn && !adminBtn._panelWired){
-    adminBtn._panelWired = true;
-    adminBtn.addEventListener('dblclick', ()=>{ window.location.href='admin.html'; });
-  }
+
   if(SESSION.role==='admin' && S.adminMode){
     document.getElementById('adminBtn').classList.add('active');
     document.getElementById('adminBtn').textContent='⚙ ADMIN ON';
