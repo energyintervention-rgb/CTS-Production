@@ -1465,14 +1465,14 @@ function genReport(type){
         alternateRowStyles:ALT_STY,
         columnStyles:{
           0:{cellWidth:16,overflow:'linebreak'},
-          1:{cellWidth:60,overflow:'linebreak'},
+          1:{cellWidth:68,overflow:'linebreak'},
           2:{cellWidth:28,overflow:'linebreak'},
           3:{cellWidth:24,overflow:'linebreak'},
           4:{cellWidth:18,halign:'center',overflow:'linebreak'},
           5:{cellWidth:14,halign:'center',overflow:'linebreak'},
           6:{cellWidth:22,halign:'center',overflow:'linebreak'},
         },
-        tableWidth:182,
+        tableWidth:190,
         theme:'grid',
         didDrawCell:(d)=>{
           if(d.section==='body'&&d.column.index===6){
@@ -1519,7 +1519,7 @@ function genReport(type){
           3:{cellWidth:14,halign:'center',overflow:'linebreak'},
           4:{cellWidth:24,overflow:'linebreak'},
           5:{cellWidth:24,halign:'center',overflow:'linebreak'},
-          6:{cellWidth:42,overflow:'linebreak'},
+          6:{cellWidth:50,overflow:'linebreak'},
         },
         tableWidth:190,
         theme:'grid',
@@ -1557,13 +1557,13 @@ function genReport(type){
         columnStyles:{
           0:{cellWidth:24,overflow:'linebreak'},
           1:{cellWidth:30,overflow:'linebreak'},
-          2:{cellWidth:38,overflow:'linebreak'},
+          2:{cellWidth:46,overflow:'linebreak'},
           3:{cellWidth:14,halign:'center',overflow:'linebreak'},
           4:{cellWidth:24,overflow:'linebreak'},
           5:{cellWidth:24,halign:'center',overflow:'linebreak'},
           6:{cellWidth:28,halign:'center',overflow:'linebreak'},
         },
-        tableWidth:182,
+        tableWidth:190,
         theme:'grid',
       });
       y=doc.lastAutoTable.finalY+6;
