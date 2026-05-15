@@ -457,6 +457,23 @@
     .viewer-head{flex-wrap:wrap;gap:10px}
     .viewer-head .actions{order:3;width:100%;justify-content:flex-end}
   }
+
+/* ── THEME ── */
+body.light{
+  --bg:#F0F4F8;--bg2:#FFFFFF;--card:#FFFFFF;--border:#D1D9E6;
+  --text:#1A2332;--text-dim:#4A5568;--text-mute:#A0AEC0;
+  --cyan:#0088CC;--cyan-dim:#0088CC18;--cyan-soft:#0088CC55;
+  --green:#00A855;--green-dim:#00A85518;
+  --amber:#CC8800;--amber-dim:#CC880018;
+  --red:#CC2244;--red-dim:#CC224418;
+}
+.theme-btn{
+  background:transparent;border:1px solid var(--border);border-radius:7px;
+  color:var(--text-dim);font-size:14px;padding:5px 9px;cursor:pointer;
+  transition:all .15s;line-height:1;
+}
+.theme-btn:hover{border-color:var(--cyan-soft);color:var(--cyan)}
+
 </style>
 </head>
 <body>
@@ -474,6 +491,7 @@
       </div>
     </div>
     <div class="top-right">
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
       <a href="index.html" class="back">← Back to Dashboard</a>
       <span class="live-pill"><span class="dot"></span>Live</span>
     </div>
@@ -888,7 +906,24 @@
   <span class="clo" id="toast-close">[ESC]</span>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js">
+// ── Theme toggle ──
+function toggleTheme(){
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('themeBtn').textContent = isLight ? '☀️' : '🌙';
+  localStorage.setItem('cts_theme', isLight ? 'light' : 'dark');
+}
+function initTheme(){
+  const saved = localStorage.getItem('cts_theme');
+  if(saved === 'light'){
+    document.body.classList.add('light');
+    const btn = document.getElementById('themeBtn');
+    if(btn) btn.textContent = '☀️';
+  }
+}
+window.addEventListener('DOMContentLoaded', initTheme);
+
+</script><script>
   // Toast
   const toast = document.getElementById('toast');
   const toastMsg = document.getElementById('toast-msg');
