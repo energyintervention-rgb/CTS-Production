@@ -1386,7 +1386,7 @@ function genReport(type){
     doc.setFillColor(...ALT_FILL);
     doc.setDrawColor(...BDR_CLR);
     doc.setLineWidth(0.4);
-    doc.rect(ML,y-3,TW,8,'FD');
+    doc.rect(ML,y-3,TW,8,'FD'); // TW=190 full width
     doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(...HEAD_FILL);
     doc.text(title.toUpperCase(),ML+3,y+2.5);
     y+=10;
@@ -1465,14 +1465,14 @@ function genReport(type){
         alternateRowStyles:ALT_STY,
         columnStyles:{
           0:{cellWidth:16,overflow:'linebreak'},
-          1:{cellWidth:55,overflow:'linebreak'},
-          2:{cellWidth:26,overflow:'linebreak'},
-          3:{cellWidth:22,overflow:'linebreak'},
+          1:{cellWidth:60,overflow:'linebreak'},
+          2:{cellWidth:28,overflow:'linebreak'},
+          3:{cellWidth:24,overflow:'linebreak'},
           4:{cellWidth:18,halign:'center',overflow:'linebreak'},
           5:{cellWidth:14,halign:'center',overflow:'linebreak'},
-          6:{cellWidth:20,halign:'center',overflow:'linebreak'},
+          6:{cellWidth:22,halign:'center',overflow:'linebreak'},
         },
-        tableWidth:171,
+        tableWidth:182,
         theme:'grid',
         didDrawCell:(d)=>{
           if(d.section==='body'&&d.column.index===6){
@@ -1557,13 +1557,13 @@ function genReport(type){
         columnStyles:{
           0:{cellWidth:24,overflow:'linebreak'},
           1:{cellWidth:30,overflow:'linebreak'},
-          2:{cellWidth:36,overflow:'linebreak'},
+          2:{cellWidth:38,overflow:'linebreak'},
           3:{cellWidth:14,halign:'center',overflow:'linebreak'},
           4:{cellWidth:24,overflow:'linebreak'},
           5:{cellWidth:24,halign:'center',overflow:'linebreak'},
           6:{cellWidth:28,halign:'center',overflow:'linebreak'},
         },
-        tableWidth:180,
+        tableWidth:182,
         theme:'grid',
       });
       y=doc.lastAutoTable.finalY+6;
