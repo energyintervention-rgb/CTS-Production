@@ -1346,226 +1346,231 @@ function genReport(type){
   const {jsPDF} = window.jspdf;
   if(!jsPDF){ toast('PDF library not loaded','err'); return; }
   const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const company = (_S.systemSettings && _S.systemSettings.company) || 'City Technical Solutions';
+  const company = (_S.systemSettings&&_S.systemSettings.company)||'City Technical Solutions';
   const now = new Date();
   const myt = new Date(now.getTime()+(8*60-now.getTimezoneOffset())*60000);
-  const dateStr = myt.toISOString().slice(8,10)+'/'+myt.toISOString().slice(5,7)+'/'+myt.toISOString().slice(0,4);
-  const timeStr = myt.toISOString().slice(11,16)+' MYT';
-  const byStr = _name || 'Admin';
-  const W = doc.internal.pageSize.getWidth();
-  let y = 15;
+  const d = myt.toISOString();
+  const dateStr = d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(0,4);
+  const timeStr = d.slice(11,16)+' MYT';
+  const byStr = _name||'Admin';
+  const W = doc.internal.pageSize.getWidth(); // 210
+  const H = doc.internal.pageSize.getHeight(); // 297
+  const ML = 10, MR = 10, TW = W-ML-MR; // 190mm usable
+  let y = 0;
+
+  // ── STYLES ──
+  const HEAD_FILL = [13,148,136];
+  const ALT_FILL  = [240,253,250];
+  const BDR_CLR   = [94,234,212];
+  const HEAD_STY  = {fillColor:HEAD_FILL,textColor:[255,255,255],fontSize:8,fontStyle:'bold',cellPadding:{top:5,right:6,bottom:5,left:6}};
+  const BODY_STY  = {fontSize:8.5,textColor:[30,30,30],fillColor:[255,255,255],cellPadding:{top:5,right:6,bottom:5,left:6},overflow:'linebreak',valign:'top'};
+  const ALT_STY   = {fillColor:ALT_FILL};
 
   function addHeader(subtitle){
-    // White header with teal accent bar
-    doc.setFillColor(13,148,136);
-    doc.rect(0,0,W,30,'F');
-    doc.setFontSize(18); doc.setFont('helvetica','bold');
-    doc.setTextColor(255,255,255);
-    doc.text('CTS PRODUCTION', 14, 13);
-    doc.setFontSize(9); doc.setFont('helvetica','normal');
-    doc.setTextColor(204,251,241);
-    doc.text(company, 14, 20);
-    doc.text(subtitle, 14, 26);
-    doc.setFontSize(8);
-    doc.text('Generated: '+dateStr+' '+timeStr, W-14, 13, {align:'right'});
-    doc.text('By: '+byStr, W-14, 20, {align:'right'});
-    // White body background
+    doc.setFillColor(...HEAD_FILL);
+    doc.rect(0,0,W,28,'F');
+    doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+    doc.text('CTS PRODUCTION',ML,11);
+    doc.setFontSize(8.5);doc.setFont('helvetica','normal');doc.setTextColor(204,251,241);
+    doc.text(company,ML,17);
+    doc.text(subtitle,ML,22);
+    doc.setFontSize(8);doc.setTextColor(204,251,241);
+    doc.text('Generated: '+dateStr+' '+timeStr,W-MR,11,{align:'right'});
+    doc.text('By: '+byStr,W-MR,17,{align:'right'});
     doc.setFillColor(255,255,255);
-    doc.rect(0,30,W,doc.internal.pageSize.getHeight()-30,'F');
-    y = 38;
+    doc.rect(0,28,W,H-28,'F');
+    y=34;
   }
 
   function addSectionTitle(title){
-    doc.setFillColor(240,253,250);
-    doc.rect(10,y-4,W-20,8,'F');
-    doc.setDrawColor(13,148,136);
-    doc.setLineWidth(0.5);
-    doc.rect(10,y-4,W-20,8,'S');
-    doc.setFontSize(10); doc.setFont('helvetica','bold');
-    doc.setTextColor(13,148,136);
-    doc.text(title.toUpperCase(), 14, y+1);
-    y += 10;
+    doc.setFillColor(...ALT_FILL);
+    doc.setDrawColor(...BDR_CLR);
+    doc.setLineWidth(0.4);
+    doc.rect(ML,y-3,TW,8,'FD');
+    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(...HEAD_FILL);
+    doc.text(title.toUpperCase(),ML+3,y+2.5);
+    y+=10;
   }
 
-  function addSummaryRow(items){
-    const totalW = W - 20;
-    const bw = Math.floor(totalW / items.length);
-    const boxH = 18;
+  function addSummaryCards(items){
+    const bw = TW/items.length;
+    const bh = 16;
     items.forEach((item,i)=>{
-      const x = 10 + i * bw;
-      const w = (i === items.length-1) ? (totalW - i*bw) : bw - 2;
-      doc.setFillColor(240,253,250);
-      doc.setDrawColor(94,234,212);
-      doc.setLineWidth(0.5);
-      doc.rect(x, y-4, w, boxH, 'FD');
-      doc.setFontSize(7); doc.setFont('helvetica','normal');
-      doc.setTextColor(100,100,100);
-      doc.text(item.label, x+5, y+2);
-      doc.setFontSize(18); doc.setFont('helvetica','bold');
-      const colorMap = {
-        '0,212,255': [13,148,136],
-        '0,255,136': [22,163,74],
-        '255,184,0': [180,100,0],
-        '255,68,102': [185,28,28],
-      };
-      const ck = (item.color||[0,0,0]).join(',');
-      const c = colorMap[ck] || [30,30,30];
+      const x = ML+i*bw;
+      const w = i===items.length-1?(TW-i*bw):bw-2;
+      doc.setFillColor(...ALT_FILL);
+      doc.setDrawColor(...BDR_CLR);
+      doc.setLineWidth(0.4);
+      doc.rect(x,y-3,w,bh,'FD');
+      doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);
+      doc.text(item.label,x+4,y+2);
+      doc.setFontSize(16);doc.setFont('helvetica','bold');
+      const colorMap={'0,212,255':[13,148,136],'0,255,136':[22,163,74],'255,184,0':[180,100,0],'255,68,102':[185,28,28]};
+      const c=colorMap[(item.color||[0,0,0]).join(',')]||[30,30,30];
       doc.setTextColor(...c);
-      doc.text(String(item.value), x+5, y+12);
+      doc.text(String(item.value),x+4,y+11);
     });
-    y += boxH + 6;
+    y+=bh+4;
   }
 
   function checkPage(){
-    if(y > 270){ doc.addPage(); addHeader('(continued)'); y=34; }
+    if(y>270){doc.addPage();y=14;}
   }
 
-  const parts = _S.inventory.parts || [];
-  const inboundPOs = _S.inventory.inboundPO || [];
-  const outboundPOs = _S.inventory.outboundPO || [];
-  const products = _S.inventory.products || [];
+  function addFooter(){
+    const pages=doc.internal.getNumberOfPages();
+    for(let i=1;i<=pages;i++){
+      doc.setPage(i);
+      doc.setFillColor(...HEAD_FILL);
+      doc.rect(0,H-9,W,9,'F');
+      doc.setFontSize(7);doc.setTextColor(255,255,255);
+      doc.text('CTS Production · '+dateStr+' · Generated by '+byStr,ML,H-4);
+      doc.text('Page '+i+' of '+pages,W-MR,H-4,{align:'right'});
+    }
+  }
 
-  // ── STOCK REPORT ──
+  const parts      = _S.inventory.parts||[];
+  const inboundPOs = _S.inventory.inboundPO||[];
+  const outboundPOs= _S.inventory.outboundPO||[];
+  const products   = _S.inventory.products||[];
+
+  // ── STOCK ──
   if(type==='stock'||type==='full'){
     addHeader('Inventory Stock Report');
-    const total=parts.length;
-    const ok=parts.filter(p=>p.qty>0&&p.qty>=p.min).length;
-    const low=parts.filter(p=>p.qty>0&&p.qty<p.min).length;
-    const out=parts.filter(p=>p.qty===0).length;
-    addSummaryRow([
-      {label:'TOTAL PARTS',value:total,color:[0,212,255]},
+    const tot=parts.length,ok=parts.filter(p=>p.qty>0&&p.qty>=p.min).length,
+          lw=parts.filter(p=>p.qty>0&&p.qty<p.min).length,out=parts.filter(p=>p.qty===0).length;
+    addSummaryCards([
+      {label:'TOTAL PARTS',value:tot,color:[0,212,255]},
       {label:'IN STOCK OK',value:ok,color:[0,255,136]},
-      {label:'LOW STOCK',value:low,color:[255,184,0]},
+      {label:'LOW STOCK',value:lw,color:[255,184,0]},
       {label:'OUT OF STOCK',value:out,color:[255,68,102]},
     ]);
 
     products.filter(p=>p.status!=='inactive').forEach(prod=>{
-      const prodParts = parts.filter(p=>p.product===prod.code);
-      if(prodParts.length===0) return;
+      const pp=parts.filter(p=>p.product===prod.code);
+      if(!pp.length) return;
       checkPage();
-      addSectionTitle(prod.name);
+      addSectionTitle(prod.name+' — Parts');
       doc.autoTable({
-        startY: y,
-        margin:{left:10,right:10},
+        startY:y, margin:{left:ML,right:MR},
         head:[['Ref','Part Name','Category','Source','Stock','Min','Status']],
-        body: prodParts.map(p=>[
-          p.ref||'—', p.name, p.cat||'—',
+        body:pp.map(p=>[
+          p.ref||'—',p.name,p.cat||'—',
           p.src==='inhouse'?'In-house':'Vendor',
-          p.qty, p.min,
+          p.qty,p.min,
           p.qty===0?'OUT':p.qty<p.min?'LOW':'OK'
         ]),
-        headStyles:{fillColor:[13,148,136],textColor:[255,255,255],fontSize:8,fontStyle:'bold'},
-        bodyStyles:{fontSize:9,textColor:[30,30,30],fillColor:[255,255,255],overflow:'linebreak'},
-        alternateRowStyles:{fillColor:[240,253,250]},
+        headStyles:HEAD_STY,
+        bodyStyles:BODY_STY,
+        alternateRowStyles:ALT_STY,
         columnStyles:{
-          0:{cellWidth:14},1:{cellWidth:52},2:{cellWidth:22},
-          3:{cellWidth:18},4:{cellWidth:14,halign:'center'},
-          5:{cellWidth:12,halign:'center'},6:{cellWidth:18,halign:'center'}
-        },
-        didDrawCell:(data)=>{
-          if(data.section==='body'&&data.column.index===6){
-            const v=data.cell.raw;
-            const c = v==='OK'?[22,163,74]:v==='LOW'?[180,100,0]:[185,28,28];
-            doc.setTextColor(...c);
-            doc.setFontSize(8); doc.setFont('helvetica','bold');
-            doc.text(v, data.cell.x+data.cell.width/2, data.cell.y+data.cell.height/2+0.5,{align:'center'});
-          }
+          0:{cellWidth:14,overflow:'ellipsize'},
+          1:{cellWidth:48,overflow:'linebreak'},
+          2:{cellWidth:24,overflow:'ellipsize'},
+          3:{cellWidth:20,overflow:'ellipsize'},
+          4:{cellWidth:16,halign:'center',overflow:'ellipsize'},
+          5:{cellWidth:12,halign:'center',overflow:'ellipsize'},
+          6:{cellWidth:20,halign:'center',overflow:'ellipsize'},
         },
         theme:'grid',
+        didDrawCell:(d)=>{
+          if(d.section==='body'&&d.column.index===6){
+            const v=d.cell.raw;
+            const c=v==='OK'?[22,163,74]:v==='LOW'?[180,100,0]:[185,28,28];
+            doc.setTextColor(...c);doc.setFontSize(8);doc.setFont('helvetica','bold');
+            doc.text(v,d.cell.x+d.cell.width/2,d.cell.y+d.cell.height/2+0.5,{align:'center'});
+          }
+        },
       });
-      y = doc.lastAutoTable.finalY + 6;
+      y=doc.lastAutoTable.finalY+6;
     });
-
-    if(type==='stock'){
-      addFooter(doc,dateStr,byStr);
-      doc.save('CTS_Stock_Report_'+dateStr.replace(/\//g,'-')+'.pdf');
-      toast('✓ Stock report downloaded','ok'); return;
-    }
+    if(type==='stock'){addFooter();doc.save('CTS_Stock_Report_'+dateStr.replace(/\//g,'-')+'.pdf');toast('✓ Stock report downloaded','ok');return;}
   }
 
   // ── INBOUND PO ──
   if(type==='inbound'||type==='full'){
     if(type==='inbound') addHeader('Inbound Purchase Orders');
-    else { checkPage(); addSectionTitle('Inbound Purchase Orders'); }
-
-    const t=inboundPOs.length,r=inboundPOs.filter(p=>p.status==='received').length,
+    else{checkPage();addSectionTitle('Inbound Purchase Orders');}
+    const tot=inboundPOs.length,r=inboundPOs.filter(p=>p.status==='received').length,
           pe=inboundPOs.filter(p=>p.status==='pending').length,pa=inboundPOs.filter(p=>p.status==='partial').length;
-    if(type==='inbound') addSummaryRow([
-      {label:'TOTAL PO',value:t,color:[0,212,255]},
+    addSummaryCards([
+      {label:'TOTAL PO',value:tot,color:[0,212,255]},
       {label:'RECEIVED',value:r,color:[0,255,136]},
       {label:'PENDING',value:pe,color:[255,184,0]},
       {label:'PARTIAL',value:pa,color:[255,68,102]},
     ]);
-
-    if(inboundPOs.length===0){
-      doc.setFontSize(9); doc.setTextColor(100,100,100);
-      doc.text('No purchase orders recorded.', 14, y); y+=8;
+    if(!inboundPOs.length){
+      doc.setFontSize(9);doc.setTextColor(150,150,150);doc.text('No purchase orders recorded.',ML,y);y+=8;
     } else {
       doc.autoTable({
-        startY:y, margin:{left:10,right:10},
+        startY:y,margin:{left:ML,right:MR},
         head:[['PO Number','Vendor','Part / Item','Qty','Date','Status','Notes']],
         body:inboundPOs.map(po=>[
-          po.poNum||'—',po.vendor||'—',po.part||'—',po.qty||0,
-          fmtDate(po.date),(po.status||'pending').toUpperCase(),po.notes||''
+          po.poNum||'—',po.vendor||'—',po.part||'—',
+          po.qty||0,fmtDate(po.date),
+          (po.status||'pending').toUpperCase(),po.notes||''
         ]),
-        headStyles:{fillColor:[13,148,136],textColor:[255,255,255],fontSize:8,fontStyle:'bold'},
-        bodyStyles:{fontSize:9,textColor:[30,30,30],fillColor:[255,255,255],overflow:'linebreak'},
-        alternateRowStyles:{fillColor:[240,253,250]},
-        columnStyles:{0:{cellWidth:26},1:{cellWidth:32},2:{cellWidth:34},3:{cellWidth:12,halign:'center'},4:{cellWidth:18},5:{cellWidth:22,halign:'center'},6:{cellWidth:36}},
+        headStyles:HEAD_STY,bodyStyles:BODY_STY,alternateRowStyles:ALT_STY,
+        columnStyles:{
+          0:{cellWidth:28,overflow:'linebreak'},
+          1:{cellWidth:24,overflow:'linebreak'},
+          2:{cellWidth:30,overflow:'linebreak'},
+          3:{cellWidth:12,halign:'center',overflow:'ellipsize'},
+          4:{cellWidth:22,overflow:'ellipsize'},
+          5:{cellWidth:22,halign:'center',overflow:'ellipsize'},
+          6:{cellWidth:32,overflow:'linebreak'},
+        },
         theme:'grid',
       });
-      y = doc.lastAutoTable.finalY + 6;
+      y=doc.lastAutoTable.finalY+6;
     }
-    if(type==='inbound'){
-      addFooter(doc,dateStr,byStr);
-      doc.save('CTS_Inbound_PO_'+dateStr.replace(/\//g,'-')+'.pdf');
-      toast('✓ Inbound PO report downloaded','ok'); return;
-    }
+    if(type==='inbound'){addFooter();doc.save('CTS_Inbound_PO_'+dateStr.replace(/\//g,'-')+'.pdf');toast('✓ Inbound PO report downloaded','ok');return;}
   }
 
   // ── OUTBOUND ──
   if(type==='outbound'||type==='full'){
     if(type==='outbound') addHeader('Customer Orders — Outbound');
-    else { checkPage(); addSectionTitle('Customer Orders — Outbound'); }
-
-    const t=outboundPOs.length,s=outboundPOs.filter(p=>p.status==='shipped').length,
+    else{checkPage();addSectionTitle('Customer Orders — Outbound');}
+    const tot=outboundPOs.length,s=outboundPOs.filter(p=>p.status==='shipped').length,
           pr=outboundPOs.filter(p=>p.status==='processing').length,h=outboundPOs.filter(p=>p.status==='onhold').length;
-    if(type==='outbound') addSummaryRow([
-      {label:'TOTAL ORDERS',value:t,color:[0,212,255]},
+    addSummaryCards([
+      {label:'CUSTOMER PO',value:tot,color:[0,212,255]},
       {label:'SHIPPED',value:s,color:[0,255,136]},
       {label:'PROCESSING',value:pr,color:[255,184,0]},
       {label:'ON HOLD',value:h,color:[255,68,102]},
     ]);
-
-    if(outboundPOs.length===0){
-      doc.setFontSize(9); doc.setTextColor(100,100,100);
-      doc.text('No customer orders recorded.', 14, y); y+=8;
+    if(!outboundPOs.length){
+      doc.setFontSize(9);doc.setTextColor(150,150,150);doc.text('No customer orders recorded.',ML,y);y+=8;
     } else {
       doc.autoTable({
-        startY:y, margin:{left:10,right:10},
+        startY:y,margin:{left:ML,right:MR},
         head:[['Cust PO','Customer','Product','Units','Date','Payment','Status']],
         body:outboundPOs.map(po=>[
-          po.poNum||'—',po.customer||'—',po.product||'—',po.units||0,
-          fmtDate(po.date),(po.payment||'pending').toUpperCase(),(po.status||'processing').toUpperCase()
+          po.poNum||'—',po.customer||'—',po.product||'—',
+          po.units||0,fmtDate(po.date),
+          (po.payment||'pending').toUpperCase(),
+          (po.status||'processing').toUpperCase()
         ]),
-        headStyles:{fillColor:[13,148,136],textColor:[255,255,255],fontSize:8,fontStyle:'bold'},
-        bodyStyles:{fontSize:9,textColor:[30,30,30],fillColor:[255,255,255],overflow:'linebreak'},
-        alternateRowStyles:{fillColor:[240,253,250]},
-        columnStyles:{0:{cellWidth:22},1:{cellWidth:34},2:{cellWidth:22},3:{cellWidth:12,halign:'center'},4:{cellWidth:18},5:{cellWidth:18,halign:'center'},6:{cellWidth:28,halign:'center'}},
+        headStyles:HEAD_STY,bodyStyles:BODY_STY,alternateRowStyles:ALT_STY,
+        columnStyles:{
+          0:{cellWidth:24,overflow:'linebreak'},
+          1:{cellWidth:28,overflow:'linebreak'},
+          2:{cellWidth:32,overflow:'linebreak'},
+          3:{cellWidth:13,halign:'center',overflow:'ellipsize'},
+          4:{cellWidth:22,overflow:'ellipsize'},
+          5:{cellWidth:22,halign:'center',overflow:'ellipsize'},
+          6:{cellWidth:24,halign:'center',overflow:'ellipsize'},
+        },
         theme:'grid',
       });
-      y = doc.lastAutoTable.finalY + 6;
+      y=doc.lastAutoTable.finalY+6;
     }
-    if(type==='outbound'){
-      addFooter(doc,dateStr,byStr);
-      doc.save('CTS_Outbound_'+dateStr.replace(/\//g,'-')+'.pdf');
-      toast('✓ Outbound report downloaded','ok'); return;
-    }
+    if(type==='outbound'){addFooter();doc.save('CTS_Outbound_'+dateStr.replace(/\//g,'-')+'.pdf');toast('✓ Outbound report downloaded','ok');return;}
   }
 
-  // ── FULL REPORT — footer ──
+  // ── FULL ──
   if(type==='full'){
-    addFooter(doc,dateStr,byStr);
+    addFooter();
     doc.save('CTS_Full_Inventory_Report_'+dateStr.replace(/\//g,'-')+'.pdf');
     toast('✓ Full report downloaded','ok');
   }
