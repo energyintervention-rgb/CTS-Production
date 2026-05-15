@@ -1472,7 +1472,6 @@ function genReport(type){
           5:{cellWidth:14,halign:'center',overflow:'linebreak'},
           6:{cellWidth:22,halign:'center',overflow:'linebreak'},
         },
-        tableWidth:190,
         theme:'grid',
         didDrawCell:(d)=>{
           if(d.section==='body'&&d.column.index===6){
@@ -1519,9 +1518,8 @@ function genReport(type){
           3:{cellWidth:14,halign:'center',overflow:'linebreak'},
           4:{cellWidth:24,overflow:'linebreak'},
           5:{cellWidth:24,halign:'center',overflow:'linebreak'},
-          6:{cellWidth:50,overflow:'linebreak'},
+          6:{cellWidth:42,overflow:'linebreak'},
         },
-        tableWidth:190,
         theme:'grid',
       });
       y=doc.lastAutoTable.finalY+6;
@@ -1563,7 +1561,6 @@ function genReport(type){
           5:{cellWidth:24,halign:'center',overflow:'linebreak'},
           6:{cellWidth:28,halign:'center',overflow:'linebreak'},
         },
-        tableWidth:190,
         theme:'grid',
       });
       y=doc.lastAutoTable.finalY+6;
