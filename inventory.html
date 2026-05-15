@@ -592,17 +592,25 @@ function resolveEditPerm(){
   if(_role==='admin'){ _canEdit=true; return; }
   if(_role==='worker'){ _canEdit=false; return; }
   // Supervisor — check supervisorPerms
-  const perms = (_S?.authConfig?.supervisorPerms||{})[_name] || {};
-  _canEdit = perms.inventory !== false;
+  // Default to true if no perms set yet (supervisor can edit by default)
+  const permsMap = (_S && _S.authConfig && _S.authConfig.supervisorPerms) || {};
+  const perms = permsMap[_name] || {};
+  _canEdit = perms.inventory !== false; // default true unless explicitly false
 }
 
 function showEditControls(){
+  // Always call this after resolveEditPerm
   if(_canEdit){
-    document.getElementById('stock-edit-btns').style.display='';
-    document.getElementById('inbound-edit-btns').style.display='';
-    document.getElementById('outbound-edit-btns').style.display='';
+    const seb = document.getElementById('stock-edit-btns');
+    const ieb = document.getElementById('inbound-edit-btns');
+    const oeb = document.getElementById('outbound-edit-btns');
+    if(seb) seb.style.display='';
+    if(ieb) ieb.style.display='';
+    if(oeb) oeb.style.display='';
   }
 }
+
+
 
 // ── Load from Firestore ──
 function loadData(){
