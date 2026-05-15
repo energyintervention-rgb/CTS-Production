@@ -227,6 +227,23 @@ body{
 .pin-tbl .tbl-head,.pin-tbl .tbl-row{grid-template-columns:1fr 90px 80px 110px 110px}
 .worker-tbl .tbl-head,.worker-tbl .tbl-row{grid-template-columns:1fr 110px 90px 110px}
 
+
+/* ── THEME ── */
+body.light{
+  --bg:#F0F4F8;--bg2:#FFFFFF;--card:#FFFFFF;--border:#D1D9E6;
+  --text:#1A2332;--text-dim:#4A5568;--text-mute:#A0AEC0;
+  --cyan:#0088CC;--cyan-dim:#0088CC18;--cyan-soft:#0088CC55;
+  --green:#00A855;--green-dim:#00A85518;
+  --amber:#CC8800;--amber-dim:#CC880018;
+  --red:#CC2244;--red-dim:#CC224418;
+}
+.theme-btn{
+  background:transparent;border:1px solid var(--border);border-radius:7px;
+  color:var(--text-dim);font-size:14px;padding:5px 9px;cursor:pointer;
+  transition:all .15s;line-height:1;
+}
+.theme-btn:hover{border-color:var(--cyan-soft);color:var(--cyan)}
+
 @media(max-width:600px){
   .topbar{padding:10px 14px}
   .main{padding:16px 14px 48px}
@@ -260,6 +277,7 @@ body{
     <a class="nav-btn" href="dashboard.html">⬅ Dashboard</a>
     <a class="nav-btn" href="inventory.html">📦 Inventory</a>
     <button class="nav-btn danger" onclick="doLogout()">Logout</button>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
   </div>
 </div>
 
@@ -501,11 +519,26 @@ function checkAccess(){
   const role = sessionStorage.getItem('cts_role');
   const name = sessionStorage.getItem('cts_name') || 'Admin';
   if(role !== 'admin'){
+    // Try localStorage fallback (remember me)
+    try{
+      const rm = localStorage.getItem('cts_remember');
+      if(rm){
+        const d = JSON.parse(rm);
+        if(d.role === 'admin'){
+          sessionStorage.setItem('cts_role', d.role);
+          sessionStorage.setItem('cts_name', d.name || 'Admin');
+          location.reload(); return false;
+        }
+      }
+    }catch(e){}
     document.getElementById('access-denied').style.display='block';
     return false;
   }
+  // Refresh sessionStorage to keep alive
+  sessionStorage.setItem('cts_role', role);
+  sessionStorage.setItem('cts_name', name);
   document.getElementById('admin-content').style.display='block';
-  document.getElementById('topbar-role').textContent = name+' · Admin';
+  document.getElementById('topbar-role').textContent = name + ' · Admin';
   return true;
 }
 
@@ -878,6 +911,23 @@ function doLogout(){
   sessionStorage.clear();
   window.location.href='index.html';
 }
+
+
+// ── Theme toggle ──
+function toggleTheme(){
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('themeBtn').textContent = isLight ? '☀️' : '🌙';
+  localStorage.setItem('cts_theme', isLight ? 'light' : 'dark');
+}
+function initTheme(){
+  const saved = localStorage.getItem('cts_theme');
+  if(saved === 'light'){
+    document.body.classList.add('light');
+    const btn = document.getElementById('themeBtn');
+    if(btn) btn.textContent = '☀️';
+  }
+}
+window.addEventListener('DOMContentLoaded', initTheme);
 
 // ── Close modal on bg click ──
 document.querySelectorAll('.modal-bg').forEach(bg=>{
