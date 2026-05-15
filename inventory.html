@@ -1362,8 +1362,8 @@ function genReport(type){
   const HEAD_FILL = [13,148,136];
   const ALT_FILL  = [240,253,250];
   const BDR_CLR   = [94,234,212];
-  const HEAD_STY  = {fillColor:HEAD_FILL,textColor:[255,255,255],fontSize:8,fontStyle:'bold',cellPadding:{top:5,right:6,bottom:5,left:6}};
-  const BODY_STY  = {fontSize:8.5,textColor:[30,30,30],fillColor:[255,255,255],cellPadding:{top:5,right:6,bottom:5,left:6},overflow:'linebreak',valign:'top'};
+  const HEAD_STY  = {fillColor:HEAD_FILL,textColor:[255,255,255],fontSize:8,fontStyle:'bold',cellPadding:{top:5,right:4,bottom:5,left:4},overflow:'ellipsize',halign:'left',minCellHeight:8};
+  const BODY_STY  = {fontSize:8.5,textColor:[30,30,30],fillColor:[255,255,255],cellPadding:{top:5,right:4,bottom:5,left:4},overflow:'linebreak',valign:'middle'};
   const ALT_STY   = {fillColor:ALT_FILL};
 
   function addHeader(subtitle){
@@ -1464,14 +1464,15 @@ function genReport(type){
         bodyStyles:BODY_STY,
         alternateRowStyles:ALT_STY,
         columnStyles:{
-          0:{cellWidth:14,overflow:'ellipsize'},
-          1:{cellWidth:48,overflow:'linebreak'},
-          2:{cellWidth:24,overflow:'ellipsize'},
-          3:{cellWidth:20,overflow:'ellipsize'},
-          4:{cellWidth:16,halign:'center',overflow:'ellipsize'},
-          5:{cellWidth:12,halign:'center',overflow:'ellipsize'},
-          6:{cellWidth:20,halign:'center',overflow:'ellipsize'},
+          0:{cellWidth:16,overflow:'linebreak'},
+          1:{cellWidth:55,overflow:'linebreak'},
+          2:{cellWidth:26,overflow:'linebreak'},
+          3:{cellWidth:22,overflow:'linebreak'},
+          4:{cellWidth:18,halign:'center',overflow:'linebreak'},
+          5:{cellWidth:14,halign:'center',overflow:'linebreak'},
+          6:{cellWidth:20,halign:'center',overflow:'linebreak'},
         },
+        tableWidth:171,
         theme:'grid',
         didDrawCell:(d)=>{
           if(d.section==='body'&&d.column.index===6){
@@ -1512,14 +1513,15 @@ function genReport(type){
         ]),
         headStyles:HEAD_STY,bodyStyles:BODY_STY,alternateRowStyles:ALT_STY,
         columnStyles:{
-          0:{cellWidth:28,overflow:'linebreak'},
-          1:{cellWidth:24,overflow:'linebreak'},
+          0:{cellWidth:30,overflow:'linebreak'},
+          1:{cellWidth:26,overflow:'linebreak'},
           2:{cellWidth:30,overflow:'linebreak'},
-          3:{cellWidth:12,halign:'center',overflow:'ellipsize'},
-          4:{cellWidth:22,overflow:'ellipsize'},
-          5:{cellWidth:22,halign:'center',overflow:'ellipsize'},
-          6:{cellWidth:32,overflow:'linebreak'},
+          3:{cellWidth:14,halign:'center',overflow:'linebreak'},
+          4:{cellWidth:24,overflow:'linebreak'},
+          5:{cellWidth:24,halign:'center',overflow:'linebreak'},
+          6:{cellWidth:42,overflow:'linebreak'},
         },
+        tableWidth:190,
         theme:'grid',
       });
       y=doc.lastAutoTable.finalY+6;
@@ -1554,13 +1556,14 @@ function genReport(type){
         headStyles:HEAD_STY,bodyStyles:BODY_STY,alternateRowStyles:ALT_STY,
         columnStyles:{
           0:{cellWidth:24,overflow:'linebreak'},
-          1:{cellWidth:28,overflow:'linebreak'},
-          2:{cellWidth:32,overflow:'linebreak'},
-          3:{cellWidth:13,halign:'center',overflow:'ellipsize'},
-          4:{cellWidth:22,overflow:'ellipsize'},
-          5:{cellWidth:22,halign:'center',overflow:'ellipsize'},
-          6:{cellWidth:24,halign:'center',overflow:'ellipsize'},
+          1:{cellWidth:30,overflow:'linebreak'},
+          2:{cellWidth:36,overflow:'linebreak'},
+          3:{cellWidth:14,halign:'center',overflow:'linebreak'},
+          4:{cellWidth:24,overflow:'linebreak'},
+          5:{cellWidth:24,halign:'center',overflow:'linebreak'},
+          6:{cellWidth:28,halign:'center',overflow:'linebreak'},
         },
+        tableWidth:180,
         theme:'grid',
       });
       y=doc.lastAutoTable.finalY+6;
