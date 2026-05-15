@@ -257,7 +257,7 @@ body{
   </div>
   <div class="topbar-right">
     <span class="role-pill pill-admin" id="topbar-role">Admin</span>
-    <a class="nav-btn" href="cts_production_v3.html">⬅ Dashboard</a>
+    <a class="nav-btn" href="dashboard.html">⬅ Dashboard</a>
     <button class="nav-btn danger" onclick="doLogout()">Logout</button>
   </div>
 </div>
@@ -269,7 +269,7 @@ body{
   <div id="access-denied" style="display:none;text-align:center;padding:80px 20px">
     <div style="font-family:var(--font-mono);font-size:11px;color:var(--red);letter-spacing:.12em;margin-bottom:12px">⛔ ACCESS DENIED</div>
     <div style="font-size:13px;color:var(--text-dim);margin-bottom:20px">Admin access required to view this page.</div>
-    <a class="add-btn" href="landing.html">← Back to Login</a>
+    <a class="add-btn" href="index.html">← Back to Login</a>
   </div>
 
   <div id="admin-content" style="display:none">
@@ -875,7 +875,7 @@ function saveSystemSettings(){
 // ── Logout ──
 function doLogout(){
   sessionStorage.clear();
-  window.location.href='landing.html';
+  window.location.href='index.html';
 }
 
 // ── Close modal on bg click ──
