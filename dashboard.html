@@ -3272,7 +3272,7 @@ function renderWorkersConfig(){
         ${escH(p.name)}
       </label>`).join('');
     const workerUTCVal = getWorkerUTC(w);
-    const utcOpts = UTC_OPTIONS.map(o=>`<option value="${o.v}"${o.v===workerUTCVal?' selected':''}>${o.s} · ${o.l}</option>`).join('');
+    const utcOpts = UTC_OPTIONS.map(o=>`<option value="${o.v}"${o.v===workerUTCVal?' selected':''}>${o.s}</option>`).join('');
     return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;width:100%;">
       <!-- PC ROW: all inline -->
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;width:100%;min-width:0;">
