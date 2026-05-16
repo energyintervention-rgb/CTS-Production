@@ -1792,17 +1792,49 @@ function workerTodayKey(name){
   return local.toISOString().slice(0,10);
 }
 function utcLabel(offset){
-  const labels = {8:'MYT',9:'JST',10:'AEST',11:'AEDT',0:'UTC',1:'CET',5.5:'IST'};
-  return labels[offset] ? `+${offset} ${labels[offset]}` : (offset>=0?`+${offset}`:`${offset}`);
+  const o = UTC_OPTIONS.find(x=>x.v===offset);
+  if(o) return o.l;
+  return offset>=0 ? 'UTC+'+offset : 'UTC'+offset;
 }
 const UTC_OPTIONS = [
-  {v:8, l:'+8  MYT (Malaysia)'},
-  {v:10,l:'+10 AEST (Australia)'},
-  {v:11,l:'+11 AEDT (Australia DST)'},
-  {v:9, l:'+9  JST (Japan)'},
-  {v:0, l:'+0  UTC'},
-  {v:1, l:'+1  CET (Europe)'},
-  {v:5.5,l:'+5.5 IST (India)'},
+  {v:-12,  l:'UTC-12'},
+  {v:-11,  l:'UTC-11  · American Samoa'},
+  {v:-10,  l:'UTC-10  · Hawaii'},
+  {v:-9.5, l:'UTC-9:30 · Marquesas'},
+  {v:-9,   l:'UTC-9   · Alaska'},
+  {v:-8,   l:'UTC-8   · Los Angeles (PST)'},
+  {v:-7,   l:'UTC-7   · Denver (MST)'},
+  {v:-6,   l:'UTC-6   · Chicago (CST)'},
+  {v:-5,   l:'UTC-5   · New York (EST)'},
+  {v:-4,   l:'UTC-4   · Halifax'},
+  {v:-3.5, l:'UTC-3:30 · Newfoundland'},
+  {v:-3,   l:'UTC-3   · São Paulo'},
+  {v:-2,   l:'UTC-2   · South Georgia'},
+  {v:-1,   l:'UTC-1   · Azores'},
+  {v:0,    l:'UTC+0   · London (GMT)'},
+  {v:1,    l:'UTC+1   · Paris (CET)'},
+  {v:2,    l:'UTC+2   · Cairo (EET)'},
+  {v:3,    l:'UTC+3   · Moscow / Nairobi'},
+  {v:3.5,  l:'UTC+3:30 · Tehran'},
+  {v:4,    l:'UTC+4   · Dubai'},
+  {v:4.5,  l:'UTC+4:30 · Kabul'},
+  {v:5,    l:'UTC+5   · Karachi'},
+  {v:5.5,  l:'UTC+5:30 · India (IST)'},
+  {v:5.75, l:'UTC+5:45 · Nepal'},
+  {v:6,    l:'UTC+6   · Dhaka'},
+  {v:6.5,  l:'UTC+6:30 · Yangon'},
+  {v:7,    l:'UTC+7   · Bangkok / Jakarta'},
+  {v:8,    l:'UTC+8   · Malaysia (MYT)'},
+  {v:8.75, l:'UTC+8:45 · Eucla'},
+  {v:9,    l:'UTC+9   · Tokyo (JST)'},
+  {v:9.5,  l:'UTC+9:30 · Adelaide (ACST)'},
+  {v:10,   l:'UTC+10  · Sydney (AEST)'},
+  {v:10.5, l:'UTC+10:30 · Lord Howe'},
+  {v:11,   l:'UTC+11  · Solomon Islands'},
+  {v:12,   l:'UTC+12  · Auckland (NZST)'},
+  {v:12.75,l:'UTC+12:45 · Chatham'},
+  {v:13,   l:'UTC+13  · Tonga'},
+  {v:14,   l:'UTC+14  · Kiribati'},
 ];
 
 // ══════════════════════════════════════════
