@@ -3789,7 +3789,7 @@ function renderWeekly(totalUpdated, totalBuild, plan){
   const ahead=variance>=0;
 
   const maxPlanned=Math.max(...weeks.map(w=>w.planned),1);
-  const BAR_H=80; // px max bar height
+  const BAR_H=70; // px max bar height (reduced to fit count labels above)
 
   el.innerHTML=`
     <div style="display:flex;align-items:flex-end;gap:6px;height:${BAR_H+40}px;padding:0 2px;overflow-x:auto;">
@@ -3804,12 +3804,20 @@ function renderWeekly(totalUpdated, totalBuild, plan){
           : 0;
         const planColor=w.isCurrent?'var(--border)':w.isPast?'#1a3a2a':'var(--border)';
         const actColor=w.isCurrent?'var(--cyan)':'var(--green-dim)';
+        const plannedCount = w.planned;
+        const actualCount = w.isCurrent ? totalUpdated : (w.isPast ? w.planned : 0);
         return `<div style="display:flex;flex-direction:column;align-items:center;gap:0;flex:1;min-width:28px;">
-          <div style="display:flex;align-items:flex-end;gap:2px;width:100%;height:${BAR_H}px;">
-            <div title="Planned: ${w.planned}" style="flex:1;height:${ph}px;background:${planColor};border-radius:3px 3px 0 0;border:1px solid ${w.isCurrent?'var(--amber)':w.isPast?'#1a4a2a':'var(--border)'};"></div>
+          <div style="display:flex;align-items:flex-end;gap:2px;width:100%;height:${BAR_H}px;position:relative;">
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1;">
+              <div style="font-family:var(--font-mono);font-size:0.45rem;color:var(--text-dim);margin-bottom:2px;white-space:nowrap;">${plannedCount}</div>
+              <div title="Planned: ${w.planned}" style="width:100%;height:${ph}px;background:${planColor};border-radius:3px 3px 0 0;border:1px solid ${w.isCurrent?'var(--amber)':w.isPast?'#1a4a2a':'var(--border)'}; flex-shrink:0;"></div>
+            </div>
             ${showActual
-              ? `<div title="Actual: ${w.isCurrent?totalUpdated:w.planned}" style="flex:1;height:${ah}px;background:${actColor};border-radius:3px 3px 0 0;box-shadow:${w.isCurrent?'0 0 6px var(--cyan-dim)':'none'};"></div>`
-              : `<div style="flex:1;height:3px;background:transparent;"></div>`
+              ? `<div style="display:flex;flex-direction:column;align-items:center;flex:1;">
+                  <div style="font-family:var(--font-mono);font-size:0.45rem;color:${w.isCurrent?'var(--cyan)':'var(--green)'};margin-bottom:2px;white-space:nowrap;">${actualCount}</div>
+                  <div title="Actual: ${actualCount}" style="width:100%;height:${ah}px;background:${actColor};border-radius:3px 3px 0 0;box-shadow:${w.isCurrent?'0 0 6px var(--cyan-dim)':'none'}; flex-shrink:0;"></div>
+                </div>`
+              : `<div style="flex:1;"></div>`
             }
           </div>
           <div style="font-family:var(--font-mono);font-size:0.46rem;color:${w.isCurrent?'var(--cyan)':'var(--text-dim)'};writing-mode:vertical-lr;transform:rotate(180deg);height:34px;overflow:hidden;text-align:center;margin-top:2px;">${w.label}</div>
