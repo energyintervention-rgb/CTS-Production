@@ -7,34 +7,58 @@
 <title>CTS Production Manual — Defrost on Demand</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Exo+2:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* ══════════════════════════════════════════════════════════════
+     CTS PRODUCTION · UNIFIED DESIGN TOKENS (master = dashboard.html)
+     Local aliases (--bg-card, --line, etc.) are mapped to the
+     shared palette so manual.html matches every other page.
+     ══════════════════════════════════════════════════════════════ */
   :root{
-    --bg: #050B14;
-    --bg-card: #0B1422;
-    --bg-card-2: #0F1A2C;
-    --line: rgba(0, 224, 255, 0.10);
-    --line-2: rgba(0, 224, 255, 0.18);
-    --line-strong: rgba(0, 224, 255, 0.32);
-    --cyan: #00E0FF;
-    --cyan-soft: rgba(0, 224, 255, 0.55);
-    --green: #22DD7E;
-    --orange: #FFA94D;
-    --pink: #FF6B9A;
-    --text: #E8F0FA;
-    --text-dim: #B8C5D6;
-    --muted: #6E7C92;
-    --muted-2: #3F4A5E;
+    /* Shared tokens */
+    --bg:        #070B14;
+    --bg2:       #0D1220;
+    --bg3:       #111827;
+    --card:      #131C2E;
+    --border:    #1E2D45;
+    --cyan:      #00D4FF;
+    --cyan-dim:  #00D4FF33;
+    --cyan-soft: #00D4FF55;
+    --green:     #00FF88;
+    --green-dim: #00FF8822;
+    --amber:     #FFB800;
+    --amber-dim: #FFB80022;
+    --red:       #FF4466;
+    --red-dim:   #FF446622;
+    --text:      #E2E8F0;
+    --text-dim:  #7A8BA0;
+    --text-mute: #3F4A5E;
+    --font-head: 'Exo 2', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-ui:   'Rajdhani', sans-serif;
+
+    /* Local aliases used in manual.html — mapped to shared tokens */
+    --bg-card:    var(--card);
+    --bg-card-2:  var(--bg2);
+    --line:       rgba(0,212,255,0.10);
+    --line-2:     var(--border);
+    --line-strong:rgba(0,212,255,0.32);
+    --orange:     var(--amber);
+    --pink:       var(--red);
+    --muted:      var(--text-dim);
+    --muted-2:    var(--text-mute);
   }
   *{box-sizing:border-box}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font-ui),'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
   body{
     min-height:100vh;
     background-image:
-      linear-gradient(var(--line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--line) 1px, transparent 1px),
-      radial-gradient(1200px 600px at 90% -10%, rgba(0,224,255,0.06), transparent 60%);
-    background-size: 56px 56px, 56px 56px, 100% 100%;
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px),
+      radial-gradient(1200px 600px at 90% -10%, rgba(0,212,255,0.06), transparent 60%);
+    background-size: 40px 40px, 40px 40px, 100% 100%;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
   }
   a{color:inherit;text-decoration:none}
   button{font-family:inherit}
@@ -130,7 +154,7 @@
     padding:24px 28px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
     min-height:110px;
   }
-  .metric .v{font-family:'Inter',sans-serif;font-size:38px;font-weight:700;line-height:1;letter-spacing:-0.02em}
+  .metric .v{font-family:var(--font-head);font-size:38px;font-weight:700;line-height:1;letter-spacing:-0.02em}
   .metric .k{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.20em;text-transform:uppercase}
   .metric.cyan .v{color:var(--cyan)}
   .metric.green .v{color:var(--green)}
@@ -463,30 +487,64 @@
 
 /* ── LIGHT MODE (matches dashboard) ── */
 body.light-mode{
-  --bg:#F0FDFA;--bg2:#CCFBF1;--card:#FFFFFF;--border:#5EEAD4;
-  --cyan:#0D9488;--cyan-dim:#CCFBF1;--cyan-soft:#0D948888;
-  --green:#16A34A;--green-dim:#DCFCE7;
-  --amber:#F59E0B;--amber-dim:#FEF9C3;
-  --red:#EF4444;--red-dim:#FEE2E2;
-  --text:#134E4A;--text-dim:#0F766E;--text-mute:#5EEAD4;
+  --bg:        #F0FDFA;
+  --bg2:       #CCFBF1;
+  --bg3:       #99F6E4;
+  --card:      #FFFFFF;
+  --border:    #5EEAD4;
+  --cyan:      #0D9488;
+  --cyan-dim:  #CCFBF1;
+  --cyan-soft: #0D948888;
+  --green:     #16A34A;
+  --green-dim: #DCFCE7;
+  --amber:     #F59E0B;
+  --amber-dim: #FEF9C3;
+  --red:       #EF4444;
+  --red-dim:   #FEE2E2;
+  --text:      #134E4A;
+  --text-dim:  #0F766E;
+  --text-mute: #5EEAD4;
+  /* Local aliases re-map under light */
+  --bg-card:    #FFFFFF;
+  --bg-card-2:  #CCFBF1;
+  --line:       rgba(13,148,136,0.10);
+  --line-2:     #5EEAD4;
+  --line-strong:rgba(13,148,136,0.32);
+  --orange:     #F59E0B;
+  --pink:       #EF4444;
+  --muted:      #0F766E;
+  --muted-2:    #5EEAD4;
 }
 body.light-mode .tbl,
 body.light-mode .scard,
 body.light-mode .modal,
 body.light-mode .setting-group,
+body.light-mode .card,
+body.light-mode .panel,
+body.light-mode .metric,
+body.light-mode .hero-l,
+body.light-mode .hero-r,
+body.light-mode .specs,
+body.light-mode .ch,
+body.light-mode .footer,
 body.light-mode .ucard{background:#FFFFFF;border-color:#5EEAD4}
 body.light-mode .tbl-head{background:rgba(13,148,136,0.08)}
 body.light-mode .tbl-row:hover{background:rgba(13,148,136,0.04)}
-body.light-mode .topbar{background:rgba(240,253,250,0.95);border-bottom-color:#5EEAD4}
-body.light-mode .tab-bar{border-bottom-color:#5EEAD4}
+body.light-mode .tab.active{background:#0D9488;color:#fff;box-shadow:none}
+body.light-mode .tab{border-color:#0D9488;color:#0D9488}
 body.light-mode input,body.light-mode select,body.light-mode textarea{background:#F0FDFA;border-color:#5EEAD4;color:#134E4A}
 body.light-mode{
   background-color:#F0FDFA;
   background-image:
-    linear-gradient(rgba(13,148,136,0.12) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(13,148,136,0.12) 1px,transparent 1px),
-    radial-gradient(ellipse 100% 50% at 50% 0%,rgba(13,148,136,0.08),transparent 60%);
-  background-size:48px 48px,48px 48px,100% 100%;
+    linear-gradient(rgba(13,148,136,0.08) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(13,148,136,0.08) 1px,transparent 1px),
+    radial-gradient(ellipse 100% 50% at 50% 0%,rgba(13,148,136,0.10),transparent 60%);
+  background-size:40px 40px,40px 40px,100% 100%;
+}
+
+/* ── TOUCH TARGETS (min 44×44 on touch devices) ── */
+@media(pointer:coarse){
+  .tab,.subtab,.btn-primary,.btn-outline,.back,.v-btn,.ch{min-height:44px}
 }
 
 
@@ -501,6 +559,41 @@ img,svg,table{max-width:100%}
   table{font-size:11px}
   td,th{padding:5px 6px!important}
 }
+
+/* ── BACK TO TOP (CTS style) ── */
+.back-to-top{
+  position:fixed;
+  right:max(20px, env(safe-area-inset-right));
+  bottom:max(20px, env(safe-area-inset-bottom));
+  z-index:90;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-width:44px;min-height:44px;
+  padding:10px 14px;border-radius:12px;
+  background:rgba(13,18,32,0.92);
+  border:1px solid var(--cyan);
+  color:var(--cyan);
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  cursor:pointer;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  box-shadow:0 8px 24px rgba(0,212,255,0.18), 0 0 0 1px rgba(0,212,255,0.08);
+  opacity:0;visibility:hidden;transform:translateY(12px);
+  transition:opacity .25s ease, transform .25s ease, visibility .25s ease, background .15s ease, border-color .15s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.back-to-top.show{opacity:1;visibility:visible;transform:translateY(0)}
+.back-to-top:hover{background:rgba(0,212,255,0.12);border-color:#5DEBFF;color:#5DEBFF;box-shadow:0 10px 30px rgba(0,212,255,0.32)}
+.back-to-top:active{transform:translateY(0) scale(0.96)}
+.back-to-top .arr{font-size:14px;line-height:1;display:inline-block;transition:transform .2s ease}
+.back-to-top:hover .arr{transform:translateY(-2px)}
+body.light-mode .back-to-top{background:rgba(255,255,255,0.96);border-color:#0D9488;color:#0D9488;box-shadow:0 8px 24px rgba(13,148,136,0.18)}
+body.light-mode .back-to-top:hover{background:#CCFBF1;border-color:#0F766E;color:#0F766E}
+@media(max-width:480px){
+  .back-to-top{padding:0;min-width:48px;min-height:48px;border-radius:50%;font-size:0;gap:0}
+  .back-to-top .lbl{display:none}
+  .back-to-top .arr{font-size:18px}
+}
+@media print{.back-to-top{display:none!important}}
 </style>
 </head>
 <body>
@@ -1076,6 +1169,32 @@ window.addEventListener('DOMContentLoaded', initTheme);
       b.classList.add('active');
     });
   });
+</script>
+
+<!-- BACK TO TOP -->
+<button type="button" class="back-to-top" id="backToTop" aria-label="Back to top" title="Back to top">
+  <span class="arr" aria-hidden="true">↑</span><span class="lbl">Top</span>
+</button>
+<script>
+(function(){
+  var btn = document.getElementById('backToTop');
+  if(!btn) return;
+  var ticking = false;
+  function update(){
+    if(window.pageYOffset > 300){ btn.classList.add('show'); }
+    else { btn.classList.remove('show'); }
+    ticking = false;
+  }
+  function onScroll(){
+    if(!ticking){ window.requestAnimationFrame(update); ticking = true; }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  btn.addEventListener('click', function(){
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    catch(e){ window.scrollTo(0, 0); }
+  });
+  update();
+})();
 </script>
 </body>
 </html>
