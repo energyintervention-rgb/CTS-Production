@@ -3101,48 +3101,31 @@ function requestClockin(name){
   if(status==='tooEarly'){ showToast('⚠ Too early to clock in','warn'); return; }
   const isLate = status==='late';
   pendingClockAction = {name, type:'in', isLate};
-  document.getElementById('clockConfirmIcon').textContent = '▶';
-  document.getElementById('clockConfirmTitle').textContent = 'Confirm Clock In';
   const _pr3 = attProject();
   const _sched3 = getTodaySchedule(_pr3);
   const _hols3 = (_pr3.plan&&_pr3.plan.holidays)||[];
   const _isOTNow = !_sched3.on || !!_hols3.find(h=>h.enabled&&h.date===TODAY);
   const lateNow = _isOTNow ? 0 : calcLate(nowHMS());
   const lateStr = lateNow>0 ? Math.floor(lateNow/60)+'h '+String(lateNow%60).padStart(2,'0')+'m late' : '';
-  document.getElementById('clockConfirmMsg').innerHTML =
+  document.getElementById('clockInMsg').innerHTML =
     `Clocking in for <strong>${escH(name)}</strong>.`+
     (isLate?`<br><span style="color:var(--amber);font-family:var(--font-mono);font-size:0.8rem;">⚠ You are ${lateStr}. A reason is required.</span>`:'');
-  const label = document.getElementById('clockReasonLabel');
-  const hint  = document.getElementById('clockReasonHint');
+  const label = document.getElementById('clockInReasonLabel');
+  const hint  = document.getElementById('clockInHint');
   label.textContent = isLate ? 'REASON FOR LATE (REQUIRED)' : 'REASON / NOTE (OPTIONAL)';
   label.style.color  = isLate ? 'var(--amber)' : 'var(--text-dim)';
   hint.style.display = 'none';
-  document.getElementById('clockConfirmReason').value = '';
-  document.getElementById('clockConfirmBtn').textContent = 'Yes, Clock In';
+  document.getElementById('clockInReason').value = '';
   document.getElementById('clockInModal').classList.add('show');
   setTimeout(()=>document.getElementById('clockInReason').focus(),200);
 }
 
 function requestClockOut(name){
   const rec = getAttRecord(name);
-  const early = isEarlyLeave(nowHMS());
+  if(!rec.clockIn){ showToast('Not clocked in','warn'); return; }
   _pendingClockName = name;
-  pendingClockAction = {name, type:'out', isEarly:early};
-  document.getElementById('clockConfirmIcon').textContent = '⏹';
-  document.getElementById('clockConfirmTitle').textContent = early ? 'Leaving Early?' : 'Confirm Clock Out';
-  const pr = attProject();
-  const sched = getTodaySchedule(pr);
-  document.getElementById('clockConfirmMsg').innerHTML =
-    `Clocking out for <strong>${escH(name)}</strong>.`+
-    (early?`<br><span style="color:var(--amber);font-family:var(--font-mono);font-size:0.8rem;">⚠ You are leaving before ${sched.end}. A reason is required.</span>`:'');
-  const label = document.getElementById('clockReasonLabel');
-  const hint  = document.getElementById('clockReasonHint');
-  label.textContent = early ? 'REASON FOR LEAVING EARLY (REQUIRED)' : 'REASON / NOTE (OPTIONAL)';
-  label.style.color  = early ? 'var(--amber)' : 'var(--text-dim)';
-  hint.style.display = 'none';
-  document.getElementById('clockConfirmReason').value = rec.reason||'';
-  document.getElementById('clockConfirmBtn').textContent = early ? 'Confirm Early Leave' : 'Yes, Clock Out';
-  document.getElementById('jobUpdateName').innerHTML=`Clocking out for <strong>${escH(name)}</strong>.`;
+  pendingClockAction = {name, type:'out', isEarly: isEarlyLeave(nowHMS())};
+  document.getElementById('jobUpdateName').innerHTML = `<strong>${escH(name)}</strong> — please confirm before clocking out.`;
   document.getElementById('jobUpdateModal').classList.add('show');
 }
 
