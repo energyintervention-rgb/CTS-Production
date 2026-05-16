@@ -1829,7 +1829,7 @@ function genReport(type){
         const isIn = m.action==='in'||m.action==='return';
         bal = isIn ? bal+q : bal-q;
         const dt = m.date ? fmtDate(m.date) : (m.ts? new Date(m.ts).toISOString().slice(0,10).split('-').reverse().join('/') : '—');
-        return [dt, _actLabel[m.action]||(m.action||'—').toUpperCase(), (isIn?'+':'−')+q, String(bal),
+        return [dt, _actLabel[m.action]||(m.action||'—').toUpperCase(), (isIn?'+':'-')+String(q), String(bal),
                 m.to||'—', m.ref||'—', m.notes||'—', m.by||'—'];
       });
 
@@ -1852,20 +1852,15 @@ function genReport(type){
           7:{cellWidth:20,overflow:'linebreak'},
         },
         theme:'grid',
-        didDrawCell:(d)=>{
+        didParseCell:(d)=>{
           if(d.section!=='body') return;
           const raw = d.row.raw;
           const key = raw[1]==='STOCK IN'?'in':raw[1]==='STOCK OUT'?'out':raw[1]==='ADJUSTMENT'?'adjust':raw[1]==='DAMAGED'?'damage':raw[1]==='RETURN'?'return':null;
           const c = key?_actColor[key]:null;
           if(!c) return;
-          if(d.column.index===1){
-            doc.setTextColor(...c);
-            doc.setFontSize(7.5);doc.setFont('helvetica','bold');
-            doc.text(raw[1],d.cell.x+d.cell.width/2,d.cell.y+d.cell.height/2+0.5,{align:'center'});
-          } else if(d.column.index===2){
-            doc.setTextColor(...c);
-            doc.setFontSize(8);doc.setFont('helvetica','bold');
-            doc.text(raw[2],d.cell.x+d.cell.width-3,d.cell.y+d.cell.height/2+0.5,{align:'right'});
+          if(d.column.index===1||d.column.index===2){
+            d.cell.styles.textColor = c;
+            d.cell.styles.fontStyle = 'bold';
           }
         },
       });
@@ -1878,7 +1873,7 @@ function genReport(type){
       doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(...HEAD_FILL);
       doc.text('SUMMARY',ML+3,y+4.3);
       doc.setFont('helvetica','normal');doc.setTextColor(60,60,60);
-      doc.text('Total In: +'+totalIn+'   ·   Total Out: −'+totalOut+'   ·   Current Balance: '+currentBal,
+      doc.text('Total In: +'+String(totalIn)+'   .   Total Out: -'+String(totalOut)+'   .   Current Balance: '+String(currentBal),
                ML+22,y+4.3);
       y += 9;
     }
