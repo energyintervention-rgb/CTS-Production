@@ -1761,6 +1761,50 @@ function bridgeFromLanding(){
 }
 
 
+
+// ══════════════════════════════════════════
+// WORKER TIMEZONE / UTC OFFSET
+// ══════════════════════════════════════════
+function getWorkerUTC(name){
+  const pr = attProject();
+  if(pr.workerUTC && pr.workerUTC[name] !== undefined) return Number(pr.workerUTC[name]);
+  return 8; // default MYT
+}
+function setWorkerUTC(name, offset){
+  const pr = attProject();
+  if(!pr.workerUTC) pr.workerUTC = {};
+  pr.workerUTC[name] = Number(offset);
+  saveState();
+}
+function workerNowHMS(name){
+  // Get current time in worker's local timezone
+  const offset = getWorkerUTC(name);
+  const now = new Date();
+  const local = new Date(now.getTime() + offset*60*60*1000);
+  const d = local.toISOString();
+  return d.slice(11,16); // HH:MM
+}
+function workerTodayKey(name){
+  // Get today's date string in worker's local timezone
+  const offset = getWorkerUTC(name);
+  const now = new Date();
+  const local = new Date(now.getTime() + offset*60*60*1000);
+  return local.toISOString().slice(0,10);
+}
+function utcLabel(offset){
+  const labels = {8:'MYT',9:'JST',10:'AEST',11:'AEDT',0:'UTC',1:'CET',5.5:'IST'};
+  return labels[offset] ? `+${offset} ${labels[offset]}` : (offset>=0?`+${offset}`:`${offset}`);
+}
+const UTC_OPTIONS = [
+  {v:8, l:'+8  MYT (Malaysia)'},
+  {v:10,l:'+10 AEST (Australia)'},
+  {v:11,l:'+11 AEDT (Australia DST)'},
+  {v:9, l:'+9  JST (Japan)'},
+  {v:0, l:'+0  UTC'},
+  {v:1, l:'+1  CET (Europe)'},
+  {v:5.5,l:'+5.5 IST (India)'},
+];
+
 // ══════════════════════════════════════════
 // FLEX WORKER SYSTEM
 // ══════════════════════════════════════════
@@ -3195,20 +3239,27 @@ function renderWorkersConfig(){
           onchange="toggleWorkerPart('${escH(w)}','${escH(p.name)}',this.checked)">
         ${escH(p.name)}
       </label>`).join('');
-    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;">
-      <div class="admin-row" style="align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-        <input class="admin-input" value="${escH(w)}" onchange="attProject().workers[${i}]=this.value" style="flex:2;min-width:100px">
-        <div style="display:flex;align-items:center;gap:4px;flex:1;min-width:80px;">
+    const workerUTCVal = getWorkerUTC(w);
+    const utcOpts = UTC_OPTIONS.map(o=>`<option value="${o.v}"${o.v===workerUTCVal?' selected':''}>${o.l}</option>`).join('');
+    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;width:100%;">
+      <!-- PC ROW: all inline -->
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;width:100%;min-width:0;">
+        <input class="admin-input" value="${escH(w)}" onchange="attProject().workers[${i}]=this.value" style="flex:1 1 100px;min-width:80px;">
+        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
           <label style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);white-space:nowrap;">Target:</label>
-          <input class="admin-input" type="number" placeholder="${autoTarget}" value="${customTarget}" style="width:60px;flex:none" onchange="setWorkerTarget('${escH(w)}',this.value)">
+          <input class="admin-input" type="number" placeholder="${autoTarget}" value="${customTarget}" style="width:54px;flex:none;" onchange="setWorkerTarget('${escH(w)}',this.value)">
         </div>
-        <label style="display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);cursor:pointer;">
-          <input type="checkbox" ${hidden?'checked':''} onchange="toggleWorkerHide('${escH(w)}')" style="cursor:pointer;">📊 Hide Report
+        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+          <label style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);white-space:nowrap;">UTC:</label>
+          <select class="admin-input" style="padding:4px 5px;font-size:0.6rem;flex:none;" onchange="setWorkerUTC('${escH(w)}',this.value)">${utcOpts}</select>
+        </div>
+        <label style="display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);cursor:pointer;flex-shrink:0;white-space:nowrap;">
+          <input type="checkbox" ${hidden?'checked':''} onchange="toggleWorkerHide('${escH(w)}')" style="cursor:pointer;">📊 Hide
         </label>
-        <label style="display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.6rem;color:var(--amber);cursor:pointer;border:1px solid var(--amber)33;border-radius:4px;padding:2px 6px;">
+        <label style="display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.6rem;color:var(--amber);cursor:pointer;border:1px solid var(--amber)33;border-radius:4px;padding:2px 6px;flex-shrink:0;white-space:nowrap;">
           <input type="checkbox" ${flex?'checked':''} onchange="toggleFlexWorker('${escH(w)}')" style="cursor:pointer;accent-color:var(--amber);">⚡ Flex
         </label>
-        <button class="btn-remove" onclick="removeWorker(${i})">×</button>
+        <button class="btn-remove" style="flex-shrink:0;" onclick="removeWorker(${i})">×</button>
       </div>
       ${parts.length>0?`<div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-dim);margin-bottom:4px;letter-spacing:.5px;">ASSIGNED PARTS:</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;">${partChecks}</div>`:''}
