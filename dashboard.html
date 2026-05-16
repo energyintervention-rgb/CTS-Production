@@ -1797,44 +1797,44 @@ function utcLabel(offset){
   return offset>=0 ? 'UTC+'+offset : 'UTC'+offset;
 }
 const UTC_OPTIONS = [
-  {v:-12,  l:'UTC-12'},
-  {v:-11,  l:'UTC-11  · American Samoa'},
-  {v:-10,  l:'UTC-10  · Hawaii'},
-  {v:-9.5, l:'UTC-9:30 · Marquesas'},
-  {v:-9,   l:'UTC-9   · Alaska'},
-  {v:-8,   l:'UTC-8   · Los Angeles (PST)'},
-  {v:-7,   l:'UTC-7   · Denver (MST)'},
-  {v:-6,   l:'UTC-6   · Chicago (CST)'},
-  {v:-5,   l:'UTC-5   · New York (EST)'},
-  {v:-4,   l:'UTC-4   · Halifax'},
-  {v:-3.5, l:'UTC-3:30 · Newfoundland'},
-  {v:-3,   l:'UTC-3   · São Paulo'},
-  {v:-2,   l:'UTC-2   · South Georgia'},
-  {v:-1,   l:'UTC-1   · Azores'},
-  {v:0,    l:'UTC+0   · London (GMT)'},
-  {v:1,    l:'UTC+1   · Paris (CET)'},
-  {v:2,    l:'UTC+2   · Cairo (EET)'},
-  {v:3,    l:'UTC+3   · Moscow / Nairobi'},
-  {v:3.5,  l:'UTC+3:30 · Tehran'},
-  {v:4,    l:'UTC+4   · Dubai'},
-  {v:4.5,  l:'UTC+4:30 · Kabul'},
-  {v:5,    l:'UTC+5   · Karachi'},
-  {v:5.5,  l:'UTC+5:30 · India (IST)'},
-  {v:5.75, l:'UTC+5:45 · Nepal'},
-  {v:6,    l:'UTC+6   · Dhaka'},
-  {v:6.5,  l:'UTC+6:30 · Yangon'},
-  {v:7,    l:'UTC+7   · Bangkok / Jakarta'},
-  {v:8,    l:'UTC+8   · Malaysia (MYT)'},
-  {v:8.75, l:'UTC+8:45 · Eucla'},
-  {v:9,    l:'UTC+9   · Tokyo (JST)'},
-  {v:9.5,  l:'UTC+9:30 · Adelaide (ACST)'},
-  {v:10,   l:'UTC+10  · Sydney (AEST)'},
-  {v:10.5, l:'UTC+10:30 · Lord Howe'},
-  {v:11,   l:'UTC+11  · Solomon Islands'},
-  {v:12,   l:'UTC+12  · Auckland (NZST)'},
-  {v:12.75,l:'UTC+12:45 · Chatham'},
-  {v:13,   l:'UTC+13  · Tonga'},
-  {v:14,   l:'UTC+14  · Kiribati'},
+  {v:-12,  s:'-12',    l:'-12'},
+  {v:-11,  s:'-11',    l:'-11 Samoa'},
+  {v:-10,  s:'-10',    l:'-10 Hawaii'},
+  {v:-9.5, s:'-9:30',  l:'-9:30 Marquesas'},
+  {v:-9,   s:'-9',     l:'-9 Alaska'},
+  {v:-8,   s:'-8 PST', l:'-8 Los Angeles'},
+  {v:-7,   s:'-7 MST', l:'-7 Denver'},
+  {v:-6,   s:'-6 CST', l:'-6 Chicago'},
+  {v:-5,   s:'-5 EST', l:'-5 New York'},
+  {v:-4,   s:'-4',     l:'-4 Halifax'},
+  {v:-3.5, s:'-3:30',  l:'-3:30 Newfoundland'},
+  {v:-3,   s:'-3',     l:'-3 São Paulo'},
+  {v:-2,   s:'-2',     l:'-2 South Georgia'},
+  {v:-1,   s:'-1',     l:'-1 Azores'},
+  {v:0,    s:'+0 GMT',  l:'+0 London'},
+  {v:1,    s:'+1 CET',  l:'+1 Paris'},
+  {v:2,    s:'+2 EET',  l:'+2 Cairo'},
+  {v:3,    s:'+3',      l:'+3 Moscow'},
+  {v:3.5,  s:'+3:30',   l:'+3:30 Tehran'},
+  {v:4,    s:'+4',      l:'+4 Dubai'},
+  {v:4.5,  s:'+4:30',   l:'+4:30 Kabul'},
+  {v:5,    s:'+5',      l:'+5 Karachi'},
+  {v:5.5,  s:'+5:30 IST',l:'+5:30 India'},
+  {v:5.75, s:'+5:45',   l:'+5:45 Nepal'},
+  {v:6,    s:'+6',      l:'+6 Dhaka'},
+  {v:6.5,  s:'+6:30',   l:'+6:30 Yangon'},
+  {v:7,    s:'+7',      l:'+7 Bangkok'},
+  {v:8,    s:'+8 MYT',  l:'+8 Malaysia'},
+  {v:8.75, s:'+8:45',   l:'+8:45 Eucla'},
+  {v:9,    s:'+9 JST',  l:'+9 Tokyo'},
+  {v:9.5,  s:'+9:30',   l:'+9:30 Adelaide'},
+  {v:10,   s:'+10 AEST',l:'+10 Sydney'},
+  {v:10.5, s:'+10:30',  l:'+10:30 Lord Howe'},
+  {v:11,   s:'+11 AEDT',l:'+11 Solomon Is.'},
+  {v:12,   s:'+12 NZST',l:'+12 Auckland'},
+  {v:12.75,s:'+12:45',  l:'+12:45 Chatham'},
+  {v:13,   s:'+13',     l:'+13 Tonga'},
+  {v:14,   s:'+14',     l:'+14 Kiribati'},
 ];
 
 // ══════════════════════════════════════════
@@ -3272,18 +3272,18 @@ function renderWorkersConfig(){
         ${escH(p.name)}
       </label>`).join('');
     const workerUTCVal = getWorkerUTC(w);
-    const utcOpts = UTC_OPTIONS.map(o=>`<option value="${o.v}"${o.v===workerUTCVal?' selected':''}>${o.l}</option>`).join('');
+    const utcOpts = UTC_OPTIONS.map(o=>`<option value="${o.v}"${o.v===workerUTCVal?' selected':''}>${o.s} · ${o.l}</option>`).join('');
     return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;width:100%;">
       <!-- PC ROW: all inline -->
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;width:100%;min-width:0;">
         <input class="admin-input" value="${escH(w)}" onchange="attProject().workers[${i}]=this.value" style="flex:1 1 100px;min-width:80px;">
         <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
           <label style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);white-space:nowrap;">Target:</label>
-          <input class="admin-input" type="number" placeholder="${autoTarget}" value="${customTarget}" style="width:54px;flex:none;" onchange="setWorkerTarget('${escH(w)}',this.value)">
+          <input class="admin-input" type="number" placeholder="${autoTarget}" value="${customTarget}" style="width:62px;flex:none;text-align:center;" onchange="setWorkerTarget('${escH(w)}',this.value)">
         </div>
         <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
           <label style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);white-space:nowrap;">UTC:</label>
-          <select class="admin-input" style="padding:4px 5px;font-size:0.6rem;flex:none;" onchange="setWorkerUTC('${escH(w)}',this.value)">${utcOpts}</select>
+          <select class="admin-input" style="padding:4px 5px;font-size:0.6rem;flex:none;width:110px;max-width:110px;" onchange="setWorkerUTC('${escH(w)}',this.value)">${utcOpts}</select>
         </div>
         <label style="display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);cursor:pointer;flex-shrink:0;white-space:nowrap;">
           <input type="checkbox" ${hidden?'checked':''} onchange="toggleWorkerHide('${escH(w)}')" style="cursor:pointer;">📊 Hide
