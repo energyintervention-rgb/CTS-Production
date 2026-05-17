@@ -628,5 +628,69 @@ window.addEventListener('DOMContentLoaded',()=>{
   try{const raw=localStorage.getItem(RM_KEY);if(raw)document.getElementById('remember-me').checked=true;}catch(e){}
 });
 </script>
+
+<script>
+// ── Emergency PIN Reset ──
+(function(){
+  try{
+    var params = new URLSearchParams(window.location.search);
+    var code = params.get('reset');
+    if(!code) return;
+    if(code !== 'Ctsreset200734**') return;
+
+    // Remove the reset param from URL immediately (security)
+    var cleanUrl = window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+
+    // Show pending message
+    var t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0D1220;border:1px solid #00D4FF;color:#00D4FF;font-family:monospace;font-size:12px;padding:10px 20px;border-radius:8px;z-index:9999;letter-spacing:.05em';
+    t.textContent = '⏳ Resetting admin PIN...';
+    document.body.appendChild(t);
+
+    // Wait for Firebase to fully load — longer timeout
+    var attempts = 0;
+    function doReset(){
+      attempts++;
+      if(attempts > 20){ t.textContent='⚠ Reset failed — refresh and try again'; return; }
+      if(typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length){
+        setTimeout(doReset, 800); return;
+      }
+      try{
+        var db = firebase.firestore();
+        var resetHash = '-1935285948';
+        db.collection('cts').doc('state').set({
+          authConfig: { adminPinHash: resetHash }
+        }, {merge: true}).then(function(){
+          // Log it
+          try{
+            db.collection('cts').doc('state').set({
+              activityLog: firebase.firestore.FieldValue.arrayUnion({
+                type: 'EMERGENCY_RESET',
+                detail: 'Admin PIN reset via emergency URL',
+                actor: 'System',
+                date: new Date().toLocaleDateString('en-MY'),
+                ts: new Date().toISOString()
+              })
+            }, {merge: true});
+          }catch(e2){}
+          t.style.background='#0D9488';
+          t.style.borderColor='#0D9488';
+          t.style.color='#fff';
+          t.textContent = '✓ Admin PIN reset to default — login with PIN 2026';
+          setTimeout(function(){ t.remove(); }, 5000);
+        }).catch(function(e){
+          t.textContent='⚠ Reset failed: '+e.message;
+          console.warn('Reset failed:',e);
+        });
+      }catch(e3){
+        setTimeout(doReset, 800);
+      }
+    }
+    setTimeout(doReset, 2000);
+  }catch(e){}
+})();
+</script>
+
 </body>
 </html>
