@@ -555,6 +555,14 @@ img,svg,table{max-width:100%}
           4. Replace value with <span style="color:#00D4FF;letter-spacing:.1em">-1935285948</span> (default PIN: 2026)<br>
           5. Click Update — done
         </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,184,0,0.15);font-family:var(--font-mono);font-size:11px;color:var(--text-dim);line-height:1.8">
+          If admin password is forgotten:<br>
+          1. Go to <span style="color:#00D4FF">console.firebase.google.com</span><br>
+          2. Select project <span style="color:#00D4FF">cts-production-7069c</span><br>
+          3. Firestore → <span style="color:#00D4FF">cts &gt; state &gt; systemSettings &gt; adminPwd</span><br>
+          4. Read the value — that is your password<br>
+          5. Or replace with a new password of your choice
+        </div>
       </div>
     </div>
 
