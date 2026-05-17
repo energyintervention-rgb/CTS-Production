@@ -258,7 +258,7 @@ body.light-mode .topbar-title h1{
   .topbar{padding:7px 10px;gap:5px}
   .main{padding:14px 12px 48px}
   .user-grid{grid-template-columns:1fr}
-  .pin-tbl .tbl-head,.pin-tbl .tbl-row{grid-template-columns:1fr 90px 50px 80px}
+  .pin-tbl .tbl-head,.pin-tbl .tbl-row{grid-template-columns:1fr 120px 80px}
   .pin-tbl .tbl-head span:nth-child(4),
   .pin-tbl .tbl-row span:nth-child(4){display:none}
   .topbar-title h1{font-size:14px}
@@ -965,19 +965,21 @@ function renderPINTable(){
   const body = document.getElementById('pin-tbl-body');
   const rows = [];
 
+  const ll = (_S.authConfig && _S.authConfig.lastLogin) || {};
+
   // Admin row
-  rows.push({name:'Admin (You)', role:'admin', badge:'b-admin', label:'Admin', lastLogin:'—'});
+  rows.push({name:'Admin (You)', role:'admin', badge:'b-admin', label:'Admin', lastLogin:ll.admin||'—'});
 
   // Supervisors
   (_S.supervisors||[]).forEach(sup=>{
-    rows.push({name:sup.name, role:'supervisor', badge:'b-sup', label:'Supervisor', lastLogin:sup.lastLogin||'—'});
+    rows.push({name:sup.name, role:'supervisor', badge:'b-sup', label:'Supervisor', lastLogin:ll['sup_'+sup.name]||sup.lastLogin||'—'});
   });
 
   // Workers
   (_S.projects||[]).forEach(pr=>{
     (pr.workers||[]).forEach(w=>{
       const wname=typeof w==='string'?w:(w.name||w);
-      rows.push({name:wname, role:'worker', badge:'b-worker', label:'Worker', projectId:pr.id, lastLogin:'—'});
+      rows.push({name:wname, role:'worker', badge:'b-worker', label:'Worker', projectId:pr.id, lastLogin:ll['wk_'+wname]||'—'});
     });
   });
 
