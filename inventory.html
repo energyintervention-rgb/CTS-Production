@@ -1113,10 +1113,12 @@ function checkAccess(){
     return false;
   }
 
-  // Set role pill
+  // Set role pill (element may not exist if topbar was updated)
   const pill = document.getElementById('topbar-role');
-  pill.textContent = _name + ' · ' + _role.charAt(0).toUpperCase()+_role.slice(1);
-  pill.className = 'role-pill ' + (_role==='admin'?'pill-admin':'pill-sup');
+  if(pill){
+    pill.textContent = _name + ' · ' + _role.charAt(0).toUpperCase()+_role.slice(1);
+    pill.className = 'role-pill ' + (_role==='admin'?'pill-admin':'pill-sup');
+  }
 
   // Update sidenav user info
   setTimeout(snavUpdateUser, 0);
