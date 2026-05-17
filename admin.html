@@ -510,6 +510,7 @@ img,svg,table{max-width:100%}
       <button class="tab" onclick="switchTab(this,'pins')">🔑 PIN Management</button>
       <button class="tab" onclick="switchTab(this,'system')">⚙ System Settings</button>
       <button class="tab" onclick="switchTab(this,'manuals')">📖 Manuals</button>
+      <button class="tab" onclick="switchTab(this,'log')">📋 Activity Log</button>
     </div>
 
     <!-- ═══ TAB: USERS & PERMISSIONS ═══ -->
@@ -632,6 +633,35 @@ img,svg,table{max-width:100%}
           <button class="mbtn confirm" onclick="saveLink()">Save Link</button>
         </div>
       </div>
+    </div>
+
+
+    <!-- ACTIVITY LOG SECTION -->
+    <div class="sec" id="sec-log">
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--cyan);letter-spacing:.16em;text-transform:uppercase;margin-bottom:14px">◆ Activity Log</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+        <select id="logFilterType" style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font-mono);font-size:11px;padding:7px 10px;" onchange="renderActivityLog()">
+          <option value="">All types</option>
+          <option value="LOGIN">Login</option>
+          <option value="LOGIN_FAIL">Failed Login</option>
+          <option value="LOGOUT">Logout</option>
+          <option value="CLOCK">Clock In/Out</option>
+          <option value="OT">Overtime</option>
+          <option value="PIN">PIN Changes</option>
+          <option value="ADMIN">Admin Actions</option>
+        </select>
+        <select id="logFilterDate" style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font-mono);font-size:11px;padding:7px 10px;" onchange="renderActivityLog()">
+          <option value="">All dates</option>
+        </select>
+        <button class="sm-btn danger" id="resetLogBtn" onclick="confirmResetLog()">🗑 Reset Log</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+        <input type="checkbox" id="logSelectAll" style="width:14px;height:14px;cursor:pointer;accent-color:var(--cyan);" onchange="toggleSelectAllLog(this.checked)">
+        <label for="logSelectAll" style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);cursor:pointer;">Select all visible</label>
+        <button class="sm-btn danger" style="margin-left:auto;" onclick="deleteSelectedLog()">Delete Selected</button>
+      </div>
+      <div id="activityLogPanel" style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:10px;font-family:var(--font-mono);font-size:11px;background:var(--bg2);"></div>
+      <div id="logCount" style="font-family:var(--font-mono);font-size:10px;color:var(--text-mute);margin-top:6px;text-align:right;"></div>
     </div>
 
   </div><!-- end admin-content -->
@@ -846,6 +876,7 @@ function renderAll(){
   renderWorkers();
   renderPINTable();
   renderManuals();
+  renderActivityLog();
 }
 
 // ── Default perms ──
@@ -1275,6 +1306,76 @@ function deleteLink(idx){
   if(!_S.manuals||!_S.manuals.techlinks) return;
   _S.manuals.techlinks.splice(idx,1);
   saveData(function(){ toast('Link deleted'); renderLinksList(); });
+}
+
+
+// ══════════════════════════════════════════
+// ACTIVITY LOG
+// ══════════════════════════════════════════
+function renderActivityLog(){
+  var el = document.getElementById('activityLogPanel');
+  if(!el) return;
+  var log = (_S && _S.activityLog) || [];
+  var dateFilter = document.getElementById('logFilterDate');
+  if(dateFilter){
+    var dates = [...new Set(log.map(function(e){ return e.date; }))].sort().reverse();
+    var curDate = dateFilter.value;
+    dateFilter.innerHTML = '<option value="">All dates</option>' +
+      dates.map(function(d){ return '<option value="'+d+'"'+(d===curDate?' selected':'')+'>'+d+'</option>'; }).join('');
+  }
+  var typeFilter = (document.getElementById('logFilterType')||{}).value||'';
+  var dateVal    = (document.getElementById('logFilterDate')||{}).value||'';
+  var filtered = log.filter(function(e){
+    var matchType = !typeFilter ||
+      (typeFilter==='LOGIN'      && e.type==='LOGIN') ||
+      (typeFilter==='LOGIN_FAIL' && e.type==='LOGIN_FAIL') ||
+      (typeFilter==='LOGOUT'     && e.type==='LOGOUT') ||
+      (typeFilter==='CLOCK'      && (e.type.includes('CLOCK')||e.type.includes('OVERTIME'))) ||
+      (typeFilter==='OT'         && e.type.includes('OT')) ||
+      (typeFilter==='PIN'        && e.type.includes('PIN')) ||
+      (typeFilter==='ADMIN'      && (e.type.includes('ADMIN')||e.type.includes('EDIT')));
+    var matchDate = !dateVal || e.date===dateVal;
+    return matchType && matchDate;
+  });
+  var count = document.getElementById('logCount');
+  if(count) count.textContent = 'Showing '+filtered.length+' of '+log.length+' entries';
+  if(!filtered.length){ el.innerHTML='<div style="color:var(--text-mute);padding:4px;">No entries match filter.</div>'; return; }
+  el.innerHTML = filtered.slice(0,200).map(function(e,i){
+    var d = new Date(e.ts);
+    var t = d.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    var dt = (e.date||'')+' '+t;
+    var col = e.type.includes('FAIL')||e.type.includes('REJECT') ? 'var(--red)' :
+              e.type.includes('APPROVE')||e.type==='LOGIN' ? 'var(--green)' :
+              e.type.includes('PIN') ? 'var(--amber)' : 'var(--text-dim)';
+    var idx = log.indexOf(e);
+    return '<div style="padding:6px 0;border-bottom:1px solid var(--border);">'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">'+
+      '<input type="checkbox" class="log-chk" data-idx="'+idx+'" style="width:12px;height:12px;cursor:pointer;accent-color:var(--cyan);flex-shrink:0;">'+
+      '<span style="color:var(--text-dim);font-size:10px;white-space:nowrap;">'+dt+'</span>'+
+      '<span style="color:'+col+';font-size:11px;font-weight:700;">'+escH(e.type)+'</span>'+
+      '</div>'+
+      '<div style="color:var(--text);font-size:11px;padding-left:18px;word-break:break-word;line-height:1.4;">'+escH(e.detail||'')+(e.actor?' <span style="color:var(--text-dim);font-style:italic;">— '+escH(e.actor)+'</span>':'')+'</div>'+
+      '</div>';
+  }).join('');
+}
+
+function toggleSelectAllLog(checked){
+  document.querySelectorAll('.log-chk').forEach(function(c){ c.checked=checked; });
+}
+
+function deleteSelectedLog(){
+  var checked = [...document.querySelectorAll('.log-chk:checked')];
+  if(!checked.length){ toast('Select entries to delete','err'); return; }
+  var idxs = new Set(checked.map(function(c){ return parseInt(c.dataset.idx); }));
+  if(!_S.activityLog) return;
+  _S.activityLog = _S.activityLog.filter(function(_,i){ return !idxs.has(i); });
+  saveData(function(){ document.getElementById('logSelectAll').checked=false; renderActivityLog(); toast('Deleted '+idxs.size+' entries'); });
+}
+
+function confirmResetLog(){
+  if(!confirm('Reset entire activity log? This cannot be undone.')) return;
+  _S.activityLog=[];
+  saveData(function(){ renderActivityLog(); toast('Activity log cleared'); });
 }
 
 function doLogout(){
