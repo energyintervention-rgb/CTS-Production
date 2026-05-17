@@ -544,6 +544,13 @@ img,svg,table{max-width:100%}
         <div id="pin-tbl-body"><div class="loading">Loading…</div></div>
       </div>
 
+      <!-- SESSION RESET -->
+      <div style="margin-top:20px;background:rgba(255,68,102,0.06);border:1px solid rgba(255,68,102,0.25);border-radius:10px;padding:14px 16px;">
+        <div style="font-family:var(--font-mono);font-size:10px;color:#FF4466;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px">⚠ Session Reset</div>
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin-bottom:12px;line-height:1.6">Force all devices to log out — clears all "Remember me" sessions. Workers must select their name again on next open.</div>
+        <button class="sm-btn danger" onclick="adminResetAllSessions()" style="flex:none;width:auto;padding:7px 16px">🔄 Reset All Sessions</button>
+      </div>
+
       <!-- RECOVERY NOTE -->
       <div style="margin-top:20px;background:rgba(255,184,0,0.06);border:1px solid rgba(255,184,0,0.25);border-radius:10px;padding:14px 16px;">
         <div style="font-family:var(--font-mono);font-size:10px;color:#FFB800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">⚠ Admin PIN Recovery</div>
@@ -1435,6 +1442,13 @@ function confirmResetLog(){
   if(!confirm('Reset entire activity log? This cannot be undone.')) return;
   _S.activityLog=[];
   saveData(function(){ renderActivityLog(); toast('Activity log cleared'); });
+}
+
+function adminResetAllSessions(){
+  if(!confirm('Force all devices to log out? This cannot be undone.')) return;
+  if(!_S.authConfig) _S.authConfig={};
+  _S.authConfig.sessionResetToken = Date.now().toString();
+  saveData(()=>{ toast('✓ All sessions reset — devices will re-login on next open','ok'); });
 }
 
 function doLogout(){
