@@ -973,7 +973,6 @@ img,svg,table{max-width:100%}
     <div class="admin-section">
       <label>Workers</label>
       <div id="workersConfig"></div>
-      <button class="btn-sm btn-amber" onclick="addWorkerRow()" style="margin-top:8px">+ Add Worker</button>
     </div>
     <div style="display:flex;gap:8px;margin-top:8px;">
       <button class="btn-sm btn-cyan" onclick="saveAttConfig()">Save Changes</button>
@@ -981,31 +980,7 @@ img,svg,table{max-width:100%}
       <button class="btn-sm btn-amber" onclick="printAttReport()">Print PDF</button>
     </div>
 
-    <!-- PIN Management -->
-    <div class="admin-section" style="margin-top:14px;">
-      <label>🔐 PIN Management</label>
-      <div id="pinManagementPanel"></div>
-      <div style="margin-top:10px;padding:10px 12px;background:var(--red-dim);border:1px solid var(--red);border-radius:8px;">
-        <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--red);margin-bottom:6px;letter-spacing:.5px;">⚠ SESSION RESET</div>
-        <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-dim);margin-bottom:8px;line-height:1.5;">Force all devices to log out — clears all "Remember me" sessions. Workers must select their name again on next open.</div>
-        <button class="btn-sm btn-red" onclick="adminResetAllSessions()" style="width:100%;">🔄 Reset All Sessions (Force Re-login)</button>
-      </div>
-      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-        <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);margin-bottom:6px;">CHANGE SUPERVISOR PIN</div>
-        <div class="admin-row">
-          <input class="admin-input" type="password" id="newSuperPin" placeholder="New 4-digit PIN" maxlength="4">
-          <button class="btn-sm btn-cyan" onclick="saveSupervisorPIN()">Set</button>
-        </div>
-      </div>
-      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-        <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);margin-bottom:6px;">CHANGE ADMIN PIN</div>
-        <div class="admin-row">
-          <input class="admin-input" type="password" id="currentAdminPin" placeholder="Current PIN" maxlength="4">
-          <input class="admin-input" type="password" id="newAdminPin" placeholder="New PIN" maxlength="4">
-          <button class="btn-sm btn-red" onclick="saveAdminPIN()">Set</button>
-        </div>
-      </div>
-    </div>
+
 
     <!-- Activity Log -->
     <div class="admin-section" style="margin-top:14px;">
@@ -3038,6 +3013,8 @@ function toggleSchedDay(day, on){
 }
 
 function renderPINManagement(){
+  // Removed — managed in admin.html
+  return;
   const el = document.getElementById('pinManagementPanel');
   if(!el) return;
   // Show workers from ALL projects
