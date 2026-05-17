@@ -1384,6 +1384,7 @@ let _loginRole = null; // 'worker'|'supervisor'|'admin'
 let _loginWorker = null;
 let _loginWorkerProject = null;
 let _pinAttempts = 0;
+let _pwdAttempts = 0;
 let _pinBuffer = '';
 
 function getAuthConfig(){
@@ -3513,7 +3514,47 @@ function toggleAdminLogin(){
 
 function confirmAdmin(){
   const pwd = document.getElementById('adminPwd').value;
-  if(pwd!==ADMIN_PWD){ showToast('⚠ Wrong password','warn'); return; }
+
+  // Check lockout
+  const lk = isLockedOut('adminpwd');
+  if(lk){
+    showToast(`⚠ Locked out. Try again in ${lk} min.`,'warn');
+    document.getElementById('adminPwd').value='';
+    return;
+  }
+
+  // Read live password from Firestore state first, fallback to hardcoded
+  const livePwd = (S.systemSettings && S.systemSettings.adminPwd) || ADMIN_PWD;
+
+  if(pwd !== livePwd){
+    _pwdAttempts++;
+    document.getElementById('adminPwd').value='';
+    const left = 5 - _pwdAttempts;
+
+    if(_pwdAttempts === 3){
+      // WhatsApp alert at 3 fails
+      const now = new Date().toLocaleString('en-MY',{timeZone:'Asia/Kuala_Lumpur'});
+      const msg = '🚨 CTS PRODUCTION SECURITY ALERT\nADMIN PASSWORD failed 3 times.\nTime: '+now+'\nDevice: '+navigator.userAgent.substring(0,60)+'\nPlease check Admin Panel → Activity Log.';
+      window.open('https://wa.me/60192091913?text='+encodeURIComponent(msg),'_blank');
+      logActivity('LOGIN_FAIL','⚠ WA alert sent — Admin password failed 3 times','Admin');
+    }
+
+    if(_pwdAttempts >= 5){
+      setLockout('adminpwd');
+      _pwdAttempts = 0;
+      showToast('⚠ Too many attempts. Locked for 15 minutes.','warn');
+      logActivity('LOGIN_FAIL','🔒 Admin password locked out for 15 min after 5 failed attempts','Admin');
+      closeModal('adminModal');
+    } else {
+      showToast(`⚠ Wrong password. ${left} attempt${left===1?'':'s'} left.`,'warn');
+      logActivity('LOGIN_FAIL',`Failed admin password attempt (${_pwdAttempts}/5)`,'Admin');
+    }
+    return;
+  }
+
+  // Correct password
+  _pwdAttempts = 0;
+  localStorage.removeItem(getLockoutKey('adminpwd'));
   closeModal('adminModal');
   _activateAdminMode();
 }
