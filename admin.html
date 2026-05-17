@@ -8,689 +8,1446 @@
 <meta name="theme-color" content="#070B14">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="CTS Prod">
+<title>CTS Admin Panel</title>
 
-<title>CTS Production</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Exo+2:wght@400;600;700;800&display=swap" rel="stylesheet">
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
+/* ══════════════════════════════════════════════════════════════
+   CTS PRODUCTION · UNIFIED DESIGN TOKENS (master = dashboard.html)
+   ══════════════════════════════════════════════════════════════ */
 :root{
-  --bg:#070B14;--bg2:#0D1220;--card:#131C2E;--border:#1E2D45;
-  --cyan:#00D4FF;--cyan-dim:#00D4FF22;--cyan-soft:#00D4FF55;
-  --green:#00FF88;--amber:#FFB800;--red:#FF4466;
-  --text:#E2E8F0;--text-dim:#7A8BA0;--text-mute:#3F4A5E;
-  --font-head:'Exo 2',sans-serif;--font-mono:'JetBrains Mono',monospace;
+  --bg:        #070B14;
+  --bg2:       #0D1220;
+  --bg3:       #111827;
+  --card:      #131C2E;
+  --border:    #1E2D45;
+  --cyan:      #00D4FF;
+  --cyan-dim:  #00D4FF33;
+  --cyan-soft: #00D4FF55;
+  --green:     #00FF88;
+  --green-dim: #00FF8822;
+  --amber:     #FFB800;
+  --amber-dim: #FFB80022;
+  --red:       #FF4466;
+  --red-dim:   #FF446622;
+  --text:      #E2E8F0;
+  --text-dim:  #7A8BA0;
+  --text-mute: #3F4A5E;
+  --font-head: 'Exo 2', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-ui:   'Rajdhani', sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--font-head);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+
+
+html,body{
+  height:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-ui);
+  -webkit-font-smoothing:antialiased;
+}
 body{
+  min-height:100vh;
+  background-color:var(--bg);
   background-image:
     linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),
     linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px),
-    radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,212,255,0.07),transparent 65%);
+    radial-gradient(ellipse 100% 50% at 50% 0%,rgba(0,212,255,0.06),transparent 60%);
   background-size:40px 40px,40px 40px,100% 100%;
+  overflow-x:hidden;
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:env(safe-area-inset-bottom);
 }
-
-/* ── TOPBAR ── */
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
-  padding:14px 20px;padding-top:max(14px,env(safe-area-inset-top));
+  padding:12px 20px;gap:8px;flex-wrap:wrap;
+  background:linear-gradient(180deg,#0D1525 0%,transparent 100%);
   border-bottom:1px solid var(--border);
-  position:sticky;top:0;z-index:50;
-  background:rgba(7,11,20,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  padding-top:max(12px, env(safe-area-inset-top));
 }
-.brand{display:flex;align-items:center;gap:12px}
-.brand-logo{width:36px;height:36px;border-radius:8px;background:var(--bg2);border:1px solid var(--cyan-soft);display:grid;place-items:center;flex-shrink:0}
-.brand-logo svg{width:28px;height:28px}
-.brand-name{font-size:15px;font-weight:800;color:var(--text);letter-spacing:-.01em}
-.brand-sub{font-family:var(--font-mono);font-size:8.5px;color:var(--text-dim);letter-spacing:.2em;text-transform:uppercase;margin-top:2px}
+body.light-mode .topbar{
+  background:linear-gradient(180deg,#0F766E 0%,transparent 100%);
+  border-bottom-color:#0F766E;
+}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.topbar-title h1{
+  font-size:15px;font-weight:800;
+  background:linear-gradient(135deg,#ffffff 0%,var(--cyan) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+body.light-mode .topbar-title h1{
+  background:linear-gradient(135deg,#ffffff 0%,#5EEAD4 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.topbar-title .sub{font-family:var(--font-mono);font-size:8px;color:rgba(255,255,255,0.6);letter-spacing:.18em;text-transform:uppercase;margin-top:1px}
+.logo{width:34px;height:34px;border-radius:8px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.2);display:grid;place-items:center;flex-shrink:0}
+.logo svg{width:26px;height:26px}
+/* ── MAIN ── */
+.main{max-width:100%;margin:0;padding:24px 28px 60px}
 
-/* HAMBURGER */
-.btn-hamburger{
-  background:none;border:1px solid var(--border);border-radius:8px;
-  padding:8px 10px;cursor:pointer;color:var(--text);
-  display:flex;align-items:center;justify-content:center;
-  position:relative;min-width:40px;min-height:40px;
-  transition:background .15s,border-color .2s;
+/* ── TABS ── */
+.tab-bar{display:flex;gap:0;border-bottom:1px solid rgba(0,212,255,0.12);margin-bottom:24px}
+.tab{
+  font-family:var(--font-mono);font-size:12px;letter-spacing:.10em;text-transform:uppercase;
+  padding:11px 18px;color:var(--text-mute);cursor:pointer;
+  border:none;border-bottom:2px solid transparent;margin-bottom:-1px;
+  background:transparent;transition:all .18s;
 }
-.btn-hamburger:hover{background:var(--border)}
-.btn-hamburger svg{width:18px;height:18px;display:block}
-.btn-hamburger::after{
-  content:'';position:absolute;inset:-4px;border-radius:12px;
-  border:2px solid var(--cyan);opacity:0;pointer-events:none;
-}
-.btn-hamburger.hint::after{animation:ringFade 1s ease 0s 2}
-@keyframes ringFade{0%{opacity:.9}50%{opacity:.4}100%{opacity:0}}
+.tab:hover{color:var(--text-dim)}
+.tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
 
-/* tooltip */
-.menu-tip{
-  position:fixed;top:62px;right:16px;z-index:200;
-  background:var(--bg2);border:1px solid var(--cyan-soft);border-radius:8px;
-  padding:6px 14px;font-family:var(--font-mono);font-size:10px;color:var(--cyan);
-  letter-spacing:.06em;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap;
+/* ── SECTION ── */
+.sec{display:none}
+.sec.show{display:block}
+.sec-title{
+  font-family:var(--font-mono);font-size:12px;color:var(--cyan);
+  letter-spacing:.16em;text-transform:uppercase;margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;
 }
-.menu-tip::before{
-  content:'';position:absolute;top:-5px;right:14px;width:8px;height:8px;
-  background:var(--bg2);border-top:1px solid var(--cyan-soft);border-left:1px solid var(--cyan-soft);
-  transform:rotate(45deg);
-}
-.menu-tip.show{opacity:1}
+.sec-title::before{content:"◆";font-size:7px}
 
-/* ── HERO ── */
-.hero{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;padding:52px 24px 48px;min-height:calc(100vh - 65px);
+/* ── USER GRID ── */
+.user-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:20px}
+.ucard{
+  background:rgba(13,18,32,0.9);border:1px solid rgba(0,212,255,0.12);
+  border-radius:14px;padding:18px;
+  backdrop-filter:blur(8px);
 }
-.hero-badge{
-  display:inline-flex;align-items:center;gap:7px;
-  background:rgba(0,212,255,0.07);border:1px solid rgba(0,212,255,0.2);
-  border-radius:999px;padding:5px 16px;
-  font-family:var(--font-mono);font-size:9px;color:var(--cyan);
-  letter-spacing:.16em;text-transform:uppercase;margin-bottom:24px;
+.ucard-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(0,212,255,0.08)}
+.avatar{
+  width:40px;height:40px;border-radius:50%;
+  display:grid;place-items:center;font-weight:700;font-size:14px;flex-shrink:0;
 }
-.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:livePulse 2s infinite}
-@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
-.hero h1{font-size:clamp(28px,7vw,48px);font-weight:800;color:#fff;line-height:1.15;margin-bottom:10px;letter-spacing:-.02em}
-.hero h1 span{color:var(--cyan)}
-.hero-tagline{font-family:var(--font-mono);font-size:10px;color:var(--text-mute);letter-spacing:.2em;text-transform:uppercase;margin-bottom:28px}
-.hero-divider{width:52px;height:1px;background:linear-gradient(90deg,transparent,var(--cyan-soft),transparent);margin:0 auto 24px}
-.hero-clock{font-family:var(--font-mono);font-size:13px;color:var(--text-dim);letter-spacing:.14em;margin-bottom:44px}
-.hero-clock span{color:var(--cyan)}
+.av-sup{background:rgba(0,212,255,0.10);border:1px solid rgba(0,212,255,0.25);color:var(--cyan)}
+.av-worker{background:rgba(255,184,0,0.10);border:1px solid rgba(255,184,0,0.25);color:var(--amber)}
+.uname{color:var(--text);font-size:16px;font-weight:700}
+.urole-badge{font-family:var(--font-mono);font-size:8px;padding:2px 6px;border-radius:4px;letter-spacing:.04em;text-transform:uppercase;margin-top:3px;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.b-sup{background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);color:var(--cyan)}
+.b-worker{background:rgba(255,184,0,0.08);border:1px solid rgba(255,184,0,0.2);color:var(--amber)}
+.b-admin{background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);color:var(--green)}
+.ucard-pin{font-family:var(--font-mono);font-size:9px;color:var(--text-mute);margin-left:auto;flex-shrink:0}
 
-/* products strip */
-.products-strip{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:40px;min-height:4px}
-.prod-pill{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:999px;padding:8px 18px;font-family:var(--font-mono);font-size:13px;color:var(--text-dim);letter-spacing:.06em}
-.prod-dot{width:5px;height:5px;border-radius:50%;background:var(--cyan);flex-shrink:0}
+/* ── PERMISSION TOGGLES ── */
+.perm-list{display:flex;flex-direction:column;gap:9px;margin-bottom:14px}
+.perm-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.perm-label{font-size:13px;color:var(--text-dim);display:flex;align-items:center;gap:7px}
+.perm-label.locked{opacity:.3;pointer-events:none}
+.perm-icon{font-size:13px;width:16px;text-align:center}
+.toggle{position:relative;width:36px;height:20px;cursor:pointer;flex-shrink:0}
+.toggle input{width:0;height:0;position:absolute}
+.tslider{position:absolute;inset:0;border-radius:20px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);transition:all .2s}
+.tslider::before{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:var(--text-mute);top:2px;left:2px;transition:all .2s}
+.toggle input:checked+.tslider{background:rgba(0,212,255,0.15);border-color:rgba(0,212,255,0.4)}
+.toggle input:checked+.tslider::before{background:var(--cyan);left:18px;box-shadow:0 0 6px rgba(0,212,255,0.4)}
+.toggle input:disabled+.tslider{opacity:.3;cursor:not-allowed}
 
-/* guest button */
-.guest-btn{
-  display:inline-flex;align-items:center;gap:9px;
-  background:rgba(255,184,0,0.06);border:1px solid rgba(255,184,0,0.25);
-  border-radius:12px;padding:13px 28px;
-  color:var(--amber);font-family:var(--font-head);font-size:14px;font-weight:700;
-  cursor:pointer;transition:background .15s,border-color .2s;min-height:48px;
-}
-.guest-btn:hover{background:rgba(255,184,0,0.12);border-color:rgba(255,184,0,0.4)}
-.guest-note{font-family:var(--font-mono);font-size:9px;color:var(--text-mute);letter-spacing:.12em;margin-top:10px}
+.ucard-foot{display:flex;gap:8px;padding-top:12px;border-top:1px solid rgba(0,212,255,0.08)}
+.sm-btn{flex:1;padding:7px;border-radius:7px;font-family:var(--font-mono);font-size:9px;letter-spacing:.10em;text-transform:uppercase;cursor:pointer;transition:all .15s;text-align:center}
+.sm-btn.edit{background:transparent;border:1px solid rgba(0,212,255,0.2);color:var(--cyan)}
+.sm-btn.edit:hover{background:var(--cyan-dim)}
+.sm-btn.pin-reset{background:transparent;border:1px solid rgba(255,184,0,0.2);color:var(--amber)}
+.sm-btn.pin-reset:hover{background:var(--amber-dim)}
+.sm-btn.del{background:transparent;border:1px solid rgba(255,68,102,0.2);color:var(--red)}
+.sm-btn.del:hover{background:var(--red-dim)}
 
-/* footer */
-.lp-footer{
-  text-align:center;padding:16px 20px;padding-bottom:max(16px,env(safe-area-inset-bottom));
-  border-top:1px solid var(--border);font-family:var(--font-mono);font-size:9px;color:var(--text-mute);letter-spacing:.1em;
+.add-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--cyan-dim);border:1px solid rgba(0,212,255,0.3);
+  border-radius:9px;color:var(--cyan);font-family:var(--font-mono);
+  font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+  padding:10px 16px;cursor:pointer;transition:all .18s;
 }
+.add-btn:hover{background:rgba(0,212,255,0.15)}
 
-/* ── OVERLAY ── */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
-.overlay.open{display:block}
+/* ── PIN TABLE ── */
+.tbl{background:rgba(13,18,32,0.9);border:1px solid rgba(0,212,255,0.12);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.tbl-head{background:rgba(0,212,255,0.05);border-bottom:1px solid rgba(0,212,255,0.10)}
+.tbl-head,.tbl-row{display:grid;align-items:center}
+.tbl-head span{font-family:var(--font-mono);font-size:10px;color:var(--text-mute);letter-spacing:.14em;text-transform:uppercase;padding:10px 14px}
+.tbl-row{border-bottom:1px solid rgba(0,212,255,0.06);transition:background .15s}
+.tbl-row:last-child{border-bottom:none}
+.tbl-row:hover{background:rgba(0,212,255,0.03)}
+.tbl-row span{font-size:13px;color:var(--text);padding:10px 14px}
+.tbl-row span.mono{font-family:var(--font-mono);font-size:10px}
+.tbl-row span.dim{color:var(--text-dim)}
+.tbl-row span.cyan{color:var(--cyan);font-family:var(--font-mono);font-size:10px}
+.act-btn{
+  background:transparent;border:1px solid rgba(0,212,255,0.2);border-radius:5px;
+  color:var(--cyan);font-family:var(--font-mono);font-size:8px;
+  padding:4px 8px;cursor:pointer;transition:all .15s;letter-spacing:.06em;text-transform:uppercase;
+}
+.act-btn:hover{background:var(--cyan-dim)}
+.act-btn.warn{border-color:rgba(255,184,0,0.25);color:var(--amber)}
+.act-btn.warn:hover{background:var(--amber-dim)}
+.act-btn.del{border-color:rgba(255,68,102,0.25);color:var(--red)}
+.act-btn.del:hover{background:var(--red-dim)}
 
-/* ── DRAWER ── */
-.drawer{
-  position:fixed;right:-280px;top:0;bottom:0;width:280px;
-  background:var(--bg2);border-left:1px solid var(--border);
-  z-index:110;transition:right .26s cubic-bezier(.4,0,.2,1);
-  display:flex;flex-direction:column;overflow-y:auto;
-  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);
+/* ── SETTINGS ── */
+.setting-group{background:rgba(13,18,32,0.9);border:1px solid rgba(0,212,255,0.12);border-radius:12px;padding:18px;margin-bottom:14px}
+.sg-title{font-family:var(--font-mono);font-size:9px;color:var(--text-mute);letter-spacing:.16em;text-transform:uppercase;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(0,212,255,0.08)}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(0,212,255,0.05);flex-wrap:wrap}
+.setting-row:last-child{border-bottom:none;padding-bottom:0}
+.setting-label{font-size:14px;color:var(--text)}
+.setting-desc{font-family:var(--font-mono);font-size:10px;color:var(--text-mute);margin-top:3px;letter-spacing:.04em}
+.s-input{
+  background:var(--bg);border:1px solid rgba(0,212,255,0.2);border-radius:7px;
+  color:var(--text);font-family:var(--font-mono);font-size:11px;
+  padding:7px 10px;outline:none;min-width:160px;width:100%;max-width:240px;
+  transition:border-color .15s;
 }
-.drawer.open{right:0}
-@media(max-width:380px){.drawer{width:100%;right:-100%}}
+.s-input:focus{border-color:rgba(0,212,255,0.5)}
+.s-select{
+  background:var(--bg);border:1px solid rgba(0,212,255,0.2);border-radius:7px;
+  color:var(--text);font-family:var(--font-mono);font-size:11px;
+  padding:7px 10px;outline:none;cursor:pointer;min-width:180px;
+}
+.save-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.4);
+  border-radius:9px;color:var(--cyan);font-family:var(--font-mono);
+  font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+  padding:10px 20px;cursor:pointer;margin-top:6px;transition:all .18s;
+}
+.save-btn:hover{background:rgba(0,212,255,0.20)}
 
-.drw-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
-.drw-title{font-size:13px;font-weight:700;color:var(--text)}
-.drw-close{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:18px;padding:5px;border-radius:5px;line-height:1}
-.drw-close:hover{background:var(--border);color:var(--text)}
-.drw-grp{font-family:var(--font-mono);font-size:9px;color:var(--text-mute);letter-spacing:.16em;text-transform:uppercase;padding:14px 16px 5px;flex-shrink:0}
-.drw-divider{height:1px;background:var(--border);margin:8px 16px;flex-shrink:0}
-
-/* role buttons */
-.role-btns{padding:4px 8px 8px;display:flex;flex-direction:column;gap:8px}
-.role-btn{
-  display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;cursor:pointer;
-  border:1px solid var(--border);background:var(--card);
-  color:var(--text);font-family:var(--font-head);font-size:13px;font-weight:600;
-  width:100%;text-align:left;transition:all .15s;min-height:52px;
-}
-.role-icon{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;flex-shrink:0;font-size:17px}
-.role-name{font-size:13px;font-weight:700;color:var(--text)}
-.role-hint{font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
-.role-btn.admin:hover{border-color:var(--cyan-soft);background:rgba(0,212,255,0.06)}
-.role-btn.sup:hover{border-color:rgba(0,255,136,0.4);background:rgba(0,255,136,0.06)}
-.role-btn.wkr:hover{border-color:rgba(255,184,0,0.4);background:rgba(255,184,0,0.06)}
-.drw-guest{
-  display:flex;align-items:center;gap:10px;padding:11px 14px;margin:2px 8px;border-radius:8px;
-  cursor:pointer;border:none;background:none;color:var(--amber);
-  font-family:var(--font-head);font-size:13px;font-weight:600;
-  width:calc(100% - 16px);text-align:left;transition:background .15s;min-height:44px;
-}
-.drw-guest:hover{background:rgba(255,184,0,0.08)}
-
-/* ── PIN STEP ── */
-.drw-step{display:none;flex-direction:column;flex:1;padding:14px 14px}
-.drw-step.show{display:flex}
-.step-back{
-  background:transparent;border:1px solid var(--border);border-radius:7px;
-  color:var(--text-dim);font-family:var(--font-mono);font-size:9px;
-  letter-spacing:.1em;text-transform:uppercase;padding:7px 12px;cursor:pointer;
-  transition:all .15s;align-self:flex-start;margin-bottom:16px;
-}
-.step-back:hover{border-color:var(--cyan-soft);color:var(--cyan)}
-.pin-label{font-family:var(--font-mono);font-size:9.5px;color:var(--cyan);letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:8px}
-.pin-who{font-size:14px;font-weight:700;color:var(--text);text-align:center;margin-bottom:16px;min-height:20px}
-
-/* worker selector */
-.worker-sel{margin-bottom:16px}
-.worker-sel-lbl{font-family:var(--font-mono);font-size:9px;color:var(--text-mute);letter-spacing:.16em;text-transform:uppercase;margin-bottom:8px}
-.worker-list{display:flex;flex-wrap:wrap;gap:6px}
-.worker-btn-item{
-  background:var(--card);border:1px solid var(--border);border-radius:7px;
-  color:var(--text-dim);font-family:var(--font-mono);font-size:10px;
-  letter-spacing:.05em;padding:7px 12px;cursor:pointer;transition:all .15s;
-}
-.worker-btn-item:hover,.worker-btn-item.selected{border-color:var(--cyan-soft);color:var(--cyan);background:var(--cyan-dim)}
-
-.pin-dots{display:flex;justify-content:center;gap:12px;margin-bottom:8px}
-.pin-dot{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--border);background:transparent;transition:all .15s}
-.pin-dot.filled{background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 8px rgba(0,212,255,0.4)}
-.pin-dot.error{background:var(--red);border-color:var(--red)}
-.pin-error{font-family:var(--font-mono);font-size:10px;color:var(--red);text-align:center;min-height:16px;margin-bottom:10px;letter-spacing:.05em}
-.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px}
-.pin-key{
-  background:var(--card);border:1px solid var(--border);border-radius:9px;
-  color:var(--text);font-family:var(--font-head);font-size:18px;font-weight:700;
-  padding:13px;cursor:pointer;text-align:center;transition:all .15s;
-}
-.pin-key:hover{border-color:var(--cyan-soft);background:var(--cyan-dim);color:var(--cyan)}
-.pin-key:active{transform:scale(0.95)}
-.pin-key.action{font-family:var(--font-mono);font-size:11px;color:var(--text-dim)}
-.pin-key.action:hover{color:var(--amber);border-color:rgba(255,184,0,0.3)}
-.remember-row{display:flex;align-items:center;justify-content:center;gap:8px}
-.remember-row input{width:14px;height:14px;accent-color:var(--cyan);cursor:pointer}
-.remember-row label{font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;user-select:none}
-
-/* ── PASSWORD STEP ── */
-.pwd-label{font-family:var(--font-mono);font-size:9.5px;color:var(--cyan);letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:8px}
-.pwd-who{font-size:13px;color:var(--text);font-weight:600;text-align:center;margin-bottom:16px}
-.pwd-wrap{position:relative;margin-bottom:8px}
-.pwd-input{
-  width:100%;background:var(--card);border:1px solid var(--border);border-radius:10px;
-  color:var(--text);font-family:var(--font-mono);font-size:14px;
-  padding:12px 44px 12px 14px;outline:none;transition:border-color .2s;letter-spacing:.1em;
-}
-.pwd-input:focus{border-color:var(--cyan-soft)}
-.pwd-toggle{position:absolute;right:11px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:16px;padding:4px}
-.pwd-toggle:hover{color:var(--text)}
-.pwd-error{font-family:var(--font-mono);font-size:10px;color:var(--red);text-align:center;min-height:16px;margin-bottom:10px;letter-spacing:.05em}
-.pwd-submit{
-  width:100%;background:linear-gradient(135deg,var(--cyan),#0099BB);
-  border:none;border-radius:10px;color:#070B14;
-  font-family:var(--font-head);font-size:14px;font-weight:800;
-  padding:13px;cursor:pointer;transition:opacity .15s;letter-spacing:.04em;
-}
-.pwd-submit:hover{opacity:.88}
-.pwd-submit:active{transform:scale(.98)}
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(5,11,20,0.88);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:#0B1422;border:1px solid rgba(0,212,255,0.25);border-radius:16px;padding:24px;width:100%;max-width:360px;box-shadow:0 24px 64px rgba(0,0,0,0.6)}
+.modal h3{color:var(--text);font-size:16px;font-weight:700;margin-bottom:18px}
+.field{margin-bottom:13px}
+.field label{display:block;font-family:var(--font-mono);font-size:8.5px;color:var(--text-mute);letter-spacing:.16em;text-transform:uppercase;margin-bottom:5px}
+.field input,.field select{width:100%;background:var(--bg);border:1px solid rgba(0,212,255,0.2);border-radius:7px;color:var(--text);font-family:var(--font-mono);font-size:12px;padding:9px 11px;outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus{border-color:rgba(0,212,255,0.5)}
+.modal-btns{display:flex;gap:8px;margin-top:20px}
+.mbtn{flex:1;padding:10px;border-radius:8px;font-family:var(--font-mono);font-size:9.5px;letter-spacing:.10em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.mbtn.confirm{background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.4);color:var(--cyan)}
+.mbtn.confirm:hover{background:rgba(0,212,255,0.22)}
+.mbtn.cancel{background:transparent;border:1px solid var(--border);color:var(--text-dim)}
+.mbtn.cancel:hover{border-color:rgba(255,255,255,0.2);color:var(--text)}
+.mbtn.danger{background:var(--red-dim);border:1px solid rgba(255,68,102,0.4);color:var(--red)}
 
 /* ── TOAST ── */
 .toast{
   position:fixed;bottom:28px;left:50%;transform:translate(-50%,20px);
-  background:rgba(13,18,32,0.96);border:1px solid var(--cyan-soft);border-radius:10px;
-  padding:11px 20px;font-family:var(--font-mono);font-size:11px;color:var(--text);
+  background:rgba(13,18,32,0.97);border:1px solid var(--cyan-soft);border-radius:10px;
+  padding:11px 18px;font-family:var(--font-mono);font-size:11px;color:var(--text);
   letter-spacing:.05em;opacity:0;pointer-events:none;transition:all .25s;z-index:999;white-space:nowrap;
 }
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast.err{border-color:rgba(255,68,102,0.5);color:var(--red)}
+.toast.ok{border-color:rgba(0,255,136,0.5);color:var(--green)}
+
+/* ── LOADING ── */
+.loading{text-align:center;padding:48px;font-family:var(--font-mono);font-size:11px;color:var(--text-mute);letter-spacing:.12em}
+
+/* ── GRID COLS for tables ── */
+.pin-tbl .tbl-head,.pin-tbl .tbl-row{grid-template-columns:1fr 100px 50px 80px 70px}
+.worker-tbl .tbl-head,.worker-tbl .tbl-row{grid-template-columns:1fr 110px 90px 110px}
+
+
+
+
+@media(max-width:600px){
+  .topbar{padding:7px 10px;gap:5px}
+  .main{padding:14px 12px 48px}
+  .user-grid{grid-template-columns:1fr}
+  .pin-tbl .tbl-head,.pin-tbl .tbl-row{grid-template-columns:1fr 120px 80px}
+  .pin-tbl .tbl-head span:nth-child(4),
+  .pin-tbl .tbl-row span:nth-child(4){display:none}
+  .topbar-title h1{font-size:14px}
+  .topbar-title .sub{display:none}
+  .tab-bar .tab{padding:8px 9px;font-size:9px;letter-spacing:0}
+  .s-input,.s-select{max-width:100%;min-width:0;width:100%}
+  .worker-tbl .tbl-head,.worker-tbl .tbl-row{grid-template-columns:1fr 90px 90px}
+  .worker-tbl .tbl-head span:nth-child(2),
+  .worker-tbl .tbl-row span:nth-child(2){display:none}
+  .nav-btn{font-size:9.5px;padding:6px 10px;gap:4px}
+  .role-pill{font-size:8.5px;padding:4px 8px}
+  .theme-btn{padding:5px 8px;font-size:14px}
+  .topbar-right{gap:5px}
+}
+@media(max-width:400px){
+  .nav-btn{font-size:9px;padding:5px 8px}
+  .topbar-title h1{font-size:12px}
+}
+
+/* ── TOUCH TARGETS (min 44×44 on touch devices) ── */
+@media(pointer:coarse){
+  .nav-btn,.tab,.act-btn,.sm-btn,.mbtn,.add-btn,.save-btn,.theme-btn{min-height:44px;min-width:44px}
+  .toggle{min-width:44px;min-height:30px}
+}
+
+/* ── TABLE WRAPS ON MOBILE ── */
+@media(max-width:600px){
+  .tbl{overflow-x:auto;-webkit-overflow-scrolling:touch}
+}
+
+
+
+body.light-mode .tbl,
+body.light-mode .scard,
+body.light-mode .modal,
+body.light-mode .setting-group,
+body.light-mode .ucard{background:#FFFFFF;border-color:#5EEAD4}
+body.light-mode .tbl-head{background:rgba(13,148,136,0.08)}
+body.light-mode .tbl-row:hover{background:rgba(13,148,136,0.04)}
+body.light-mode .tab{color:#0F766E}
+body.light-mode .tab.active{color:#0D9488;border-bottom-color:#0D9488}
+body.light-mode .ucard-head{border-bottom-color:#5EEAD4}
+body.light-mode .ucard-foot{border-top-color:#5EEAD4}
+body.light-mode .tab-bar{border-bottom-color:#5EEAD4}
+body.light-mode input,body.light-mode select,body.light-mode textarea{background:#F0FDFA;border-color:#5EEAD4;color:#134E4A}
+
+
+
+body.light-mode{
+  --bg:        #F0FDFA;
+  --bg2:       #CCFBF1;
+  --bg3:       #99F6E4;
+  --card:      #FFFFFF;
+  --border:    #5EEAD4;
+  --cyan:      #0D9488;
+  --cyan-dim:  #CCFBF1;
+  --cyan-soft: #0D948888;
+  --green:     #16A34A;
+  --green-dim: #DCFCE7;
+  --amber:     #F59E0B;
+  --amber-dim: #FEF9C3;
+  --red:       #EF4444;
+  --red-dim:   #FEE2E2;
+  --text:      #134E4A;
+  --text-dim:  #0F766E;
+  --text-mute: #5EEAD4;
+}
+body.light-mode{
+  background-color:#F0FDFA !important;
+  background-image:
+    linear-gradient(rgba(13,148,136,0.08) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(13,148,136,0.08) 1px,transparent 1px),
+    radial-gradient(ellipse 100% 50% at 50% 0%,rgba(13,148,136,0.10),transparent 60%) !important;
+  background-size:40px 40px,40px 40px,100% 100% !important;
+}
+
+/* ── NAV BUTTONS ── */
+.nav-btn{
+  background:rgba(255,255,255,0.12);
+  border:1.5px solid rgba(255,255,255,0.35);
+  border-radius:8px;
+  color:#ffffff !important;
+  font-family:var(--font-mono);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  padding:7px 14px;
+  cursor:pointer;
+  text-decoration:none !important;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  transition:all .15s;
+  white-space:nowrap;
+}
+.nav-btn:hover{background:rgba(255,255,255,0.25);border-color:rgba(255,255,255,0.6);color:#fff !important}
+.nav-btn.danger{background:rgba(255,68,102,0.15);border-color:rgba(255,68,102,0.5);color:#ffaaaa !important}
+.nav-btn.danger:hover{background:rgba(255,68,102,0.3);border-color:#ff4466;color:#fff !important}
+.role-pill{font-family:var(--font-mono);font-size:10px;padding:5px 12px;border-radius:999px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;font-weight:600;color:#ffffff}
+.pill-admin{background:rgba(0,212,255,0.2);border:1.5px solid rgba(0,212,255,0.5);color:#00D4FF !important}
+.pill-sup{background:rgba(0,255,136,0.2);border:1.5px solid rgba(0,255,136,0.4);color:#00FF88 !important}
+.theme-btn{background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.35);border-radius:8px;color:#fff;font-size:16px;padding:6px 10px;cursor:pointer;transition:all .15s;line-height:1}
+.theme-btn:hover{background:rgba(255,255,255,0.25)}
+/* ── SIDE NAV ── */
+.sidenav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
+.sidenav-overlay.open{display:block;}
+.sidenav{position:fixed;right:-240px;top:0;bottom:0;width:240px;background:#0D1220;border-left:1px solid #1E2D45;z-index:210;transition:right .26s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow-y:auto;}
+.sidenav.open{right:0;}
+body.light-mode .sidenav{background:#fff;border-left-color:#5EEAD4;}
+.snav-head{padding:14px 14px 12px;border-bottom:1px solid #1E2D45;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+body.light-mode .snav-head{border-bottom-color:#5EEAD4;}
+.snav-brand{display:flex;align-items:center;gap:9px;}
+.snav-logo{width:32px;height:32px;border-radius:7px;background:#070B14;border:1px solid rgba(0,212,255,0.2);display:grid;place-items:center;flex-shrink:0;}
+.snav-logo svg{width:24px;height:24px;}
+.snav-title{font-size:13px;font-weight:700;color:#E2E8F0;}
+body.light-mode .snav-title{color:#134E4A;}
+.snav-sub{font-size:9px;color:#7A8BA0;letter-spacing:.12em;margin-top:1px;font-family:var(--font-mono);}
+.snav-close{background:none;border:none;cursor:pointer;padding:5px;color:#7A8BA0;font-size:18px;line-height:1;border-radius:5px;}
+.snav-close:hover{background:#1E2D45;color:#E2E8F0;}
+body.light-mode .snav-close:hover{background:#CCFBF1;color:#0D9488;}
+.snav-grp{font-size:9px;color:#3F4A5E;letter-spacing:.14em;text-transform:uppercase;padding:12px 14px 4px;font-family:var(--font-mono);flex-shrink:0;}
+body.light-mode .snav-grp{color:#5EEAD4;}
+.snav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;margin:1px 6px;border-radius:7px;cursor:pointer;font-size:13px;color:#7A8BA0;transition:background .15s,color .15s;border:none;background:none;width:calc(100% - 12px);text-align:left;}
+.snav-item svg{flex-shrink:0;width:16px;height:16px;}
+.snav-item:hover{background:#131C2E;color:#E2E8F0;}
+body.light-mode .snav-item:hover{background:#CCFBF1;color:#0D9488;}
+.snav-item.active{background:rgba(0,212,255,0.08);color:#00D4FF;border:0.5px solid rgba(0,212,255,0.15);}
+body.light-mode .snav-item.active{background:#CCFBF1;color:#0D9488;border-color:#5EEAD4;}
+.snav-item.danger:hover{background:rgba(255,68,102,0.1);color:#FF4466;}
+.snav-divider{height:1px;background:#1E2D45;margin:6px 14px;flex-shrink:0;}
+body.light-mode .snav-divider{background:#5EEAD4;}
+.snav-foot{margin-top:auto;padding:10px 6px;border-top:1px solid #1E2D45;flex-shrink:0;}
+body.light-mode .snav-foot{border-top-color:#5EEAD4;}
+.snav-user{display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:4px;}
+.snav-avatar{width:30px;height:30px;border-radius:50%;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.25);display:grid;place-items:center;font-size:11px;font-weight:700;color:#00D4FF;flex-shrink:0;font-family:var(--font-mono);}
+body.light-mode .snav-avatar{background:#CCFBF1;border-color:#5EEAD4;color:#0D9488;}
+.snav-uname{font-size:12px;color:#E2E8F0;font-weight:600;}
+body.light-mode .snav-uname{color:#134E4A;}
+.snav-urole{font-size:10px;color:#7A8BA0;font-family:var(--font-mono);}
+.btn-hamburger{background:none;border:1px solid rgba(255,255,255,0.25);border-radius:7px;padding:6px 8px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;transition:background .15s;min-height:36px;}
+.btn-hamburger:hover{background:rgba(255,255,255,0.12)}
+.btn-hamburger svg{width:18px;height:18px;display:block;}
+@media(max-width:480px){.sidenav{width:100%;right:-100%;}}
+
+
+
+/* ── OVERFLOW FIX ── */
+html{overflow-x:hidden}
+body{overflow-x:hidden}
+img,svg,table{max-width:100%}
+
 </style>
+
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Exo+2:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-<!-- MENU TOOLTIP -->
-<div class="menu-tip" id="menu-tip">Tap here to login →</div>
-
-<!-- OVERLAY -->
-<div class="overlay" id="overlay" onclick="drawerClose()"></div>
-
-<!-- DRAWER -->
-<nav class="drawer" id="drawer" aria-label="Login menu">
-  <div class="drw-head">
-    <span class="drw-title">CTS Production</span>
-    <button class="drw-close" onclick="drawerClose()" aria-label="Close">✕</button>
-  </div>
-
-  <!-- MAIN MENU -->
-  <div id="drw-main">
-    <div class="drw-grp">Staff Login</div>
-    <div class="role-btns">
-      <button class="role-btn admin" onclick="startLogin('admin')">
-        <div class="role-icon" style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.18)">⚙</div>
-        <div><div class="role-name">Admin</div><div class="role-hint">PIN + Password</div></div>
-      </button>
-      <button class="role-btn sup" onclick="startLogin('supervisor')">
-        <div class="role-icon" style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.18)">👁</div>
-        <div><div class="role-name">Supervisor</div><div class="role-hint">PIN only</div></div>
-      </button>
-      <button class="role-btn wkr" onclick="startLogin('worker')">
-        <div class="role-icon" style="background:rgba(255,184,0,0.08);border:1px solid rgba(255,184,0,0.18)">👷</div>
-        <div><div class="role-name">Worker</div><div class="role-hint">PIN only</div></div>
-      </button>
-    </div>
-    <div class="drw-divider"></div>
-    <div class="drw-grp">Guest Access</div>
-    <button class="drw-guest" onclick="goGuest()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFB800" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-      View Device Manual
-    </button>
-  </div>
-
-  <!-- PIN STEP -->
-  <div class="drw-step" id="drw-pin">
-    <button class="step-back" onclick="backToMain()">← Back</button>
-    <div id="worker-sel-wrap" class="worker-sel" style="display:none">
-      <div class="worker-sel-lbl">Select your name</div>
-      <div class="worker-list" id="worker-list"><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-mute)">Loading…</div></div>
-    </div>
-    <div class="pin-label">Enter PIN</div>
-    <div class="pin-who" id="pin-who"></div>
-    <div class="pin-dots">
-      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
-      <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
-    </div>
-    <div class="pin-error" id="pin-error"></div>
-    <div class="pin-pad" id="pin-pad"></div>
-    <div class="remember-row">
-      <input type="checkbox" id="remember-me">
-      <label for="remember-me">Remember me</label>
-    </div>
-  </div>
-
-  <!-- PASSWORD STEP -->
-  <div class="drw-step" id="drw-pwd">
-    <button class="step-back" onclick="backToPin()">← Back</button>
-    <div class="pwd-label">Admin Password</div>
-    <div class="pwd-who">⚙ Admin — PIN verified ✓</div>
-    <div class="pwd-wrap">
-      <input class="pwd-input" id="pwd-input" type="password" placeholder="Enter password…" autocomplete="off" onkeyup="if(event.key==='Enter')checkAdminPwd()">
-      <button class="pwd-toggle" onclick="togglePwdShow()" aria-label="Show/hide">👁</button>
-    </div>
-    <div class="pwd-error" id="pwd-error"></div>
-    <button class="pwd-submit" onclick="checkAdminPwd()">Unlock Admin Access →</button>
-  </div>
-</nav>
-
 <!-- TOPBAR -->
 <div class="topbar">
-  <div class="brand">
-    <div class="brand-logo">
+  <div class="topbar-left">
+    <div class="logo">
       <svg viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
         <rect width="38" height="38" rx="8" fill="#0D1220"/>
         <rect x="3" y="3" width="32" height="32" rx="6" fill="#131C2E" stroke="#00D4FF" stroke-width="1.5"/>
-        <text x="19" y="18" font-family="Arial,sans-serif" font-weight="900" font-size="10" fill="#00D4FF" text-anchor="middle" dominant-baseline="middle">CTS</text>
-        <text x="19" y="29" font-family="Arial,sans-serif" font-weight="600" font-size="5" fill="#7A8BA0" text-anchor="middle" dominant-baseline="middle" letter-spacing="1">PROD</text>
+        <text x="19" y="18" font-family="Arial" font-weight="900" font-size="10" fill="#00D4FF" text-anchor="middle" dominant-baseline="middle">CTS</text>
+        <text x="19" y="29" font-family="Arial" font-size="5" fill="#7A8BA0" text-anchor="middle" dominant-baseline="middle" letter-spacing="1">PROD</text>
       </svg>
     </div>
-    <div>
-      <div class="brand-name">CTS Production</div>
-      <div class="brand-sub">City Technical Solutions · Malaysia</div>
+    <div class="topbar-title">
+      <h1>Admin Panel</h1>
+      <div class="sub">User Management · Permissions · System</div>
     </div>
   </div>
-  <button class="btn-hamburger" id="menu-btn" onclick="onMenuClick()" aria-label="Open menu">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-    </svg>
-  </button>
-</div>
-
-<!-- HERO -->
-<div class="hero">
-  <div class="hero-badge"><span class="live-dot"></span>System Online · Live</div>
-  <h1>Smart <span>Manufacturing</span><br>Live Dashboard</h1>
-  <div class="hero-tagline">Smart Manufacturing · Live Dashboard</div>
-  <div class="hero-divider"></div>
-  <div class="hero-clock">
-    <span id="clock-time">--:--:--</span>&nbsp;&nbsp;<span id="clock-day"></span>&nbsp;&nbsp;<span id="clock-tz" style="color:var(--cyan-soft)"></span>
+  <div class="topbar-right">
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
+    <button class="btn-hamburger" onclick="snavOpen()" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
   </div>
-  <div class="products-strip" id="products-strip"></div>
-  <button class="guest-btn" onclick="goGuest()">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFB800" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-    Guest / View Manual
-  </button>
-  <div class="guest-note">Staff — tap ☰ to login</div>
 </div>
 
-<div class="lp-footer">CTS Production System · v2026 · MYT (UTC+8)</div>
+<!-- SIDENAV OVERLAY -->
+<div class="sidenav-overlay" id="snavOverlay" onclick="snavClose()"></div>
+
+<!-- SIDE NAV -->
+<nav class="sidenav" id="sidenav" aria-label="Main navigation">
+  <div class="snav-head">
+    <div class="snav-brand">
+      <div class="snav-logo">
+        <svg viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg"><rect width="38" height="38" rx="8" fill="#070B14"/><rect x="3" y="3" width="32" height="32" rx="6" fill="#131C2E" stroke="#00D4FF" stroke-width="1.5"/><text x="19" y="18" font-family="Arial,sans-serif" font-weight="900" font-size="10" fill="#00D4FF" text-anchor="middle" dominant-baseline="middle">CTS</text><text x="19" y="29" font-family="Arial,sans-serif" font-weight="600" font-size="5" fill="#7A8BA0" text-anchor="middle" dominant-baseline="middle" letter-spacing="1">PROD</text></svg>
+      </div>
+      <div>
+        <div class="snav-title">CTS Production</div>
+        <div class="snav-sub">MYT · UTC+8</div>
+      </div>
+    </div>
+    <button class="snav-close" onclick="snavClose()" aria-label="Close">✕</button>
+  </div>
+
+  <div class="snav-grp">Pages</div>
+  <button class="snav-item" onclick="window.location.href='dashboard.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </button>
+  <button class="snav-item" onclick="window.location.href='inventory.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    Inventory
+  </button>
+  <button class="snav-item active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+    Admin Panel
+  </button>
+  <button class="snav-item" onclick="window.location.href='manual.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    Device Manual
+  </button>
+
+  <div class="snav-foot">
+    <div class="snav-user">
+      <div class="snav-avatar" id="snav-avatar">AD</div>
+      <div>
+        <div class="snav-uname" id="snav-uname">Admin</div>
+        <div class="snav-urole">Administrator</div>
+      </div>
+    </div>
+    <button class="snav-item danger" onclick="doLogout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Logout
+    </button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ACCESS GUARD -->
+  <div id="access-denied" style="display:none;text-align:center;padding:80px 20px">
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--red);letter-spacing:.12em;margin-bottom:12px">⛔ ACCESS DENIED</div>
+    <div style="font-size:13px;color:var(--text-dim);margin-bottom:20px">Admin access required to view this page.</div>
+    <a class="add-btn" href="index.html">← Back to Login</a>
+  </div>
+
+  <div id="admin-content" style="display:none">
+
+    <!-- TAB BAR -->
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchTab(this,'users')">👥 Users &amp; Permissions</button>
+      <button class="tab" onclick="switchTab(this,'pins')">🔑 PIN Management</button>
+      <button class="tab" onclick="switchTab(this,'system')">⚙ System Settings</button>
+      <button class="tab" onclick="switchTab(this,'manuals')">📖 Manuals</button>
+      <button class="tab" onclick="switchTab(this,'log')">📋 Activity Log</button>
+    </div>
+
+    <!-- ═══ TAB: USERS & PERMISSIONS ═══ -->
+    <div class="sec show" id="sec-users">
+      <div class="sec-title">Supervisors — Permission Control</div>
+      <div class="user-grid" id="supervisor-grid">
+        <div class="loading">Loading supervisors…</div>
+      </div>
+
+      <div class="sec-title" style="margin-top:8px">Workers</div>
+      <div class="tbl worker-tbl" id="worker-tbl">
+        <div class="tbl-head">
+          <span>Name</span><span>Project</span><span>Status</span><span>Actions</span>
+        </div>
+        <div id="worker-tbl-body"><div class="loading">Loading workers…</div></div>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="add-btn" onclick="openModal('add-supervisor')">+ Add Supervisor</button>
+        <button class="add-btn" style="border-color:rgba(255,184,0,0.3);color:var(--amber);background:var(--amber-dim)" onclick="openModal('add-worker')">+ Add Worker</button>
+      </div>
+    </div>
+
+    <!-- ═══ TAB: PIN MANAGEMENT ═══ -->
+    <div class="sec" id="sec-pins">
+      <div class="sec-title">All User PINs</div>
+      <div class="tbl pin-tbl">
+        <div class="tbl-head">
+          <span>Name</span><span>Role</span><span>PIN</span><span>Last Login</span><span>Actions</span>
+        </div>
+        <div id="pin-tbl-body"><div class="loading">Loading…</div></div>
+      </div>
+
+      <!-- RECOVERY NOTE -->
+      <div style="margin-top:20px;background:rgba(255,184,0,0.06);border:1px solid rgba(255,184,0,0.25);border-radius:10px;padding:14px 16px;">
+        <div style="font-family:var(--font-mono);font-size:10px;color:#FFB800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">⚠ Admin PIN Recovery</div>
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);line-height:1.8">
+          If admin PIN is forgotten:<br>
+          1. Go to <span style="color:#00D4FF">console.firebase.google.com</span><br>
+          2. Select project <span style="color:#00D4FF">cts-production-7069c</span><br>
+          3. Firestore → <span style="color:#00D4FF">cts &gt; state &gt; authConfig &gt; adminPinHash</span><br>
+          4. Replace value with <span style="color:#00D4FF;letter-spacing:.1em">-1935285948</span> (default PIN: 2026)<br>
+          5. Click Update — done
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,184,0,0.15);font-family:var(--font-mono);font-size:11px;color:var(--text-dim);line-height:1.8">
+          If admin password is forgotten:<br>
+          1. Go to <span style="color:#00D4FF">console.firebase.google.com</span><br>
+          2. Select project <span style="color:#00D4FF">cts-production-7069c</span><br>
+          3. Firestore → <span style="color:#00D4FF">cts &gt; state &gt; systemSettings &gt; adminPwd</span><br>
+          4. Read the value — that is your password<br>
+          5. Or replace with a new password of your choice
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TAB: SYSTEM SETTINGS ═══ -->
+    <div class="sec" id="sec-system">
+
+      <div class="setting-group">
+        <div class="sg-title">Company Info</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Company Name</div><div class="setting-desc">Shown on reports and PDF exports</div></div>
+          <input class="s-input" id="s-company" value="City Technical Solutions" placeholder="Company name">
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Timezone</div><div class="setting-desc">All timestamps use this timezone</div></div>
+          <select class="s-select" id="s-tz">
+            <option value="8" selected>MYT (UTC+8)</option>
+            <option value="8">SGT (UTC+8)</option>
+            <option value="0">UTC</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Admin Password</div><div class="setting-desc">Secondary password for sensitive operations</div></div>
+          <input class="s-input" id="s-adminpwd" type="password" placeholder="Current: CTS2026" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="sg-title">Inventory Alerts</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Low Stock Warning</div><div class="setting-desc">Alert when qty falls below min stock</div></div>
+          <label class="toggle"><input type="checkbox" id="s-lowstock" checked><span class="tslider"></span></label>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Out of Stock Alert</div><div class="setting-desc">Notify Admin &amp; Supervisor when qty = 0</div></div>
+          <label class="toggle"><input type="checkbox" id="s-outstock" checked><span class="tslider"></span></label>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Auto-draft PO on Low Stock</div><div class="setting-desc">Create a draft purchase order automatically</div></div>
+          <label class="toggle"><input type="checkbox" id="s-autopo"><span class="tslider"></span></label>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="sg-title">Guest Access</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Allow Guest Login</div><div class="setting-desc">Guests can view the manual page without PIN</div></div>
+          <label class="toggle"><input type="checkbox" id="s-guest" checked><span class="tslider"></span></label>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Show Device Specs to Guest</div><div class="setting-desc">Energy Eye, Fridge Eye, AC Eye specs visible</div></div>
+          <label class="toggle"><input type="checkbox" id="s-guestspecs" checked><span class="tslider"></span></label>
+        </div>
+      </div>
+
+      <button class="save-btn" onclick="saveSystemSettings()">💾 Save Settings</button>
+    </div>
+
+
+    <!-- MANUALS SECTION -->
+    <div class="sec" id="sec-manuals">
+
+      <!-- DEVICE ENABLE/DISABLE -->
+      <div style="margin-bottom:28px">
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--cyan);letter-spacing:.16em;text-transform:uppercase;margin-bottom:14px">◆ Device Enable / Disable</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-mute);margin-bottom:12px">Controls which devices show as "Available" on the manual page.</div>
+        <div id="manual-devices-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px"></div>
+      </div>
+
+      <!-- TECH LINKS -->
+      <div>
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--cyan);letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px">◆ Technical Download Links</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-mute);margin-bottom:14px">Links shown on the manual page for technical staff to download tools (e.g. CTS Rulez, CTS RulezPRO).</div>
+        <button class="add-btn" onclick="openAddLink()" style="margin-bottom:14px">+ Add Link</button>
+        <div id="manual-links-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+
+    <!-- ADD/EDIT LINK MODAL -->
+    <div class="modal-bg" id="modal-link">
+      <div class="modal">
+        <div class="modal-title" id="lk-modal-title">Add Tech Link</div>
+        <div class="field"><label>Title</label><input id="lk-title" type="text" placeholder="e.g. CTS Rulez"></div>
+        <div class="field"><label>URL</label><input id="lk-url" type="url" placeholder="https://..."></div>
+        <div class="field"><label>Description (optional)</label><input id="lk-desc" type="text" placeholder="Short description"></div>
+        <div class="field"><label>Icon (emoji, optional)</label><input id="lk-icon" type="text" placeholder="⬇" maxlength="4"></div>
+        <input type="hidden" id="lk-idx" value="-1">
+        <div class="modal-actions">
+          <button class="mbtn cancel" onclick="closeModal('modal-link')">Cancel</button>
+          <button class="mbtn confirm" onclick="saveLink()">Save Link</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ACTIVITY LOG SECTION -->
+    <div class="sec" id="sec-log">
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--cyan);letter-spacing:.16em;text-transform:uppercase;margin-bottom:14px">◆ Activity Log</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+        <select id="logFilterType" style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font-mono);font-size:11px;padding:7px 10px;" onchange="renderActivityLog()">
+          <option value="">All types</option>
+          <option value="LOGIN">Login</option>
+          <option value="LOGIN_FAIL">Failed Login</option>
+          <option value="LOGOUT">Logout</option>
+          <option value="CLOCK">Clock In/Out</option>
+          <option value="OT">Overtime</option>
+          <option value="PIN">PIN Changes</option>
+          <option value="ADMIN">Admin Actions</option>
+        </select>
+        <select id="logFilterDate" style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font-mono);font-size:11px;padding:7px 10px;" onchange="renderActivityLog()">
+          <option value="">All dates</option>
+        </select>
+        <button class="sm-btn danger" id="resetLogBtn" onclick="confirmResetLog()" style="flex:none;width:auto;padding:7px 14px">🗑 Reset</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+        <input type="checkbox" id="logSelectAll" style="width:14px;height:14px;cursor:pointer;accent-color:var(--cyan);flex-shrink:0" onchange="toggleSelectAllLog(this.checked)">
+        <label for="logSelectAll" style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);cursor:pointer;white-space:nowrap">Select all</label>
+        <button class="sm-btn danger" style="flex:none;width:auto;padding:7px 14px" onclick="deleteSelectedLog()">🗑 Delete</button>
+      </div>
+      <div id="activityLogPanel" style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:10px;font-family:var(--font-mono);font-size:11px;background:var(--bg2);"></div>
+      <div id="logCount" style="font-family:var(--font-mono);font-size:10px;color:var(--text-mute);margin-top:6px;text-align:right;"></div>
+    </div>
+
+  </div><!-- end admin-content -->
+</div><!-- end main -->
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Add/Edit Supervisor -->
+<div class="modal-bg" id="modal-supervisor">
+  <div class="modal">
+    <h3 id="modal-sup-title">Add Supervisor</h3>
+    <div class="field"><label>Full Name</label><input id="sup-name" placeholder="e.g. Ahmad Hafizi"></div>
+    <div class="field"><label>PIN (4 digits)</label><input id="sup-pin" type="password" maxlength="4" placeholder="••••" inputmode="numeric"></div>
+    <div style="margin-bottom:13px">
+      <div style="font-family:var(--font-mono);font-size:8.5px;color:var(--text-mute);letter-spacing:.16em;text-transform:uppercase;margin-bottom:10px">Permissions</div>
+      <div id="sup-perm-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn cancel" onclick="closeModal('modal-supervisor')">Cancel</button>
+      <button class="mbtn confirm" onclick="saveSupervisor()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Worker -->
+<div class="modal-bg" id="modal-worker">
+  <div class="modal">
+    <h3 id="modal-wk-title">Add Worker</h3>
+    <div class="field"><label>Full Name</label><input id="wk-name" placeholder="e.g. Razif Ismail"></div>
+    <div class="field"><label>Assign to Project</label>
+      <select id="wk-project"></select>
+    </div>
+    <div class="field"><label>PIN (4 digits)</label><input id="wk-pin" type="password" maxlength="4" placeholder="Default: 0000" inputmode="numeric"></div>
+    <div class="modal-btns">
+      <button class="mbtn cancel" onclick="closeModal('modal-worker')">Cancel</button>
+      <button class="mbtn confirm" onclick="saveWorker()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Change PIN -->
+<div class="modal-bg" id="modal-pin">
+  <div class="modal">
+    <h3 id="modal-pin-title">Change PIN</h3>
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-bottom:14px" id="modal-pin-user"></div>
+    <div class="field"><label>New PIN (4 digits)</label><input id="new-pin" type="password" maxlength="4" placeholder="••••" inputmode="numeric"></div>
+    <div class="field"><label>Confirm PIN</label><input id="new-pin2" type="password" maxlength="4" placeholder="••••" inputmode="numeric"></div>
+    <div class="modal-btns">
+      <button class="mbtn cancel" onclick="closeModal('modal-pin')">Cancel</button>
+      <button class="mbtn confirm" onclick="savePIN()">Save PIN</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete -->
+<div class="modal-bg" id="modal-confirm">
+  <div class="modal">
+    <h3 id="modal-confirm-title">Confirm Delete</h3>
+    <div style="font-size:13px;color:var(--text-dim);margin-bottom:20px" id="modal-confirm-body"></div>
+    <div class="modal-btns">
+      <button class="mbtn cancel" onclick="closeModal('modal-confirm')">Cancel</button>
+      <button class="mbtn danger" id="modal-confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
 // ── Firebase ──
-const firebaseConfig={
-  apiKey:"AIzaSyCk3Vq2vn7FOfps8CEtBE4kePZogR4Pvs0",
-  authDomain:"cts-production-7069c.firebaseapp.com",
-  projectId:"cts-production-7069c",
-  storageBucket:"cts-production-7069c.firebasestorage.app",
-  messagingSenderId:"661872165270",
-  appId:"1:661872165270:web:878ef6410d82cf21059db7"
+const firebaseConfig = {
+  apiKey: "AIzaSyCk3Vq2vn7FOfps8CEtBE4kePZogR4Pvs0",
+  authDomain: "cts-production-7069c.firebaseapp.com",
+  projectId: "cts-production-7069c",
+  storageBucket: "cts-production-7069c.firebasestorage.app",
+  messagingSenderId: "661872165270",
+  appId: "1:661872165270:web:878ef6410d82cf21059db7"
 };
-let db=null,DOC_REF=null;
-try{firebase.initializeApp(firebaseConfig);db=firebase.firestore();DOC_REF=db.collection('cts').doc('state');}
-catch(e){console.warn('Firebase:',e.message);}
+let db=null, DOC_REF=null;
+try{
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  DOC_REF = db.collection('cts').doc('state');
+}catch(e){ console.warn('Firebase:',e.message); }
 
-let _S=null,_role=null,_workerName=null,_workerProject=null,_pinBuf='',_attempts=0,_pwdAttempts=0;
-const DEF_ADMIN_PIN='2026',DEF_SUPER_PIN='1234',DEF_WORKER_PIN='0000',RM_KEY='cts_remember';
+// ── Helpers ──
+function hashPIN(pin){ let h=0; for(let i=0;i<pin.length;i++){h=((h<<5)-h)+pin.charCodeAt(i);h|=0;} return String(h); }
+function escH(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function workerKey(projectId,name){ return projectId+'__'+name; }
 
-function hashPIN(pin){let h=0;for(let i=0;i<pin.length;i++){h=((h<<5)-h)+pin.charCodeAt(i);h|=0;}return String(h);}
-function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+const DEF_ADMIN_PIN  = '2026';
+const DEF_SUPER_PIN  = '1234';
+const DEF_WORKER_PIN = '0000';
 
-// ── Clock ──
-function tickClock(){
-  const now=new Date(),days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],pad=n=>String(n).padStart(2,'0');
-  document.getElementById('clock-time').textContent=pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
-  document.getElementById('clock-day').textContent=days[now.getDay()]+' '+pad(now.getDate())+'/'+pad(now.getMonth()+1)+'/'+now.getFullYear();
-  document.getElementById('clock-tz').textContent=Intl.DateTimeFormat('en',{timeZoneName:'short'}).format(now).split(' ').pop();
-}
-setInterval(tickClock,1000);tickClock();
+// ── All permissions definition ──
+const ALL_PERMS = [
+  {id:'production',  label:'Production Dashboard', icon:'🏭'},
+  {id:'attendance',  label:'Attendance Edit',       icon:'🕐'},
+  {id:'inventory',   label:'Inventory Edit',        icon:'📦'},
+  {id:'po',          label:'PO Management',         icon:'🚚'},
+  {id:'reports',     label:'Reports Export',        icon:'📊'},
+  {id:'manual',      label:'Manual Page',           icon:'📖'},
+];
+const WORKER_LOCKED = ['inventory','po','reports']; // workers can never have these
+
+// ── State ──
+let _S = null;
+let _editSupIdx = null; // index into _S.supervisors[]
+let _pinTarget = null;  // {role, name, projectId}
+let _confirmCb = null;
 
 // ── Toast ──
-let _toastT;
-function toast(msg,isErr=false){
+let _tTimer;
+function toast(msg, type=''){
   const el=document.getElementById('toast');
-  el.textContent=msg;el.className='toast show'+(isErr?' err':'');
-  clearTimeout(_toastT);_toastT=setTimeout(()=>el.classList.remove('show'),2800);
+  el.textContent=msg;
+  el.className='toast show'+(type?' '+type:'');
+  clearTimeout(_tTimer);
+  _tTimer=setTimeout(()=>el.classList.remove('show'),2800);
 }
 
-// ── Dynamic products from Firestore ──
-function renderProducts(state){
-  const strip=document.getElementById('products-strip');
-  // Products stored at state.inventory.products
-  const prods=(state&&state.inventory&&state.inventory.products)||[];
-  if(!prods.length){strip.innerHTML='';return;}
-  strip.innerHTML=prods.map(p=>`<div class="prod-pill"><span class="prod-dot"></span>${escH(p.name||p.code||String(p))}</div>`).join('');
+// ── Tab switching ──
+function switchTab(el, sec){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('show'));
+  el.classList.add('active');
+  document.getElementById('sec-'+sec).classList.add('show');
 }
 
-function watchProducts(){
-  if(!DOC_REF){return;}
-  DOC_REF.onSnapshot(snap=>{
-    const data=snap.exists?snap.data():null;
-    if(!_S)_S=data;
-    else Object.assign(_S,data);
-    renderProducts(data);
-  },()=>{});
-}
-
-// ── Firestore load ──
-function loadState(cb){
-  if(!DOC_REF){cb(null);return;}
-  DOC_REF.get().then(snap=>{_S=snap.exists?snap.data():null;cb(_S);}).catch(()=>cb(null));
-}
-
-// ── Hamburger animation — 3 cycles then stays visible ──
-const menuBtn=document.getElementById('menu-btn');
-const menuTip=document.getElementById('menu-tip');
-let _menuClicked=false,_menuTimers=[];
-
-function clearMenuTimers(){_menuTimers.forEach(t=>clearTimeout(t));_menuTimers=[];}
-
-function menuPop(){
-  menuBtn.classList.remove('hint');
-  void menuBtn.offsetWidth;
-  menuBtn.classList.add('hint');
-  menuTip.classList.add('show');
-}
-function menuTipHide(){
-  menuTip.classList.remove('show');
-}
-
-function startMenuAnimation(){
-  // Button always visible — just pulse tooltip 3 times
-  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuPop();},2000));
-  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuTipHide();},5000));
-  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuPop();},7000));
-  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuTipHide();},10000));
-  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuPop();},12000));
-  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuTipHide();},15000));
-}
-
-function onMenuClick(){
-  _menuClicked=true;
-  clearMenuTimers();
-  menuTipHide();
-  drawerOpen();
-}
-
-// ── Drawer ──
-function drawerOpen(){
-  document.getElementById('drawer').classList.add('open');
-  document.getElementById('overlay').classList.add('open');
-  if(!_S)loadState(s=>{_S=s;buildWorkerList();applyRememberMe();});
-  else{buildWorkerList();applyRememberMe();}
-}
-function drawerClose(){
-  document.getElementById('drawer').classList.remove('open');
-  document.getElementById('overlay').classList.remove('open');
-  backToMain();
-}
-
-function backToMain(){
-  _role=null;_workerName=null;_pinBuf='';_attempts=0;
-  document.getElementById('drw-main').style.display='';
-  document.getElementById('drw-pin').classList.remove('show');
-  document.getElementById('drw-pwd').classList.remove('show');
-  document.getElementById('worker-sel-wrap').style.display='none';
-  document.getElementById('pin-who').textContent='';
-  document.getElementById('pin-error').textContent='';
-  document.querySelectorAll('.worker-btn-item').forEach(b=>b.classList.remove('selected'));
-}
-function backToPin(){
-  document.getElementById('drw-pwd').classList.remove('show');
-  document.getElementById('drw-pin').classList.add('show');
-  _pinBuf='';updateDots();scramblePad();
-}
-
-function startLogin(role){
-  _role=role;_workerName=null;_pinBuf='';_attempts=0;
-  document.getElementById('drw-main').style.display='none';
-  document.getElementById('drw-pin').classList.add('show');
-  document.getElementById('pin-error').textContent='';
-  document.getElementById('worker-sel-wrap').style.display=role==='worker'?'block':'none';
-  document.getElementById('pin-who').textContent=role==='worker'?'Select your name above':role.charAt(0).toUpperCase()+role.slice(1);
-  updateDots();scramblePad();
-}
-
-// ── Worker list ──
-function buildWorkerList(){
-  const container=document.getElementById('worker-list');
-  let workers=[];
-  if(_S&&_S.projects){
-    _S.projects.forEach(pr=>{
-      (pr.workers||[]).forEach(w=>{
-        const wname=(typeof w==='string')?w:(w.name||w);
-        if(wname&&!workers.find(x=>x.name===wname))workers.push({name:wname,projectId:pr.id});
-      });
-    });
+// ── Auth guard ──
+function checkAccess(){
+  let role = sessionStorage.getItem('cts_role');
+  let name = sessionStorage.getItem('cts_name') || 'Admin';
+  // Fallback: cts_session (set by dashboard)
+  if(role !== 'admin'){
+    try{
+      const sess = localStorage.getItem('cts_session');
+      if(sess){ const d=JSON.parse(sess); if(d.role==='admin'){ role=d.role; name=d.name||'Admin'; sessionStorage.setItem('cts_role',role); sessionStorage.setItem('cts_name',name); } }
+    }catch(e){}
   }
-  if(!workers.length){container.innerHTML='<div style="font-family:var(--font-mono);font-size:10px;color:var(--text-mute)">No workers found</div>';return;}
-  container.innerHTML=workers.map(w=>`<button class="worker-btn-item" onclick="selectWorker('${escH(w.name)}','${escH(w.projectId)}')">${escH(w.name)}</button>`).join('');
-}
-function selectWorker(name,projectId){
-  _workerName=name;_workerProject=projectId;
-  document.querySelectorAll('.worker-btn-item').forEach(b=>b.classList.toggle('selected',b.textContent.trim()===name));
-  document.getElementById('pin-who').textContent=name;
-  _pinBuf='';updateDots();
+  // Fallback: cts_remember
+  if(role !== 'admin'){
+    try{
+      const rm = localStorage.getItem('cts_remember');
+      if(rm){ const d=JSON.parse(rm); if(d.role==='admin'){ role=d.role; name=d.name||'Admin'; sessionStorage.setItem('cts_role',role); sessionStorage.setItem('cts_name',name); } }
+    }catch(e){}
+  }
+  if(role !== 'admin'){
+    // Not admin — redirect to login
+    window.location.href='index.html';
+    return false;
+  }
+  sessionStorage.setItem('cts_role', role);
+  sessionStorage.setItem('cts_name', name);
+  document.getElementById('admin-content').style.display='block';
+  // Update snav user
+  const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()||'AD';
+  const av=document.getElementById('snav-avatar'); if(av) av.textContent=initials;
+  const un=document.getElementById('snav-uname'); if(un) un.textContent=name;
+  return true;
 }
 
-// ── PIN pad ──
-function scramblePad(){
-  const digits=[1,2,3,4,5,6,7,8,9,0];
-  for(let i=digits.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[digits[i],digits[j]]=[digits[j],digits[i]];}
-  const order=[...digits.slice(0,9),'CLR',digits[9],'⌫'];
-  document.getElementById('pin-pad').innerHTML=order.map(k=>{
-    if(k==='CLR')return`<button class="pin-key action" onclick="pkClear()">CLR</button>`;
-    if(k==='⌫')return`<button class="pin-key action" onclick="pkBack()">⌫</button>`;
-    return`<button class="pin-key" onclick="pk('${k}')">${k}</button>`;
+// ── Load from Firestore ──
+function loadData(){
+  if(!DOC_REF){
+    // No firebase — use empty state for preview
+    _S = buildDefaultState();
+    renderAll();
+    return;
+  }
+  DOC_REF.get().then(snap=>{
+    _S = snap.exists ? snap.data() : buildDefaultState();
+    if(!_S.supervisors) _S.supervisors = [];
+    if(!_S.authConfig)  _S.authConfig  = {};
+    if(!_S.systemSettings) _S.systemSettings = {};
+    renderAll();
+    loadSystemSettings();
+  }).catch(e=>{
+    toast('⚠ Firebase error: '+e.message,'err');
+    _S = buildDefaultState();
+    renderAll();
+  });
+}
+
+function buildDefaultState(){
+  return {
+    projects:[{id:'proj_1',name:'Project 1',workers:['Tech 1']}],
+    supervisors:[],
+    authConfig:{
+      adminPinHash: hashPIN(DEF_ADMIN_PIN),
+      supervisorPinHash: hashPIN(DEF_SUPER_PIN),
+      workerPins:{},
+      supervisorPerms:{}
+    },
+    systemSettings:{}
+  };
+}
+
+// ── Save to Firestore ──
+function saveData(cb){
+  if(!DOC_REF){ toast('Firebase not connected','err'); return; }
+  DOC_REF.set(_S, {merge:true}).then(()=>{
+    toast('✓ Saved','ok');
+    if(cb) cb();
+  }).catch(e=>toast('⚠ Save failed: '+e.message,'err'));
+}
+
+// ── Render all ──
+function renderAll(){
+  renderSupervisors();
+  renderWorkers();
+  renderPINTable();
+  renderManuals();
+  renderActivityLog();
+}
+
+// ── Default perms ──
+function defaultPerms(){
+  const p={};
+  ALL_PERMS.forEach(x=>p[x.id]=true);
+  return p;
+}
+
+// ── SUPERVISORS ──
+function renderSupervisors(){
+  const grid = document.getElementById('supervisor-grid');
+  const sups = _S.supervisors || [];
+  if(sups.length===0){
+    grid.innerHTML='<div style="font-family:var(--font-mono);font-size:10px;color:var(--text-mute);padding:20px">No supervisors added yet.</div>';
+    return;
+  }
+  const permsMap = (_S.authConfig && _S.authConfig.supervisorPerms) || {};
+  grid.innerHTML = sups.map((sup,i)=>{
+    const perms = permsMap[sup.name] || defaultPerms();
+    const initials = sup.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    return `<div class="ucard">
+      <div class="ucard-head">
+        <div class="avatar av-sup">${initials}</div>
+        <div>
+          <div class="uname">${escH(sup.name)}</div>
+          <span class="urole-badge b-sup">Supervisor</span>
+        </div>
+        <span class="ucard-pin">PIN ••••</span>
+      </div>
+      <div class="perm-list">
+        ${ALL_PERMS.map(p=>`
+          <div class="perm-row">
+            <span class="perm-label"><span class="perm-icon">${p.icon}</span>${p.label}</span>
+            <label class="toggle">
+              <input type="checkbox" ${perms[p.id]!==false?'checked':''} onchange="togglePerm(${i},'${p.id}',this.checked)">
+              <span class="tslider"></span>
+            </label>
+          </div>`).join('')}
+      </div>
+      <div class="ucard-foot">
+        <button class="sm-btn edit" onclick="openModal('edit-supervisor',${i})">Edit</button>
+        <button class="sm-btn pin-reset" onclick="openPINModal('supervisor','${escH(sup.name)}',null)">PIN</button>
+        <button class="sm-btn del" onclick="confirmDelete('supervisor',${i})">Remove</button>
+      </div>
+    </div>`;
   }).join('');
 }
-function pk(digit){
-  if(_pinBuf.length>=4)return;
-  if(!_role){toast('Select a role first',true);return;}
-  if(_role==='worker'&&!_workerName){toast('Select your name first',true);return;}
-  _pinBuf+=digit;updateDots();
-  if(_pinBuf.length===4)setTimeout(checkPin,180);
+
+function togglePerm(supIdx, permId, val){
+  const sup = _S.supervisors[supIdx];
+  if(!_S.authConfig.supervisorPerms) _S.authConfig.supervisorPerms={};
+  if(!_S.authConfig.supervisorPerms[sup.name]) _S.authConfig.supervisorPerms[sup.name]=defaultPerms();
+  _S.authConfig.supervisorPerms[sup.name][permId]=val;
+  saveData();
 }
-function pkBack(){_pinBuf=_pinBuf.slice(0,-1);updateDots();}
-function pkClear(){_pinBuf='';updateDots();document.getElementById('pin-error').textContent='';scramblePad();}
-function updateDots(){
-  for(let i=0;i<4;i++){
-    const d=document.getElementById('pd'+i);
-    d.className='pin-dot'+(i<_pinBuf.length?' filled':'');d.style.background='';
+
+// ── WORKERS ──
+function renderWorkers(){
+  const body = document.getElementById('worker-tbl-body');
+  const rows = [];
+  (_S.projects||[]).forEach(pr=>{
+    (pr.workers||[]).forEach(w=>{
+      const wname = typeof w==='string'?w:(w.name||w);
+      rows.push({name:wname, project:pr.name, projectId:pr.id});
+    });
+  });
+  if(rows.length===0){
+    body.innerHTML='<div class="loading">No workers found.</div>';
+    return;
+  }
+  body.innerHTML = rows.map(r=>`
+    <div class="tbl-row">
+      <span>${escH(r.name)}</span>
+      <span class="dim">${escH(r.project)}</span>
+      <span><span class="urole-badge b-worker">Worker</span></span>
+      <span style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px">
+        <button class="act-btn warn" onclick="openPINModal('worker','${escH(r.name)}','${escH(r.projectId)}')">PIN</button>
+        <button class="act-btn del" onclick="confirmDeleteWorker('${escH(r.name)}','${escH(r.projectId)}')">Remove</button>
+      </span>
+    </div>`).join('');
+}
+
+// ── PIN TABLE ──
+function renderPINTable(){
+  const body = document.getElementById('pin-tbl-body');
+  const rows = [];
+
+  const ll = (_S.authConfig && _S.authConfig.lastLogin) || {};
+
+  // Build fallback from activity log — find most recent LOGIN per actor
+  const logFallback = {};
+  (_S.activityLog||[]).filter(e=>e.type==='LOGIN').forEach(e=>{
+    if(e.actor && e.ts){
+      const d = new Date(e.ts);
+      const fmt = d.toLocaleString('en-MY',{timeZone:'Asia/Kuala_Lumpur',hour12:false,
+        day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      // Store latest (log is chronological, last entry wins per actor)
+      logFallback[e.actor] = fmt;
+    }
+  });
+
+  function getLL(key, actorName){
+    return ll[key] || logFallback[actorName] || '—';
+  }
+
+  // Admin row
+  rows.push({name:'Admin (You)', role:'admin', badge:'b-admin', label:'Admin', lastLogin:getLL('admin','admin')});
+
+  // Supervisors
+  (_S.supervisors||[]).forEach(sup=>{
+    rows.push({name:sup.name, role:'supervisor', badge:'b-sup', label:'Supervisor', lastLogin:getLL('sup_'+sup.name, sup.name)});
+  });
+
+  // Workers
+  (_S.projects||[]).forEach(pr=>{
+    (pr.workers||[]).forEach(w=>{
+      const wname=typeof w==='string'?w:(w.name||w);
+      rows.push({name:wname, role:'worker', badge:'b-worker', label:'Worker', projectId:pr.id, lastLogin:getLL('wk_'+wname, wname)});
+    });
+  });
+
+  body.innerHTML = rows.map(r=>`
+    <div class="tbl-row">
+      <span>${escH(r.name)}</span>
+      <span><span class="urole-badge ${r.badge}">${r.label}</span></span>
+      <span class="mono" style="letter-spacing:.2em">••••</span>
+      <span class="dim" style="font-family:var(--font-mono);font-size:10px">${r.lastLogin}</span>
+      <span style="padding:8px 14px">
+        ${r.role!=='admin'
+          ? `<button class="act-btn" onclick="openPINModal('${r.role}','${escH(r.name)}','${r.projectId||''}')">Change</button>`
+          : `<button class="act-btn" onclick="openPINModal('admin','Admin',null)">Change</button>`}
+      </span>
+    </div>`).join('');
+}
+
+// ── MODALS ──
+function openModal(type, idx=null){
+  if(type==='add-supervisor'){
+    _editSupIdx=null;
+    document.getElementById('modal-sup-title').textContent='Add Supervisor';
+    document.getElementById('sup-name').value='';
+    document.getElementById('sup-pin').value='';
+    buildSupPermList(null);
+    document.getElementById('modal-supervisor').classList.add('show');
+
+  } else if(type==='edit-supervisor'){
+    _editSupIdx=idx;
+    const sup=_S.supervisors[idx];
+    document.getElementById('modal-sup-title').textContent='Edit Supervisor';
+    document.getElementById('sup-name').value=sup.name;
+    document.getElementById('sup-pin').value='';
+    const perms=(_S.authConfig.supervisorPerms||{})[sup.name]||defaultPerms();
+    buildSupPermList(perms);
+    document.getElementById('modal-supervisor').classList.add('show');
+
+  } else if(type==='add-worker'){
+    document.getElementById('modal-wk-title').textContent='Add Worker';
+    document.getElementById('wk-name').value='';
+    document.getElementById('wk-pin').value='';
+    // Populate project dropdown
+    const sel=document.getElementById('wk-project');
+    sel.innerHTML=(_S.projects||[]).map(p=>`<option value="${escH(p.id)}">${escH(p.name)}</option>`).join('');
+    document.getElementById('modal-worker').classList.add('show');
   }
 }
 
-// ── Check PIN ──
-function checkPin(){
-  const cfg=(_S&&_S.authConfig)?_S.authConfig:{};
-  const adminHash=cfg.adminPinHash||hashPIN(DEF_ADMIN_PIN);
-  const superHash=cfg.supervisorPinHash||hashPIN(DEF_SUPER_PIN);
-  const entered=hashPIN(_pinBuf);
-  let ok=false;
-  if(_role==='admin'&&entered===adminHash)ok=true;
-  else if(_role==='supervisor'&&entered===superHash)ok=true;
-  else if(_role==='worker'){
-    const key=_workerProject+'__'+_workerName;
-    const workerHash=(cfg.workerPins&&cfg.workerPins[key])||hashPIN(DEF_WORKER_PIN);
-    if(entered===workerHash)ok=true;
-  }
-  if(ok){
-    if(_role==='admin'){
-      for(let i=0;i<4;i++)document.getElementById('pd'+i).style.background='var(--cyan)';
-      setTimeout(()=>{
-        document.getElementById('drw-pin').classList.remove('show');
-        document.getElementById('drw-pwd').classList.add('show');
-        document.getElementById('pwd-input').value='';
-        document.getElementById('pwd-error').textContent='';
-        setTimeout(()=>document.getElementById('pwd-input').focus(),150);
-      },400);
+function buildSupPermList(perms){
+  const list=document.getElementById('sup-perm-list');
+  list.innerHTML=ALL_PERMS.map(p=>`
+    <div class="perm-row">
+      <span class="perm-label"><span class="perm-icon">${p.icon}</span>${p.label}</span>
+      <label class="toggle">
+        <input type="checkbox" id="mp-${p.id}" ${!perms||perms[p.id]!==false?'checked':''}>
+        <span class="tslider"></span>
+      </label>
+    </div>`).join('');
+}
+
+function saveSupervisor(){
+  const name=document.getElementById('sup-name').value.trim();
+  const pin=document.getElementById('sup-pin').value.trim();
+  if(!name){ toast('Name required','err'); return; }
+
+  const perms={};
+  ALL_PERMS.forEach(p=>perms[p.id]=document.getElementById('mp-'+p.id).checked);
+
+  if(!_S.supervisors) _S.supervisors=[];
+  if(!_S.authConfig.supervisorPerms) _S.authConfig.supervisorPerms={};
+
+  if(_editSupIdx!==null){
+    const oldName=_S.supervisors[_editSupIdx].name;
+    _S.supervisors[_editSupIdx].name=name;
+    // Move perms if name changed
+    if(oldName!==name){
+      _S.authConfig.supervisorPerms[name]=perms;
+      delete _S.authConfig.supervisorPerms[oldName];
     } else {
-      saveRememberMe();
-      sessionStorage.setItem('cts_role',_role);
-      sessionStorage.setItem('cts_name',_workerName||(_role.charAt(0).toUpperCase()+_role.slice(1)));
-      if(_workerProject)sessionStorage.setItem('cts_project',_workerProject);
-      for(let i=0;i<4;i++)document.getElementById('pd'+i).style.background='var(--green)';
-      toast('✓ Welcome! Redirecting…');
-      setTimeout(()=>{window.location.href='dashboard.html';},700);
+      _S.authConfig.supervisorPerms[name]=perms;
     }
   } else {
-    _attempts++;
-    for(let i=0;i<4;i++)document.getElementById('pd'+i).className='pin-dot error';
-    document.getElementById('pin-error').textContent=_attempts>=3?'Too many attempts.':'Incorrect PIN. Try again.';
-    setTimeout(()=>{_pinBuf='';updateDots();document.getElementById('pin-error').textContent='';scramblePad();},800);
+    _S.supervisors.push({name, addedAt:Date.now()});
+    _S.authConfig.supervisorPerms[name]=perms;
   }
+
+  // Set PIN if provided
+  if(pin.length===4){
+    if(!_S.authConfig.supervisorPins) _S.authConfig.supervisorPins={};
+    _S.authConfig.supervisorPins[name]=hashPIN(pin);
+  }
+
+  saveData(()=>{ renderAll(); closeModal('modal-supervisor'); });
 }
 
-// ── Admin password ──
-function togglePwdShow(){const i=document.getElementById('pwd-input');i.type=i.type==='password'?'text':'password';}
-function checkAdminPwd(){
-  const adminPwd=(_S&&_S.systemSettings&&_S.systemSettings.adminPwd)?_S.systemSettings.adminPwd:'CTS2026';
-  const entered=document.getElementById('pwd-input').value;
-  if(entered===adminPwd){
-    _pwdAttempts=0;saveRememberMe();
-    sessionStorage.setItem('cts_role','admin');sessionStorage.setItem('cts_name','Admin');
-    document.getElementById('pwd-input').style.borderColor='var(--green)';
-    toast('✓ Admin access granted! Redirecting…');
-    setTimeout(()=>{window.location.href='dashboard.html';},700);
+function saveWorker(){
+  const name=document.getElementById('wk-name').value.trim();
+  const pin=document.getElementById('wk-pin').value.trim();
+  const projectId=document.getElementById('wk-project').value;
+  if(!name){ toast('Name required','err'); return; }
+
+  const pr=_S.projects.find(p=>p.id===projectId);
+  if(!pr){ toast('Project not found','err'); return; }
+  if(!pr.workers) pr.workers=[];
+
+  const wname=typeof pr.workers[0]==='string'?name:{name};
+  if(!pr.workers.includes(name)) pr.workers.push(name);
+
+  if(pin.length===4){
+    if(!_S.authConfig.workerPins) _S.authConfig.workerPins={};
+    _S.authConfig.workerPins[workerKey(projectId,name)]=hashPIN(pin);
+  }
+
+  saveData(()=>{ renderAll(); closeModal('modal-worker'); });
+}
+
+// ── PIN modal ──
+function openPINModal(role, name, projectId){
+  _pinTarget={role,name,projectId};
+  document.getElementById('modal-pin-title').textContent='Change PIN — '+name;
+  document.getElementById('modal-pin-user').textContent=
+    role.charAt(0).toUpperCase()+role.slice(1)+(projectId?' · '+projectId:'');
+  document.getElementById('new-pin').value='';
+  document.getElementById('new-pin2').value='';
+  document.getElementById('modal-pin').classList.add('show');
+}
+
+function savePIN(){
+  const p1=document.getElementById('new-pin').value.trim();
+  const p2=document.getElementById('new-pin2').value.trim();
+  if(p1.length!==4||!/^\d{4}$/.test(p1)){ toast('PIN must be 4 digits','err'); return; }
+  if(p1!==p2){ toast('PINs do not match','err'); return; }
+
+  const {role,name,projectId}=_pinTarget;
+  if(!_S.authConfig) _S.authConfig={};
+
+  if(role==='admin'){
+    _S.authConfig.adminPinHash=hashPIN(p1);
+  } else if(role==='supervisor'){
+    if(!_S.authConfig.supervisorPins) _S.authConfig.supervisorPins={};
+    _S.authConfig.supervisorPins[name]=hashPIN(p1);
+    // Also update legacy single supervisor hash if only one supervisor
+    _S.authConfig.supervisorPinHash=hashPIN(p1);
   } else {
-    _pwdAttempts++;
-    document.getElementById('pwd-input').value='';
-    document.getElementById('pwd-input').style.borderColor='var(--red)';
-    document.getElementById('pwd-error').textContent=_pwdAttempts>=3?'Too many attempts. Go back.':'Incorrect password. Try again.';
-    setTimeout(()=>{document.getElementById('pwd-input').style.borderColor='';},800);
+    if(!_S.authConfig.workerPins) _S.authConfig.workerPins={};
+    _S.authConfig.workerPins[workerKey(projectId,name)]=hashPIN(p1);
+  }
+
+  saveData(()=>{ closeModal('modal-pin'); toast('✓ PIN updated','ok'); });
+}
+
+// ── Confirm delete ──
+function confirmDelete(type, idx){
+  const sup=_S.supervisors[idx];
+  document.getElementById('modal-confirm-title').textContent='Remove Supervisor';
+  document.getElementById('modal-confirm-body').textContent=`Remove "${sup.name}"? This cannot be undone.`;
+  _confirmCb=()=>{
+    _S.supervisors.splice(idx,1);
+    if(_S.authConfig.supervisorPerms) delete _S.authConfig.supervisorPerms[sup.name];
+    saveData(()=>renderAll());
+    closeModal('modal-confirm');
+  };
+  document.getElementById('modal-confirm-ok').onclick=_confirmCb;
+  document.getElementById('modal-confirm').classList.add('show');
+}
+
+function confirmDeleteWorker(name, projectId){
+  document.getElementById('modal-confirm-title').textContent='Remove Worker';
+  document.getElementById('modal-confirm-body').textContent=`Remove "${name}" from the project? This cannot be undone.`;
+  _confirmCb=()=>{
+    const pr=_S.projects.find(p=>p.id===projectId);
+    if(pr) pr.workers=(pr.workers||[]).filter(w=>(typeof w==='string'?w:w.name)!==name);
+    if(_S.authConfig.workerPins) delete _S.authConfig.workerPins[workerKey(projectId,name)];
+    saveData(()=>renderAll());
+    closeModal('modal-confirm');
+  };
+  document.getElementById('modal-confirm-ok').onclick=_confirmCb;
+  document.getElementById('modal-confirm').classList.add('show');
+}
+
+function closeModal(id){
+  document.getElementById(id).classList.remove('show');
+}
+
+// ── System Settings ──
+function loadSystemSettings(){
+  const ss=_S.systemSettings||{};
+  if(ss.company) document.getElementById('s-company').value=ss.company;
+  if(ss.lowstock!==undefined) document.getElementById('s-lowstock').checked=ss.lowstock;
+  if(ss.outstock!==undefined) document.getElementById('s-outstock').checked=ss.outstock;
+  if(ss.autopo!==undefined)   document.getElementById('s-autopo').checked=ss.autopo;
+  if(ss.guestAllowed!==undefined) document.getElementById('s-guest').checked=ss.guestAllowed;
+  if(ss.guestSpecs!==undefined)   document.getElementById('s-guestspecs').checked=ss.guestSpecs;
+}
+
+function saveSystemSettings(){
+  if(!_S.systemSettings) _S.systemSettings={};
+  _S.systemSettings.company   = document.getElementById('s-company').value.trim();
+  _S.systemSettings.lowstock  = document.getElementById('s-lowstock').checked;
+  _S.systemSettings.outstock  = document.getElementById('s-outstock').checked;
+  _S.systemSettings.autopo    = document.getElementById('s-autopo').checked;
+  _S.systemSettings.guestAllowed = document.getElementById('s-guest').checked;
+  _S.systemSettings.guestSpecs   = document.getElementById('s-guestspecs').checked;
+
+  // Admin password change
+  const newPwd = document.getElementById('s-adminpwd').value.trim();
+  if(newPwd){
+    _S.systemSettings.adminPwd=newPwd;
+    document.getElementById('s-adminpwd').value='';
+  }
+  saveData();
+}
+
+// ── Logout ──
+// ── Side Nav ──
+function snavOpen(){
+  document.getElementById('sidenav').classList.add('open');
+  document.getElementById('snavOverlay').classList.add('open');
+}
+function snavClose(){
+  document.getElementById('sidenav').classList.remove('open');
+  document.getElementById('snavOverlay').classList.remove('open');
+}
+
+
+// ══════════════════════════════════════════
+// MANUALS MANAGEMENT
+// ══════════════════════════════════════════
+var MANUAL_DEVICES = [
+  {code:'dod', name:'Defrost on Demand'},
+  {code:'ee',  name:'Energy Eye GSM'},
+  {code:'ac',  name:'AC Eye'},
+  {code:'fe',  name:'Fridge Eye'},
+];
+
+function renderManuals(){
+  renderDeviceToggles();
+  renderLinksList();
+}
+
+function renderDeviceToggles(){
+  var el = document.getElementById('manual-devices-list');
+  if(!el) return;
+  var manuals = (_S && _S.manuals) || {};
+  el.innerHTML = MANUAL_DEVICES.map(function(d){
+    var enabled = d.code==='dod'
+      ? (manuals[d.code] ? manuals[d.code].enabled !== false : true)
+      : ((manuals[d.code] && manuals[d.code].enabled) || false);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;">'
+      +'<span style="font-size:14px;font-weight:600;color:var(--text)">'+escH(d.name)+'</span>'
+      +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;">'
+      +'<span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">'+(enabled?'Enabled':'Disabled')+'</span>'
+      +'<input type="checkbox" data-code="'+d.code+'" '+(enabled?'checked':'')
+      +' onchange="toggleDevice(this.dataset.code,this.checked)"'
+      +' style="width:16px;height:16px;accent-color:var(--cyan);cursor:pointer;">'
+      +'</label></div>';
+  }).join('');
+}
+
+function toggleDevice(code, enabled){
+  if(!_S.manuals) _S.manuals={};
+  if(!_S.manuals[code]) _S.manuals[code]={links:[]};
+  _S.manuals[code].enabled = enabled;
+  saveData(function(){ toast('Device '+(enabled?'enabled':'disabled')); renderDeviceToggles(); });
+}
+
+function renderLinksList(){
+  var el = document.getElementById('manual-links-list');
+  if(!el) return;
+  var links = (_S && _S.manuals && _S.manuals.techlinks) || [];
+  if(!links.length){
+    el.innerHTML='<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-mute);padding:10px 0">No links yet. Click + Add Link to add one.</div>';
+    return;
+  }
+  el.innerHTML = links.map(function(lk,i){
+    return '<div style="display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">'
+      +'<span style="font-size:20px">'+escH(lk.icon||'⬇')+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:13px;font-weight:600;color:var(--text)">'+escH(lk.title||'Link')+'</div>'
+      +(lk.desc?'<div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">'+escH(lk.desc)+'</div>':'')
+      +'<div style="font-family:var(--font-mono);font-size:10px;color:var(--cyan);word-break:break-all">'+escH(lk.url)+'</div>'
+      +'</div>'
+      +'<button class="sm-btn" onclick="openEditLink('+i+')" title="Edit">✏</button>'
+      +'<button class="sm-btn danger" onclick="deleteLink('+i+')" title="Delete">✕</button>'
+      +'</div>';
+  }).join('');
+}
+
+function openAddLink(){
+  document.getElementById('lk-title').value='';
+  document.getElementById('lk-url').value='';
+  document.getElementById('lk-desc').value='';
+  document.getElementById('lk-icon').value='⬇';
+  document.getElementById('lk-idx').value='-1';
+  document.getElementById('modal-link').classList.add('show');
+}
+
+function openEditLink(idx){
+  var links = (_S && _S.manuals && _S.manuals.techlinks)||[];
+  var lk = links[idx];
+  if(!lk) return;
+  document.getElementById('lk-title').value=lk.title||'';
+  document.getElementById('lk-url').value=lk.url||'';
+  document.getElementById('lk-desc').value=lk.desc||'';
+  document.getElementById('lk-icon').value=lk.icon||'⬇';
+  document.getElementById('lk-idx').value=idx;
+  document.getElementById('modal-link').classList.add('show');
+}
+
+function saveLink(){
+  var title = document.getElementById('lk-title').value.trim();
+  var url   = document.getElementById('lk-url').value.trim();
+  var desc  = document.getElementById('lk-desc').value.trim();
+  var icon  = document.getElementById('lk-icon').value.trim()||'🔗';
+  var idx   = parseInt(document.getElementById('lk-idx').value);
+  if(!title||!url){ toast('Title and URL required','err'); return; }
+  if(!_S.manuals) _S.manuals={};
+  if(!_S.manuals.techlinks) _S.manuals.techlinks=[];
+  var lk = {title:title,url:url,desc:desc,icon:icon};
+  if(idx>=0) _S.manuals.techlinks[idx]=lk;
+  else _S.manuals.techlinks.push(lk);
+  saveData(function(){ closeModal('modal-link'); toast('Link saved'); renderLinksList(); });
+}
+
+function deleteLink(idx){
+  if(!_S.manuals||!_S.manuals.techlinks) return;
+  _S.manuals.techlinks.splice(idx,1);
+  saveData(function(){ toast('Link deleted'); renderLinksList(); });
+}
+
+
+// ══════════════════════════════════════════
+// ACTIVITY LOG
+// ══════════════════════════════════════════
+function renderActivityLog(){
+  var el = document.getElementById('activityLogPanel');
+  if(!el) return;
+  var log = (_S && _S.activityLog) || [];
+  var dateFilter = document.getElementById('logFilterDate');
+  if(dateFilter){
+    var dates = [...new Set(log.map(function(e){ return e.date; }))].sort().reverse();
+    var curDate = dateFilter.value;
+    dateFilter.innerHTML = '<option value="">All dates</option>' +
+      dates.map(function(d){ return '<option value="'+d+'"'+(d===curDate?' selected':'')+'>'+d+'</option>'; }).join('');
+  }
+  var typeFilter = (document.getElementById('logFilterType')||{}).value||'';
+  var dateVal    = (document.getElementById('logFilterDate')||{}).value||'';
+  var filtered = log.filter(function(e){
+    var matchType = !typeFilter ||
+      (typeFilter==='LOGIN'      && e.type==='LOGIN') ||
+      (typeFilter==='LOGIN_FAIL' && e.type==='LOGIN_FAIL') ||
+      (typeFilter==='LOGOUT'     && e.type==='LOGOUT') ||
+      (typeFilter==='CLOCK'      && (e.type.includes('CLOCK')||e.type.includes('OVERTIME'))) ||
+      (typeFilter==='OT'         && e.type.includes('OT')) ||
+      (typeFilter==='PIN'        && e.type.includes('PIN')) ||
+      (typeFilter==='ADMIN'      && (e.type.includes('ADMIN')||e.type.includes('EDIT')));
+    var matchDate = !dateVal || e.date===dateVal;
+    return matchType && matchDate;
+  });
+  var count = document.getElementById('logCount');
+  if(count) count.textContent = 'Showing '+filtered.length+' of '+log.length+' entries';
+  if(!filtered.length){ el.innerHTML='<div style="color:var(--text-mute);padding:4px;">No entries match filter.</div>'; return; }
+  el.innerHTML = filtered.slice(0,200).map(function(e,i){
+    var d = new Date(e.ts);
+    var t = d.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    var dt = (e.date||'')+' '+t;
+    var col = e.type.includes('FAIL')||e.type.includes('REJECT') ? 'var(--red)' :
+              e.type.includes('APPROVE')||e.type==='LOGIN' ? 'var(--green)' :
+              e.type.includes('PIN') ? 'var(--amber)' : 'var(--text-dim)';
+    var idx = log.indexOf(e);
+    return '<div style="padding:6px 0;border-bottom:1px solid var(--border);">'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">'+
+      '<input type="checkbox" class="log-chk" data-idx="'+idx+'" style="width:12px;height:12px;cursor:pointer;accent-color:var(--cyan);flex-shrink:0;">'+
+      '<span style="color:var(--text-dim);font-size:10px;white-space:nowrap;">'+dt+'</span>'+
+      '<span style="color:'+col+';font-size:11px;font-weight:700;">'+escH(e.type)+'</span>'+
+      '</div>'+
+      '<div style="color:var(--text);font-size:11px;padding-left:18px;word-break:break-word;line-height:1.4;">'+escH(e.detail||'')+(e.actor?' <span style="color:var(--text-dim);font-style:italic;">— '+escH(e.actor)+'</span>':'')+'</div>'+
+      '</div>';
+  }).join('');
+}
+
+function toggleSelectAllLog(checked){
+  document.querySelectorAll('.log-chk').forEach(function(c){ c.checked=checked; });
+}
+
+function deleteSelectedLog(){
+  var checked = [...document.querySelectorAll('.log-chk:checked')];
+  if(!checked.length){ toast('Select entries to delete','err'); return; }
+  var idxs = new Set(checked.map(function(c){ return parseInt(c.dataset.idx); }));
+  if(!_S.activityLog) return;
+  _S.activityLog = _S.activityLog.filter(function(_,i){ return !idxs.has(i); });
+  saveData(function(){ document.getElementById('logSelectAll').checked=false; renderActivityLog(); toast('Deleted '+idxs.size+' entries'); });
+}
+
+function confirmResetLog(){
+  if(!confirm('Reset entire activity log? This cannot be undone.')) return;
+  _S.activityLog=[];
+  saveData(function(){ renderActivityLog(); toast('Activity log cleared'); });
+}
+
+function doLogout(){
+  sessionStorage.clear();
+  window.location.href='index.html';
+}
+
+
+
+// ── Theme toggle (matches dashboard) ──
+function toggleTheme(){
+  const isLight = document.body.classList.toggle('light-mode');
+  document.getElementById('themeBtn').textContent = isLight ? '☀️' : '🌙';
+  localStorage.setItem('cts_theme', isLight ? 'light' : 'dark');
+}
+function initTheme(){
+  const saved = localStorage.getItem('cts_theme');
+  if(saved === 'light'){
+    document.body.classList.add('light-mode');
+    const btn = document.getElementById('themeBtn');
+    if(btn) btn.textContent = '☀️';
   }
 }
+window.addEventListener('DOMContentLoaded', initTheme);
 
-// ── Guest ──
-function goGuest(){
-  sessionStorage.setItem('cts_role','guest');sessionStorage.setItem('cts_name','Guest');
-  window.location.href='manual.html';
-}
 
-// ── Remember Me ──
-function saveRememberMe(){
-  if(!document.getElementById('remember-me').checked){localStorage.removeItem(RM_KEY);return;}
-  localStorage.setItem(RM_KEY,JSON.stringify({role:_role,name:_workerName,project:_workerProject}));
-}
-function applyRememberMe(){
-  try{const raw=localStorage.getItem(RM_KEY);if(raw){const d=JSON.parse(raw);if(d.role)document.getElementById('remember-me').checked=true;}}catch(e){}
-}
+// ── Close modal on bg click ──
+document.querySelectorAll('.modal-bg').forEach(bg=>{
+  bg.addEventListener('click', e=>{ if(e.target===bg) bg.classList.remove('show'); });
+});
 
 // ── Init ──
-window.addEventListener('DOMContentLoaded',()=>{
-  watchProducts();
-  startMenuAnimation();
-  try{const raw=localStorage.getItem(RM_KEY);if(raw)document.getElementById('remember-me').checked=true;}catch(e){}
-});
+if(checkAccess()) loadData();
 </script>
-
-<script>
-// ── Emergency PIN Reset ──
-(function(){
-  try{
-    var params = new URLSearchParams(window.location.search);
-    var code = params.get('reset');
-    if(!code) return;
-    if(code !== 'Ctsreset200734**') return;
-
-    // Remove the reset param from URL immediately (security)
-    var cleanUrl = window.location.pathname;
-    window.history.replaceState({}, document.title, cleanUrl);
-
-    // Show pending message
-    var t = document.createElement('div');
-    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0D1220;border:1px solid #00D4FF;color:#00D4FF;font-family:monospace;font-size:12px;padding:10px 20px;border-radius:8px;z-index:9999;letter-spacing:.05em';
-    t.textContent = '⏳ Resetting admin PIN...';
-    document.body.appendChild(t);
-
-    // Wait for Firebase to fully load — longer timeout
-    var attempts = 0;
-    function doReset(){
-      attempts++;
-      if(attempts > 20){ t.textContent='⚠ Reset failed — refresh and try again'; return; }
-      if(typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length){
-        setTimeout(doReset, 800); return;
-      }
-      try{
-        var db = firebase.firestore();
-        var resetHash = '1537282';
-        db.collection('cts').doc('state').set({
-          authConfig: { adminPinHash: resetHash }
-        }, {merge: true}).then(function(){
-          // Log it
-          try{
-            db.collection('cts').doc('state').set({
-              activityLog: firebase.firestore.FieldValue.arrayUnion({
-                type: 'EMERGENCY_RESET',
-                detail: 'Admin PIN reset via emergency URL',
-                actor: 'System',
-                date: new Date().toLocaleDateString('en-MY'),
-                ts: new Date().toISOString()
-              })
-            }, {merge: true});
-          }catch(e2){}
-          t.style.background='#0D9488';
-          t.style.borderColor='#0D9488';
-          t.style.color='#fff';
-          t.textContent = '✓ Admin PIN reset to default — login with PIN 2026';
-          setTimeout(function(){ t.remove(); }, 5000);
-        }).catch(function(e){
-          t.textContent='⚠ Reset failed: '+e.message;
-          console.warn('Reset failed:',e);
-        });
-      }catch(e3){
-        setTimeout(doReset, 800);
-      }
-    }
-    setTimeout(doReset, 2000);
-  }catch(e){}
-})();
-</script>
-
 </body>
 </html>
