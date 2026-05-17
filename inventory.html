@@ -1102,13 +1102,14 @@ function checkAccess(){
   }
 
   if(!_role || _role==='guest'){
-    document.getElementById('access-denied').style.display='block';
+    // No session — redirect to login
+    window.location.href='index.html';
     return false;
   }
 
-  // Worker — no inventory access
+  // Worker — no inventory access, redirect to dashboard
   if(_role==='worker'){
-    document.getElementById('access-denied').style.display='block';
+    window.location.href='dashboard.html';
     return false;
   }
 
