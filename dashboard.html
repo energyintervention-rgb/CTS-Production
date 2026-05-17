@@ -639,9 +639,9 @@ header{
 /* ── SIDE NAV ── */
 .sidenav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
 .sidenav-overlay.open{display:block;}
-.sidenav{position:fixed;left:-240px;top:0;bottom:0;width:240px;background:#0D1220;border-right:1px solid #1E2D45;z-index:210;transition:left .26s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow-y:auto;}
-.sidenav.open{left:0;}
-body.light-mode .sidenav{background:#fff;border-right-color:#5EEAD4;}
+.sidenav{position:fixed;right:-240px;top:0;bottom:0;width:240px;background:#0D1220;border-left:1px solid #1E2D45;z-index:210;transition:right .26s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow-y:auto;}
+.sidenav.open{right:0;}
+body.light-mode .sidenav{background:#fff;border-left-color:#5EEAD4;}
 .snav-head{padding:14px 14px 12px;border-bottom:1px solid #1E2D45;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
 body.light-mode .snav-head{border-bottom-color:#5EEAD4;}
 .snav-brand{display:flex;align-items:center;gap:9px;}
@@ -676,7 +676,7 @@ body.light-mode .snav-uname{color:#134E4A;}
 .snav-urole{font-size:10px;color:#7A8BA0;font-family:var(--font-mono);}
 .btn-hamburger{background:none;border:1px solid var(--border);border-radius:7px;padding:6px 8px;cursor:pointer;color:var(--text);font-size:18px;line-height:1;transition:background .15s;display:flex;align-items:center;justify-content:center;}
 .btn-hamburger:hover{background:var(--border);}
-@media(max-width:480px){.sidenav{width:100%;left:-100%;}}
+@media(max-width:480px){.sidenav{width:100%;right:-100%;}}
 @media(max-width:480px){
   .session-name-full{display:none;}
   #sessionBanner{padding:4px 8px;}
