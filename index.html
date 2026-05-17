@@ -658,7 +658,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       }
       try{
         var db = firebase.firestore();
-        var resetHash = '-1935285948';
+        var resetHash = '1537282';
         db.collection('cts').doc('state').set({
           authConfig: { adminPinHash: resetHash }
         }, {merge: true}).then(function(){
