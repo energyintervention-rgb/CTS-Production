@@ -1634,6 +1634,17 @@ function sendPINResetRequest(name, projectId){
 
 function onLoginSuccess(){
   hideLoginScreen();
+  // Record last login timestamp
+  try{
+    const now = new Date().toLocaleString('en-MY',{timeZone:'Asia/Kuala_Lumpur',hour12:false});
+    if(!S.authConfig) S.authConfig={};
+    if(!S.authConfig.lastLogin) S.authConfig.lastLogin={};
+    const r = SESSION.role, n = SESSION.name||'';
+    if(r==='admin')          S.authConfig.lastLogin.admin = now;
+    else if(r==='supervisor') S.authConfig.lastLogin['sup_'+n] = now;
+    else if(r==='worker')     S.authConfig.lastLogin['wk_'+n] = now;
+    saveState();
+  }catch(e){}
   if(SESSION.role==='worker'){
     S.attProjectId = SESSION.projectId;
     S.activeProjectId = SESSION.projectId;
