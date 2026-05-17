@@ -768,20 +768,23 @@ body.light-mode .theme-btn{background:rgba(13,148,136,0.08);border-color:#5EEAD4
 <script>
 // Firebase already loaded in head
 var _db = null;
-try{
-  if(firebase.apps.length) _db = firebase.firestore();
-  else{
-    firebase.initializeApp({apiKey:"AIzaSyCk3Vq2vn7FOfps8CEtBE4kePZogR4Pvs0",authDomain:"cts-production-7069c.firebaseapp.com",projectId:"cts-production-7069c",storageBucket:"cts-production-7069c.firebasestorage.app",messagingSenderId:"661872165270",appId:"1:661872165270:web:878ef6410d82cf21059db7"});
-    _db = firebase.firestore();
-  }
-}catch(e){console.warn('Firebase:',e.message);}
+function initFirebase(){
+  try{
+    if(typeof firebase === 'undefined') return;
+    if(firebase.apps.length) _db = firebase.firestore();
+    else{
+      firebase.initializeApp({apiKey:"AIzaSyCk3Vq2vn7FOfps8CEtBE4kePZogR4Pvs0",authDomain:"cts-production-7069c.firebaseapp.com",projectId:"cts-production-7069c",storageBucket:"cts-production-7069c.firebasestorage.app",messagingSenderId:"661872165270",appId:"1:661872165270:web:878ef6410d82cf21059db7"});
+      _db = firebase.firestore();
+    }
+  }catch(e){console.warn('Firebase:',e.message);}
+}
 
 // Device definitions — static metadata
 var DEVICES = [
-  { code:'dod', name:'Defrost on Demand', desc:'Master/slave defrost controller. Initiates defrost cycles only when airflow drops — preventing ice buildup on evaporator coils.', tags:['Modbus RTU','220 VAC / 24 VDC','1.4 MB'], url:'manual-dod.html' },
-  { code:'ee',  name:'Energy Eye GSM',    desc:'Wireless optical energy monitor powered by 2 × D batteries. Reads kWh LED pulses via optical probe. No power wiring required.', tags:['GSM / NB-IoT','2 × D Battery','Optical'], url:'manual-ee.html' },
-  { code:'ac',  name:'AC Eye',            desc:'Smart air conditioner monitor. Tracks runtime, energy consumption and fault events wirelessly.', tags:['Wireless','Cloud'], url:'manual-ac.html' },
-  { code:'fe',  name:'Fridge Eye',        desc:'Cold chain monitoring device for refrigeration units. Alerts on temperature excursions and door open events.', tags:['Temperature','BLE'], url:'manual-fe.html' },
+  { code:'dod', name:'Defrost on Demand', desc:'Master/slave defrost controller. Initiates defrost cycles only when airflow drops — preventing ice buildup on evaporator coils.', tags:['Modbus RTU','220 VAC / 24 VDC','1.4 MB'], url:'manual-dod.pdf' },
+  { code:'ee',  name:'Energy Eye GSM',    desc:'Wireless optical energy monitor powered by 2 × D batteries. Reads kWh LED pulses via optical probe. No power wiring required.', tags:['GSM / NB-IoT','2 × D Battery','Optical'], url:'manual-ee.pdf' },
+  { code:'ac',  name:'AC Eye',            desc:'Smart air conditioner monitor. Tracks runtime, energy consumption and fault events wirelessly.', tags:['Wireless','Cloud'], url:'manual-ac.pdf' },
+  { code:'fe',  name:'Fridge Eye',        desc:'Cold chain monitoring device for refrigeration units. Alerts on temperature excursions and door open events.', tags:['Temperature','BLE'], url:'manual-fe.pdf' },
 ];
 
 function escH(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -799,7 +802,7 @@ function renderDevices(manuals){
       : '<span class="device-badge badge-soon"><span class="badge-dot"></span>Coming Soon</span>';
     const tags = d.tags.map(t=>`<span class="device-tag">${escH(t)}</span>`).join('');
     if(isEnabled){
-      return `<a class="device-card" href="${escH(d.url)}">
+      return `<a class="device-card" href="${escH(d.url)}" target="_blank" rel="noopener">
         <span class="device-arrow">→</span>
         ${badge}
         <div class="device-name">${escH(d.name)}</div>
@@ -870,131 +873,7 @@ function initTheme(){
 }
 window.addEventListener('DOMContentLoaded', initTheme);
 </script>
-<script>
-  // Toast
-  const toast = document.getElementById('toast');
-  const toastMsg = document.getElementById('toast-msg');
-  let toastTimer;
-  function showToast(msg){
-    toastMsg.textContent = msg;
-    toast.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(()=>toast.classList.remove('show'), 3200);
-  }
-  document.getElementById('toast-close').onclick = ()=>toast.classList.remove('show');
 
-  // PDF viewer (PDF.js)
-  const viewer = document.getElementById('viewer');
-  const vPages = document.getElementById('v-pages');
-  const vLoad = document.getElementById('v-load');
-  const vProg = document.getElementById('v-prog');
-  const vTitle = document.getElementById('v-title');
-  const defaultTitle = vTitle ? vTitle.textContent : '';
-  let pdfjsReady = null;
-  function loadPdfJs(){
-    if(pdfjsReady) return pdfjsReady;
-    pdfjsReady = new Promise((resolve, reject)=>{
-      const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-      s.onload = ()=>{
-        window['pdfjs-dist/build/pdf'].GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        resolve(window['pdfjs-dist/build/pdf']);
-      };
-      s.onerror = reject;
-      document.head.appendChild(s);
-    });
-    return pdfjsReady;
-  }
-  async function openViewer(src, opts){
-    opts = opts || {};
-    viewer.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    vPages.innerHTML = '';
-    vLoad.style.display = 'block';
-    vProg.style.width = '0%';
-    if(vTitle) vTitle.textContent = opts.title || defaultTitle;
-    try {
-      const pdfjs = await loadPdfJs();
-      const pdf = await pdfjs.getDocument(src).promise;
-      let start = 1, end = pdf.numPages;
-      if(opts.pages){
-        const m = String(opts.pages).split('-').map(n=>parseInt(n,10));
-        start = Math.max(1, m[0]);
-        end = Math.min(pdf.numPages, m[1] || m[0]);
-      }
-      const N = end - start + 1;
-      const scale = Math.min(2, (window.devicePixelRatio || 1) * 1.3);
-      for(let p=start; p<=end; p++){
-        const page = await pdf.getPage(p);
-        const viewport = page.getViewport({scale});
-        const canvas = document.createElement('canvas');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        canvas.style.width = (viewport.width/scale*1.0) + 'px';
-        await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
-        vPages.appendChild(canvas);
-        vProg.style.width = (((p-start+1)/N)*100) + '%';
-      }
-      vLoad.style.display = 'none';
-    } catch(err){
-      vLoad.innerHTML = 'Could not load PDF — <a href="'+src+'" target="_blank" style="color:var(--cyan)">open in new tab</a>';
-      console.error(err);
-    }
-  }
-  function closeViewer(){
-    viewer.classList.remove('open');
-    vPages.innerHTML = '';
-    document.body.style.overflow = '';
-  }
-  document.getElementById('v-close').onclick = closeViewer;
-  viewer.addEventListener('click', e=>{ if(e.target===viewer) closeViewer(); });
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && viewer.classList.contains('open')) closeViewer(); });
-
-  // Click delegation
-  document.addEventListener('click', e=>{
-    // chapter cards or read-online buttons → open viewer
-    const ch = e.target.closest('a.ch, [data-readonline]');
-    if(ch){
-      e.preventDefault();
-      const src = ch.dataset.readonline || ch.getAttribute('href');
-      if(src && /\.pdf$/i.test(src)) openViewer(src, {pages: ch.dataset.pages, title: ch.dataset.title});
-      return;
-    }
-    // download buttons → real PDF download
-    const b = e.target.closest('[data-dl]');
-    if(b){
-      const file = b.dataset.file;
-      if(file){
-        const a = document.createElement('a');
-        a.href = file;
-        a.download = file;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        showToast(`↓ ${b.dataset.dl} — downloading…`);
-      } else {
-        showToast(`↓ ${b.dataset.dl} — manual.pdf  •  queued`);
-      }
-    }
-  });
-
-  // Copy command on click
-  document.querySelectorAll('.cmd').forEach(c=>{
-    c.addEventListener('click', ()=>{
-      const txt = c.querySelector('code').textContent.trim();
-      navigator.clipboard?.writeText(txt);
-      showToast(`📋 Copied: ${txt}`);
-    });
-  });
-
-  // Tabs (visual only — no other sections yet)
-  document.querySelectorAll('.tab').forEach(b=>{
-    b.addEventListener('click', ()=>{
-      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active');
-    });
-  });
-</script>
 
 <!-- BACK TO TOP -->
 <button type="button" class="back-to-top" id="backToTop" aria-label="Back to top" title="Back to top">
