@@ -50,7 +50,7 @@ body{
   background:none;border:1px solid var(--border);border-radius:8px;
   padding:8px 10px;cursor:pointer;color:var(--text);
   display:flex;align-items:center;justify-content:center;
-  opacity:0;position:relative;min-width:40px;min-height:40px;
+  position:relative;min-width:40px;min-height:40px;
   transition:background .15s,border-color .2s;
 }
 .btn-hamburger:hover{background:var(--border)}
@@ -59,12 +59,7 @@ body{
   content:'';position:absolute;inset:-4px;border-radius:12px;
   border:2px solid var(--cyan);opacity:0;pointer-events:none;
 }
-.btn-hamburger.hint{animation:hintPop .5s ease forwards}
-.btn-hamburger.hint::after{animation:ringFade 1s ease .5s 2}
-.btn-hamburger.visible{opacity:1}
-@keyframes hintPop{
-  0%{opacity:0;transform:scale(.85)}60%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}
-}
+.btn-hamburger.hint::after{animation:ringFade 1s ease 0s 2}
 @keyframes ringFade{0%{opacity:.9}50%{opacity:.4}100%{opacity:0}}
 
 /* tooltip */
@@ -104,7 +99,7 @@ body{
 
 /* products strip */
 .products-strip{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:40px;min-height:4px}
-.prod-pill{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:999px;padding:5px 14px;font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:.06em}
+.prod-pill{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:999px;padding:8px 18px;font-family:var(--font-mono);font-size:13px;color:var(--text-dim);letter-spacing:.06em}
 .prod-dot{width:5px;height:5px;border-radius:50%;background:var(--cyan);flex-shrink:0}
 
 /* guest button */
@@ -434,32 +429,23 @@ let _menuClicked=false,_menuTimers=[];
 function clearMenuTimers(){_menuTimers.forEach(t=>clearTimeout(t));_menuTimers=[];}
 
 function menuPop(){
-  // Remove and re-add hint class to restart ring animation
   menuBtn.classList.remove('hint');
   void menuBtn.offsetWidth;
   menuBtn.classList.add('hint');
-  menuBtn.classList.add('visible');
   menuTip.classList.add('show');
 }
 function menuTipHide(){
   menuTip.classList.remove('show');
 }
-function menuStay(){
-  menuBtn.classList.remove('hint');
-  menuBtn.classList.add('visible');
-  menuTip.classList.remove('show');
-}
 
 function startMenuAnimation(){
-  // Pop in at 2s — button stays visible from here on
+  // Button always visible — just pulse tooltip 3 times
   _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuPop();},2000));
   _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuTipHide();},5000));
-  // Tooltip again at 7s
   _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuPop();},7000));
   _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuTipHide();},10000));
-  // Tooltip again at 12s
   _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuPop();},12000));
-  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuStay();},15000));
+  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuTipHide();},15000));
 }
 
 function onMenuClick(){
