@@ -653,12 +653,12 @@ img,svg,table{max-width:100%}
         <select id="logFilterDate" style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font-mono);font-size:11px;padding:7px 10px;" onchange="renderActivityLog()">
           <option value="">All dates</option>
         </select>
-        <button class="sm-btn danger" id="resetLogBtn" onclick="confirmResetLog()">🗑 Reset Log</button>
+        <button class="sm-btn danger" id="resetLogBtn" onclick="confirmResetLog()" style="white-space:nowrap;flex-shrink:0">🗑 Reset Log</button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
-        <input type="checkbox" id="logSelectAll" style="width:14px;height:14px;cursor:pointer;accent-color:var(--cyan);" onchange="toggleSelectAllLog(this.checked)">
-        <label for="logSelectAll" style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);cursor:pointer;">Select all visible</label>
-        <button class="sm-btn danger" style="margin-left:auto;" onclick="deleteSelectedLog()">Delete Selected</button>
+        <input type="checkbox" id="logSelectAll" style="width:14px;height:14px;cursor:pointer;accent-color:var(--cyan);flex-shrink:0" onchange="toggleSelectAllLog(this.checked)">
+        <label for="logSelectAll" style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);cursor:pointer;white-space:nowrap">Select all</label>
+        <button class="sm-btn danger" style="white-space:nowrap;flex-shrink:0" onclick="deleteSelectedLog()">🗑 Delete Selected</button>
       </div>
       <div id="activityLogPanel" style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:10px;font-family:var(--font-mono);font-size:11px;background:var(--bg2);"></div>
       <div id="logCount" style="font-family:var(--font-mono);font-size:10px;color:var(--text-mute);margin-top:6px;text-align:right;"></div>
@@ -967,19 +967,35 @@ function renderPINTable(){
 
   const ll = (_S.authConfig && _S.authConfig.lastLogin) || {};
 
+  // Build fallback from activity log — find most recent LOGIN per actor
+  const logFallback = {};
+  (_S.activityLog||[]).filter(e=>e.type==='LOGIN').forEach(e=>{
+    if(e.actor && e.ts){
+      const d = new Date(e.ts);
+      const fmt = d.toLocaleString('en-MY',{timeZone:'Asia/Kuala_Lumpur',hour12:false,
+        day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      // Store latest (log is chronological, last entry wins per actor)
+      logFallback[e.actor] = fmt;
+    }
+  });
+
+  function getLL(key, actorName){
+    return ll[key] || logFallback[actorName] || '—';
+  }
+
   // Admin row
-  rows.push({name:'Admin (You)', role:'admin', badge:'b-admin', label:'Admin', lastLogin:ll.admin||'—'});
+  rows.push({name:'Admin (You)', role:'admin', badge:'b-admin', label:'Admin', lastLogin:getLL('admin','admin')});
 
   // Supervisors
   (_S.supervisors||[]).forEach(sup=>{
-    rows.push({name:sup.name, role:'supervisor', badge:'b-sup', label:'Supervisor', lastLogin:ll['sup_'+sup.name]||sup.lastLogin||'—'});
+    rows.push({name:sup.name, role:'supervisor', badge:'b-sup', label:'Supervisor', lastLogin:getLL('sup_'+sup.name, sup.name)});
   });
 
   // Workers
   (_S.projects||[]).forEach(pr=>{
     (pr.workers||[]).forEach(w=>{
       const wname=typeof w==='string'?w:(w.name||w);
-      rows.push({name:wname, role:'worker', badge:'b-worker', label:'Worker', projectId:pr.id, lastLogin:ll['wk_'+wname]||'—'});
+      rows.push({name:wname, role:'worker', badge:'b-worker', label:'Worker', projectId:pr.id, lastLogin:getLL('wk_'+wname, wname)});
     });
   });
 
