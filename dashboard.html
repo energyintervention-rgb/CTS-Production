@@ -982,33 +982,7 @@ img,svg,table{max-width:100%}
 
 
 
-    <!-- Activity Log -->
-    <div class="admin-section" style="margin-top:14px;">
-      <label>📋 Activity Log</label>
-      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
-        <select id="logFilterType" class="admin-input" style="flex:1;min-width:120px;" onchange="renderActivityLog()">
-          <option value="">All types</option>
-          <option value="LOGIN">Login</option>
-          <option value="LOGIN_FAIL">Failed Login</option>
-          <option value="LOGOUT">Logout</option>
-          <option value="CLOCK">Clock In/Out</option>
-          <option value="OT">Overtime</option>
-          <option value="PIN">PIN Changes</option>
-          <option value="ADMIN">Admin Actions</option>
-        </select>
-        <select id="logFilterDate" class="admin-input" style="flex:1;min-width:110px;" onchange="renderActivityLog()">
-          <option value="">All dates</option>
-        </select>
-        <button class="btn-sm btn-red" id="resetLogBtn" onclick="confirmResetLog()" style="white-space:nowrap;">🗑 Reset Log</button>
-      </div>
-      <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;" id="deleteLogRow">
-        <input type="checkbox" id="logSelectAll" style="width:14px;height:14px;cursor:pointer;" onchange="toggleSelectAllLog(this.checked)">
-        <label for="logSelectAll" style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-dim);cursor:pointer;">Select all visible</label>
-        <button class="btn-sm btn-red" style="padding:3px 8px;font-size:0.62rem;margin-left:auto;" onclick="deleteSelectedLog()">Delete Selected</button>
-      </div>
-      <div id="activityLogPanel" style="max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;font-family:var(--font-mono);font-size:0.65rem;"></div>
-      <div id="logCount" style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);margin-top:4px;text-align:right;"></div>
-    </div>
+
   </div>
 
   <div id="attProjectTabs" class="proj-tabs"></div>
@@ -3077,10 +3051,11 @@ function saveAdminPIN(){
 }
 
 function renderActivityLog(){
+  // Moved to admin.html
+  return;
   const el = document.getElementById('activityLogPanel');
   if(!el) return;
 
-  // Show/hide destructive controls based on role
   const isAdmin = S.adminMode;
   const resetBtn = document.getElementById('resetLogBtn');
   const deleteRow = document.getElementById('deleteLogRow');
