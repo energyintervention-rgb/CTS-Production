@@ -404,8 +404,10 @@ function toast(msg,isErr=false){
 // ── Dynamic products from Firestore ──
 function renderProducts(state){
   const strip=document.getElementById('products-strip');
-  if(!state||!state.products||!state.products.length){strip.innerHTML='';return;}
-  strip.innerHTML=state.products.map(p=>`<div class="prod-pill"><span class="prod-dot"></span>${escH(p.name||p.code||String(p))}</div>`).join('');
+  // Products stored at state.inventory.products
+  const prods=(state&&state.inventory&&state.inventory.products)||[];
+  if(!prods.length){strip.innerHTML='';return;}
+  strip.innerHTML=prods.map(p=>`<div class="prod-pill"><span class="prod-dot"></span>${escH(p.name||p.code||String(p))}</div>`).join('');
 }
 
 function watchProducts(){
