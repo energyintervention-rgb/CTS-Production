@@ -543,6 +543,19 @@ img,svg,table{max-width:100%}
         </div>
         <div id="pin-tbl-body"><div class="loading">Loading…</div></div>
       </div>
+
+      <!-- RECOVERY NOTE -->
+      <div style="margin-top:20px;background:rgba(255,184,0,0.06);border:1px solid rgba(255,184,0,0.25);border-radius:10px;padding:14px 16px;">
+        <div style="font-family:var(--font-mono);font-size:10px;color:#FFB800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">⚠ Admin PIN Recovery</div>
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);line-height:1.8">
+          If admin PIN is forgotten:<br>
+          1. Go to <span style="color:#00D4FF">console.firebase.google.com</span><br>
+          2. Select project <span style="color:#00D4FF">cts-production-7069c</span><br>
+          3. Firestore → <span style="color:#00D4FF">cts &gt; state &gt; authConfig &gt; adminPinHash</span><br>
+          4. Replace value with <span style="color:#00D4FF;letter-spacing:.1em">-1935285948</span> (default PIN: 2026)<br>
+          5. Click Update — done
+        </div>
+      </div>
     </div>
 
     <!-- ═══ TAB: SYSTEM SETTINGS ═══ -->
