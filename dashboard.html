@@ -1459,6 +1459,10 @@ function restoreSession(){
 
 function saveSession(sess, remember){
   SESSION = sess;
+  // Always save to sessionStorage so navigation to admin.html works
+  sessionStorage.setItem('cts_role', sess.role||'');
+  sessionStorage.setItem('cts_name', sess.name||'');
+  if(sess.projectId) sessionStorage.setItem('cts_project', sess.projectId);
   if(remember){
     localStorage.setItem('cts_session', JSON.stringify(sess));
     // Save current reset token so this device is considered "up to date"
