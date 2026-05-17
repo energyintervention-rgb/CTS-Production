@@ -1199,8 +1199,8 @@ function renderDeviceToggles(){
       +'<span style="font-size:14px;font-weight:600;color:var(--text)">'+escH(d.name)+'</span>'
       +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;">'
       +'<span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">'+(enabled?'Enabled':'Disabled')+'</span>'
-      +'<input type="checkbox" '+(enabled?'checked':'')
-      +' onchange="toggleDevice(\\"'+d.code+'\\",this.checked)"'
+      +'<input type="checkbox" data-code="'+d.code+'" '+(enabled?'checked':'')
+      +' onchange="toggleDevice(this.dataset.code,this.checked)"'
       +' style="width:16px;height:16px;accent-color:var(--cyan);cursor:pointer;">'
       +'</label></div>';
   }).join('');
