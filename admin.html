@@ -1046,7 +1046,7 @@ img,svg,table{max-width:100%}
         </div>
 
         <!-- Back to top button -->
-        <button onclick="refJump('ref-top')" style="position:sticky;bottom:20px;float:right;margin:0 20px 20px 0;background:var(--cyan);color:#070B14;border:none;border-radius:999px;padding:8px 16px;font-family:var(--font-mono);font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">↑ Top</button>
+
 
       </div>
     </div>
@@ -1856,6 +1856,34 @@ document.querySelectorAll('.modal-bg').forEach(bg=>{
 
 // ── Init ──
 if(checkAccess()) loadData();
+</script>
+
+<!-- App Reference floating back to top -->
+<button id="refBackTop" onclick="refJump('ref-top')" aria-label="Back to top"
+  style="display:none;position:fixed;bottom:28px;right:24px;z-index:500;
+    background:var(--bg2);border:1px solid var(--cyan-soft);border-radius:999px;
+    color:var(--cyan);font-family:var(--font-mono);font-size:11px;font-weight:700;
+    padding:8px 16px;cursor:pointer;transition:all .2s;opacity:0;pointer-events:none">↑ TOP</button>
+<script>
+(function(){
+  var btn = document.getElementById('refBackTop');
+  var refSec = null;
+  function getRefSec(){ return document.getElementById('sec-ref'); }
+  function isRefActive(){
+    var s = getRefSec();
+    return s && s.style.display !== 'none';
+  }
+  function onScroll(){
+    if(!isRefActive()){ btn.style.display='none'; return; }
+    btn.style.display = 'block';
+    if(window.pageYOffset > 300){
+      btn.style.opacity='1'; btn.style.pointerEvents='auto';
+    } else {
+      btn.style.opacity='0'; btn.style.pointerEvents='none';
+    }
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+})();
 </script>
 </body>
 </html>
