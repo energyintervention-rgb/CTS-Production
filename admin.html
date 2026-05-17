@@ -411,6 +411,16 @@ html{overflow-x:hidden}
 body{overflow-x:hidden}
 img,svg,table{max-width:100%}
 
+@media print {
+  .topbar,.tab-bar,.sidenav,.sidenav-overlay,#refBackTop{display:none!important}
+  #admin-content{display:block!important}
+  .sec{display:none!important}
+  #sec-ref{display:block!important}
+  .ref-body{display:block!important}
+  body{background:#fff!important;color:#000!important;font-size:11px}
+  .page-section,#sec-ref>div{page-break-inside:avoid}
+}
+
 </style>
 
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Exo+2:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -704,7 +714,7 @@ img,svg,table{max-width:100%}
             <div style="font-family:var(--font-mono);font-size:11px;color:var(--cyan);letter-spacing:.14em;text-transform:uppercase">◆ App Reference Guide</div>
             <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:3px">CTS Production · Admin only</div>
           </div>
-          <button onclick="window.print()" style="background:var(--cyan);color:#070B14;border:none;border-radius:7px;padding:8px 16px;font-family:var(--font-mono);font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0">Print PDF</button>
+          <button onclick="refPrint()" style="background:var(--cyan);color:#070B14;border:none;border-radius:7px;padding:8px 16px;font-family:var(--font-mono);font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0">Print PDF</button>
         </div>
 
         <!-- Table of contents -->
@@ -1812,6 +1822,12 @@ function adminResetAllSessions(){
 
 
 // ── App Reference tab ──
+function refPrint(){
+  document.querySelectorAll('.ref-body').forEach(function(b){ b.style.display=''; });
+  document.querySelectorAll('.ref-chev').forEach(function(ch){ ch.style.transform='rotate(90deg)'; });
+  setTimeout(function(){ window.print(); }, 300);
+}
+
 function refTog(header){
   var body = header.parentElement.querySelector('.ref-body');
   var ch = header.querySelector('.ref-chev');
@@ -1872,7 +1888,7 @@ if(checkAccess()) loadData();
     return s && s.classList.contains('show');
   }
   function onScroll(){
-    if(isRefActive() && window.pageYOffset > 100){
+    if(isRefActive() && (window.pageYOffset || document.documentElement.scrollTop) > 50){
       btn.style.opacity='1'; btn.style.pointerEvents='auto';
     } else {
       btn.style.opacity='0'; btn.style.pointerEvents='none';
@@ -1881,9 +1897,10 @@ if(checkAccess()) loadData();
   window.addEventListener('scroll', onScroll, {passive:true});
   document.addEventListener('click', function(e){
     if(e.target && e.target.getAttribute('onclick') && e.target.getAttribute('onclick').indexOf('switchTab')>-1){
-      setTimeout(onScroll, 100);
+      setTimeout(onScroll, 200);
     }
   });
+  setTimeout(onScroll, 500);
 })();
 </script>
 </body>
