@@ -732,6 +732,7 @@ img,svg,table{max-width:100%}
     <div class="field"><label>Confirm PIN</label><input id="new-pin2" type="password" maxlength="4" placeholder="••••" inputmode="numeric"></div>
     <div class="modal-btns">
       <button class="mbtn cancel" onclick="closeModal('modal-pin')">Cancel</button>
+      <button class="mbtn" onclick="resetPINtoDefault()" style="background:rgba(255,184,0,0.1);border-color:#FFB800;color:#FFB800;">Reset to Default</button>
       <button class="mbtn confirm" onclick="savePIN()">Save PIN</button>
     </div>
   </div>
@@ -1142,6 +1143,25 @@ function openPINModal(role, name, projectId){
   document.getElementById('new-pin').value='';
   document.getElementById('new-pin2').value='';
   document.getElementById('modal-pin').classList.add('show');
+}
+
+function resetPINtoDefault(){
+  const {role, name, projectId} = _pinTarget;
+  const defaults = {admin:'2026', supervisor:'1234', worker:'0000'};
+  const defaultPin = defaults[role] || '0000';
+  if(!confirm('Reset PIN to default ('+defaultPin+') for '+name+'?')) return;
+  if(!_S.authConfig) _S.authConfig={};
+  if(role==='admin'){
+    _S.authConfig.adminPinHash = hashPIN(defaultPin);
+  } else if(role==='supervisor'){
+    if(!_S.authConfig.supervisorPins) _S.authConfig.supervisorPins={};
+    _S.authConfig.supervisorPins[name] = hashPIN(defaultPin);
+    _S.authConfig.supervisorPinHash = hashPIN(defaultPin);
+  } else {
+    if(!_S.authConfig.workerPins) _S.authConfig.workerPins={};
+    _S.authConfig.workerPins[workerKey(projectId,name)] = hashPIN(defaultPin);
+  }
+  saveData(()=>{ closeModal('modal-pin'); toast('✓ PIN reset to default ('+defaultPin+')','ok'); });
 }
 
 function savePIN(){
