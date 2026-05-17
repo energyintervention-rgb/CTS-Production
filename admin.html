@@ -1184,6 +1184,12 @@ function toast(msg, type=''){
 
 // ── Tab switching ──
 function switchTab(el, sec){
+  if(sec==='ref'){
+    setTimeout(function(){
+      document.querySelectorAll('.ref-body').forEach(function(b){ b.style.display=''; });
+      document.querySelectorAll('.ref-chev').forEach(function(ch){ ch.style.transform='rotate(90deg)'; });
+    }, 50);
+  }
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('show'));
   el.classList.add('active');
@@ -1876,31 +1882,20 @@ if(checkAccess()) loadData();
 
 <!-- App Reference floating back to top -->
 <button id="refBackTop" onclick="refJump('ref-top')" aria-label="Back to top"
-  style="position:fixed;bottom:28px;right:24px;z-index:500;
+  style="display:none;position:fixed;bottom:28px;right:24px;z-index:500;
     background:var(--bg2);border:1px solid var(--cyan-soft);border-radius:999px;
     color:var(--cyan);font-family:var(--font-mono);font-size:11px;font-weight:700;
-    padding:8px 16px;cursor:pointer;transition:opacity .25s;opacity:0;pointer-events:none">↑ TOP</button>
+    padding:8px 16px;cursor:pointer">↑ TOP</button>
 <script>
 (function(){
   var btn = document.getElementById('refBackTop');
-  function isRefActive(){
+  function check(){
     var s = document.getElementById('sec-ref');
-    return s && s.classList.contains('show');
+    var active = s && s.classList.contains('show');
+    btn.style.display = (active && window.pageYOffset > 100) ? 'block' : 'none';
   }
-  function onScroll(){
-    if(isRefActive() && (window.pageYOffset || document.documentElement.scrollTop) > 50){
-      btn.style.opacity='1'; btn.style.pointerEvents='auto';
-    } else {
-      btn.style.opacity='0'; btn.style.pointerEvents='none';
-    }
-  }
-  window.addEventListener('scroll', onScroll, {passive:true});
-  document.addEventListener('click', function(e){
-    if(e.target && e.target.getAttribute('onclick') && e.target.getAttribute('onclick').indexOf('switchTab')>-1){
-      setTimeout(onScroll, 200);
-    }
-  });
-  setTimeout(onScroll, 500);
+  window.addEventListener('scroll', check, {passive:true});
+  document.body.addEventListener('click', function(){ setTimeout(check,200); });
 })();
 </script>
 </body>
