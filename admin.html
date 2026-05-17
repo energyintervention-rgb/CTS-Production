@@ -511,6 +511,7 @@ img,svg,table{max-width:100%}
       <button class="tab" onclick="switchTab(this,'system')">⚙ System Settings</button>
       <button class="tab" onclick="switchTab(this,'manuals')">📖 Manuals</button>
       <button class="tab" onclick="switchTab(this,'log')">📋 Activity Log</button>
+      <button class="tab" onclick="switchTab(this,'ref')">📑 App Reference</button>
     </div>
 
     <!-- ═══ TAB: USERS & PERMISSIONS ═══ -->
@@ -690,6 +691,364 @@ img,svg,table{max-width:100%}
       </div>
       <div id="activityLogPanel" style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:10px;font-family:var(--font-mono);font-size:11px;background:var(--bg2);"></div>
       <div id="logCount" style="font-family:var(--font-mono);font-size:10px;color:var(--text-mute);margin-top:6px;text-align:right;"></div>
+    </div>
+
+
+    <!-- APP REFERENCE SECTION -->
+    <div class="sec" id="sec-ref" style="padding:0">
+      <div style="background:var(--bg2);border-radius:10px;overflow:hidden;position:relative">
+
+        <!-- Header bar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--cyan);letter-spacing:.14em;text-transform:uppercase">◆ App Reference Guide</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:3px">CTS Production · Admin only</div>
+          </div>
+          <button onclick="window.print()" style="background:var(--cyan);color:#070B14;border:none;border-radius:7px;padding:8px 16px;font-family:var(--font-mono);font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0">Print PDF</button>
+        </div>
+
+        <!-- Table of contents -->
+        <div id="ref-top" style="margin:16px 20px;background:#070B14;border:1px solid var(--border);border-radius:10px;padding:16px 18px">
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px">Contents — click to jump</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+            <div onclick="refJump('rs-index')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid transparent;transition:all .15s" onmouseover="this.style.background='#131C2E';this.style.borderColor='var(--border)'" onmouseout="this.style.background='';this.style.borderColor='transparent'">
+              <span style="width:7px;height:7px;border-radius:50%;background:#1D9E75;flex-shrink:0;display:inline-block"></span>
+              <div><div style="font-size:12px;font-weight:700;color:var(--text)">index.html</div><div style="font-size:10px;color:var(--text-dim)">Landing &amp; Login</div></div>
+              <span style="font-size:9px;color:var(--text-mute);margin-left:auto">3 topics</span>
+            </div>
+            <div onclick="refJump('rs-dashboard')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid transparent;transition:all .15s" onmouseover="this.style.background='#131C2E';this.style.borderColor='var(--border)'" onmouseout="this.style.background='';this.style.borderColor='transparent'">
+              <span style="width:7px;height:7px;border-radius:50%;background:#7F77DD;flex-shrink:0;display:inline-block"></span>
+              <div><div style="font-size:12px;font-weight:700;color:var(--text)">dashboard.html</div><div style="font-size:10px;color:var(--text-dim)">Production Dashboard</div></div>
+              <span style="font-size:9px;color:var(--text-mute);margin-left:auto">5 topics</span>
+            </div>
+            <div onclick="refJump('rs-admin')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid transparent;transition:all .15s" onmouseover="this.style.background='#131C2E';this.style.borderColor='var(--border)'" onmouseout="this.style.background='';this.style.borderColor='transparent'">
+              <span style="width:7px;height:7px;border-radius:50%;background:#D85A30;flex-shrink:0;display:inline-block"></span>
+              <div><div style="font-size:12px;font-weight:700;color:var(--text)">admin.html</div><div style="font-size:10px;color:var(--text-dim)">Admin Panel</div></div>
+              <span style="font-size:9px;color:var(--text-mute);margin-left:auto">6 topics</span>
+            </div>
+            <div onclick="refJump('rs-inventory')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid transparent;transition:all .15s" onmouseover="this.style.background='#131C2E';this.style.borderColor='var(--border)'" onmouseout="this.style.background='';this.style.borderColor='transparent'">
+              <span style="width:7px;height:7px;border-radius:50%;background:#BA7517;flex-shrink:0;display:inline-block"></span>
+              <div><div style="font-size:12px;font-weight:700;color:var(--text)">inventory.html</div><div style="font-size:10px;color:var(--text-dim)">Inventory</div></div>
+              <span style="font-size:9px;color:var(--text-mute);margin-left:auto">4 topics</span>
+            </div>
+            <div onclick="refJump('rs-manual')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid transparent;transition:all .15s" onmouseover="this.style.background='#131C2E';this.style.borderColor='var(--border)'" onmouseout="this.style.background='';this.style.borderColor='transparent'">
+              <span style="width:7px;height:7px;border-radius:50%;background:#378ADD;flex-shrink:0;display:inline-block"></span>
+              <div><div style="font-size:12px;font-weight:700;color:var(--text)">manual.html</div><div style="font-size:10px;color:var(--text-dim)">Device Manuals</div></div>
+              <span style="font-size:9px;color:var(--text-mute);margin-left:auto">3 topics</span>
+            </div>
+            <div onclick="refJump('rs-security')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid transparent;transition:all .15s" onmouseover="this.style.background='#131C2E';this.style.borderColor='var(--border)'" onmouseout="this.style.background='';this.style.borderColor='transparent'">
+              <span style="width:7px;height:7px;border-radius:50%;background:#888780;flex-shrink:0;display:inline-block"></span>
+              <div><div style="font-size:12px;font-weight:700;color:var(--text)">Security &amp; Recovery</div><div style="font-size:10px;color:var(--text-dim)">Lockout · Alerts · Emergency</div></div>
+              <span style="font-size:9px;color:var(--text-mute);margin-left:auto">4 topics</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sections -->
+        <div style="padding:0 20px 20px">
+
+          <!-- index.html -->
+          <div id="rs-index" style="margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden;scroll-margin-top:80px">
+            <div onclick="refTog(this)" style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:13px;font-weight:700;color:var(--text)">index.html — Landing &amp; Login</div>
+                <div style="font-size:10px;color:var(--text-dim);margin-top:3px">First page everyone sees. Staff login here, guests view the manual.</div>
+                <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
+                  <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(0,212,255,0.1);color:#00D4FF;border:1px solid rgba(0,212,255,0.2)">All users</span>
+                  <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(122,139,160,0.1);color:#7A8BA0;border:1px solid rgba(122,139,160,0.2)">Guest</span>
+                </div>
+              </div>
+              <span style="color:var(--text-dim);font-size:12px;transition:transform .2s;margin-left:12px" class="ref-chev">▶</span>
+            </div>
+            <div class="ref-body">
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Staff login via ☰ menu</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7;margin-bottom:8px">Staff tap the hamburger button top-right to open the login drawer. Choose your role — Admin needs PIN + password, Supervisor needs PIN only, Worker selects their name then enters PIN.</div>
+                <div style="background:#050910;border:1px solid var(--border);border-left:3px solid rgba(0,212,255,0.3);border-radius:6px;padding:10px 14px">
+                  <div style="font-size:9px;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Example — Admin login</div>
+                  <div style="font-size:11px;color:var(--text-dim);line-height:1.8">
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span><span>Tap <span style="color:var(--cyan)">☰</span> top right → tap <b style="color:var(--text)">Admin</b></span></div>
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span><span>Enter 4-digit PIN on the keypad</span></div>
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span><span>Enter password → tap <span style="color:var(--cyan)">Enter</span></span></div>
+                    <div style="display:flex;gap:8px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">4</span><span>You are taken to the <b style="color:var(--text)">Dashboard</b></span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Guest / View Manual button</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7">Guests (customers, visitors) tap the yellow button to go directly to the Device Manual page without any login. They can view and download device PDFs only. No access to any production data.</div>
+              </div>
+              <div style="padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Product pills</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7">The pills (Energy Eye GSM, AC Eye, etc.) on the landing page load live from Firestore. They update automatically when you add or remove products in the Inventory page. No code change needed.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- dashboard.html -->
+          <div id="rs-dashboard" style="margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden;scroll-margin-top:80px">
+            <div onclick="refTog(this)" style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:13px;font-weight:700;color:var(--text)">dashboard.html — Production Dashboard</div>
+                <div style="font-size:10px;color:var(--text-dim);margin-top:3px">Main workspace for all staff. Three tabs: Attendance, Assembly, Charts.</div>
+                <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
+                  <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(255,68,102,0.1);color:#FF4466;border:1px solid rgba(255,68,102,0.2)">Admin</span>
+                  <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(255,184,0,0.1);color:#FFB800;border:1px solid rgba(255,184,0,0.2)">Supervisor</span>
+                  <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(0,255,136,0.1);color:#00FF88;border:1px solid rgba(0,255,136,0.2)">Worker</span>
+                </div>
+              </div>
+              <span style="color:var(--text-dim);font-size:12px;transition:transform .2s;margin-left:12px" class="ref-chev">▶</span>
+            </div>
+            <div class="ref-body">
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Attendance tab — Clock in / Clock out</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7;margin-bottom:8px">Workers tap their card to clock in when they arrive and clock out when they leave. The system records the time and calculates hours worked automatically. Overnight shifts are detected automatically.</div>
+                <div style="background:#050910;border:1px solid var(--border);border-left:3px solid rgba(0,212,255,0.3);border-radius:6px;padding:10px 14px">
+                  <div style="font-size:9px;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Example — Worker clocks in</div>
+                  <div style="font-size:11px;color:var(--text-dim);line-height:1.8">
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span><span>Login as Worker → <b style="color:var(--text)">Attendance</b> tab</span></div>
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span><span>Tap <span style="color:var(--cyan)">Clock In</span> on your card</span></div>
+                    <div style="display:flex;gap:8px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span><span>Button changes to <span style="color:var(--cyan)">Clock Out</span> — time is recorded</span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Attendance tab — Overtime request</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7;margin-bottom:8px">Workers can request overtime from their card. Supervisor or Admin must approve or reject it. Approved OT is included in the attendance report and export.</div>
+                <div style="background:#050910;border:1px solid var(--border);border-left:3px solid rgba(0,212,255,0.3);border-radius:6px;padding:10px 14px">
+                  <div style="font-size:9px;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Example — Approve OT request</div>
+                  <div style="font-size:11px;color:var(--text-dim);line-height:1.8">
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span><span>Login as Supervisor → <b style="color:var(--text)">Attendance</b> tab</span></div>
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span><span>Find the worker with a pending OT badge</span></div>
+                    <div style="display:flex;gap:8px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span><span>Tap <span style="color:var(--cyan)">Approve</span> or <span style="color:#FF4466">Reject</span></span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Assembly tab — Update parts progress</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7;margin-bottom:8px">Workers update how many units they completed for each assigned part. Supervisor can see overall project progress. Admin can configure parts and targets in the admin settings area.</div>
+                <div style="background:#050910;border:1px solid var(--border);border-left:3px solid rgba(0,212,255,0.3);border-radius:6px;padding:10px 14px">
+                  <div style="font-size:9px;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Example — Worker updates units</div>
+                  <div style="font-size:11px;color:var(--text-dim);line-height:1.8">
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span><span>Login as Worker → <b style="color:var(--text)">Assembly</b> tab</span></div>
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span><span>Find your part → enter units completed today</span></div>
+                    <div style="display:flex;gap:8px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span><span>Tap <span style="color:var(--cyan)">Update</span> — progress bar refreshes</span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Assembly tab — Send WhatsApp report</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7">Supervisor or Admin can send the current assembly progress as a WhatsApp message to configured contacts. The message includes all parts, units done, and percentage complete. Contacts are configured in Admin → System Settings.</div>
+              </div>
+              <div style="padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Charts tab</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7">Visual charts showing attendance patterns and assembly progress over time. Admin and Supervisor see all projects. Workers see their own project only. Useful for weekly and monthly reviews.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- admin.html -->
+          <div id="rs-admin" style="margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden;scroll-margin-top:80px">
+            <div onclick="refTog(this)" style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:13px;font-weight:700;color:var(--text)">admin.html — Admin Panel</div>
+                <div style="font-size:10px;color:var(--text-dim);margin-top:3px">Full system management. 6 tabs. Admin login required.</div>
+                <div style="display:flex;gap:4px;margin-top:6px">
+                  <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(255,68,102,0.1);color:#FF4466;border:1px solid rgba(255,68,102,0.2)">Admin only</span>
+                </div>
+              </div>
+              <span style="color:var(--text-dim);font-size:12px;transition:transform .2s;margin-left:12px" class="ref-chev">▶</span>
+            </div>
+            <div class="ref-body">
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Users &amp; Permissions tab</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7;margin-bottom:8px">Add or remove Workers and Supervisors. Set which features a Supervisor can access — Attendance Edit, Inventory Edit, PO Management, Reports Export, Manual Page. Changes take effect on the next login.</div>
+                <div style="background:#050910;border:1px solid var(--border);border-left:3px solid rgba(0,212,255,0.3);border-radius:6px;padding:10px 14px">
+                  <div style="font-size:9px;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Example — Add a new worker</div>
+                  <div style="font-size:11px;color:var(--text-dim);line-height:1.8">
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span><span>Admin Panel → <b style="color:var(--text)">Users &amp; Permissions</b></span></div>
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span><span>Scroll down → tap <span style="color:var(--cyan)">+ Add Worker</span></span></div>
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span><span>Enter name and select project → Save</span></div>
+                    <div style="display:flex;gap:8px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">4</span><span>Worker can login immediately with default PIN <span style="color:var(--cyan)">0000</span></span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">PIN Management tab</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7;margin-bottom:8px">View all users and their last login time. Change any PIN or reset it to the default. Session Reset forces all devices to log out — useful when a device is lost or shared.</div>
+                <div style="background:#050910;border:1px solid var(--border);border-left:3px solid rgba(0,212,255,0.3);border-radius:6px;padding:10px 14px">
+                  <div style="font-size:9px;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Example — Worker forgot PIN</div>
+                  <div style="font-size:11px;color:var(--text-dim);line-height:1.8">
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span><span>Admin Panel → <b style="color:var(--text)">PIN Management</b></span></div>
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span><span>Find the worker → tap <span style="color:var(--cyan)">Change</span></span></div>
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span><span>Tap <span style="color:var(--cyan)">Reset to Default</span> → PIN becomes <span style="color:var(--cyan)">0000</span></span></div>
+                    <div style="display:flex;gap:8px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">4</span><span>Tell the worker to login with <span style="color:var(--cyan)">0000</span> and change it</span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">System Settings tab</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7">Change the admin password, company name, and system alert thresholds. The admin password is stored securely in Firestore and can be changed here at any time without touching any code.</div>
+              </div>
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Manuals tab</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7;margin-bottom:8px">Enable or disable device cards on the manual page. Add, edit, or delete technical download links that appear for technical staff.</div>
+                <div style="background:#050910;border:1px solid var(--border);border-left:3px solid rgba(0,212,255,0.3);border-radius:6px;padding:10px 14px">
+                  <div style="font-size:9px;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Example — Enable Energy Eye GSM manual</div>
+                  <div style="font-size:11px;color:var(--text-dim);line-height:1.8">
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span><span>Upload <span style="color:var(--cyan)">manual-ee.pdf</span> to GitHub</span></div>
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span><span>Admin Panel → <b style="color:var(--text)">Manuals</b> → tick <span style="color:var(--cyan)">Energy Eye GSM</span></span></div>
+                    <div style="display:flex;gap:8px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span><span>Card shows <span style="color:#00FF88">Available</span> on manual page instantly</span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Activity Log tab</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7;margin-bottom:8px">Every login, clock-in, PIN change, and admin action is recorded with timestamp and who did it. Filter by type or date. Delete individual entries or reset the entire log.</div>
+                <div style="background:#050910;border:1px solid var(--border);border-left:3px solid rgba(0,212,255,0.3);border-radius:6px;padding:10px 14px">
+                  <div style="font-size:9px;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Example — Check who logged in today</div>
+                  <div style="font-size:11px;color:var(--text-dim);line-height:1.8">
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span><span>Admin Panel → <b style="color:var(--text)">Activity Log</b></span></div>
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span><span>Filter by today's date → filter type: <span style="color:var(--cyan)">Login</span></span></div>
+                    <div style="display:flex;gap:8px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span><span>See all logins with time and name</span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">App Reference tab — this page</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7">Full documentation of all pages, features, and how to use them. Use the Print PDF button to save a copy for offline reference.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- inventory.html -->
+          <div id="rs-inventory" style="margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden;scroll-margin-top:80px">
+            <div onclick="refTog(this)" style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:13px;font-weight:700;color:var(--text)">inventory.html — Inventory</div>
+                <div style="font-size:10px;color:var(--text-dim);margin-top:3px">Stock management, purchase orders, and product list.</div>
+                <div style="display:flex;gap:4px;margin-top:6px">
+                  <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(255,68,102,0.1);color:#FF4466;border:1px solid rgba(255,68,102,0.2)">Admin</span>
+                  <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(255,184,0,0.1);color:#FFB800;border:1px solid rgba(255,184,0,0.2)">Supervisor</span>
+                </div>
+              </div>
+              <span style="color:var(--text-dim);font-size:12px;transition:transform .2s;margin-left:12px" class="ref-chev">▶</span>
+            </div>
+            <div class="ref-body">
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Stock tab</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7;margin-bottom:8px">View all parts with current stock, minimum level, and status (OK / Low / Out). Use + IN and - OUT buttons to adjust. View the movement log for each part.</div>
+                <div style="background:#050910;border:1px solid var(--border);border-left:3px solid rgba(0,212,255,0.3);border-radius:6px;padding:10px 14px">
+                  <div style="font-size:9px;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Example — Receive new stock</div>
+                  <div style="font-size:11px;color:var(--text-dim);line-height:1.8">
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span><span>Inventory → <b style="color:var(--text)">Stock</b> tab → find the part</span></div>
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span><span>Tap <span style="color:var(--cyan)">+ IN</span> → enter quantity received</span></div>
+                    <div style="display:flex;gap:8px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span><span>Stock level and status update instantly</span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Inbound &amp; Outbound PO tabs</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7">Record purchase orders coming in (Inbound) and goods going out to customers (Outbound). Each PO has a date, supplier/customer, reference number, and items. Export as CSV for accounting.</div>
+              </div>
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Products tab</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7">Manage the list of finished products (e.g. Energy Eye GSM, Defrost on Demand). These products appear as pills on the landing page automatically — no code change needed.</div>
+              </div>
+              <div style="padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Export reports</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7">Export Stock Report, Inbound PO, Outbound PO, or Full Report as CSV. Open in Excel or Google Sheets for further analysis and record keeping.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- manual.html -->
+          <div id="rs-manual" style="margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden;scroll-margin-top:80px">
+            <div onclick="refTog(this)" style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:13px;font-weight:700;color:var(--text)">manual.html — Device Manuals</div>
+                <div style="font-size:10px;color:var(--text-dim);margin-top:3px">Public device manual index. No login required.</div>
+                <div style="display:flex;gap:4px;margin-top:6px">
+                  <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(0,212,255,0.1);color:#00D4FF;border:1px solid rgba(0,212,255,0.2)">All users</span>
+                  <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(122,139,160,0.1);color:#7A8BA0;border:1px solid rgba(122,139,160,0.2)">Guest</span>
+                </div>
+              </div>
+              <span style="color:var(--text-dim);font-size:12px;transition:transform .2s;margin-left:12px" class="ref-chev">▶</span>
+            </div>
+            <div class="ref-body">
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Device cards</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7;margin-bottom:8px">Shows a card for each CTS device. Available cards can be clicked to open the PDF. Coming Soon cards are greyed out. Availability is controlled from Admin → Manuals tab in real time.</div>
+                <div style="background:#050910;border:1px solid var(--border);border-left:3px solid rgba(0,212,255,0.3);border-radius:6px;padding:10px 14px">
+                  <div style="font-size:9px;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Example — Open Defrost on Demand manual</div>
+                  <div style="font-size:11px;color:var(--text-dim);line-height:1.8">
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span><span>Tap <b style="color:var(--text)">Defrost on Demand</b> card</span></div>
+                    <div style="display:flex;gap:8px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:var(--cyan);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span><span>Choose <span style="color:var(--cyan)">Read Online</span> or <span style="color:var(--cyan)">Download PDF</span></span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Technical Download Links</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7">A section at the bottom shows download links for technical tools (e.g. CTS Rulez, CTS RulezPRO). Managed by Admin from the Manuals tab. Only visible when links have been added.</div>
+              </div>
+              <div style="padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Adding a new device manual</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7">Upload the PDF to GitHub with the correct filename (<span style="color:var(--cyan)">manual-ee.pdf</span>, <span style="color:var(--cyan)">manual-ac.pdf</span>, <span style="color:var(--cyan)">manual-fe.pdf</span>), then enable the device from Admin → Manuals tab. The card becomes clickable immediately — no page refresh needed.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Security -->
+          <div id="rs-security" style="margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden;scroll-margin-top:80px">
+            <div onclick="refTog(this)" style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:13px;font-weight:700;color:var(--text)">Security &amp; Recovery</div>
+                <div style="font-size:10px;color:var(--text-dim);margin-top:3px">Lockouts, WhatsApp alerts, and emergency procedures.</div>
+                <div style="display:flex;gap:4px;margin-top:6px">
+                  <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(255,68,102,0.1);color:#FF4466;border:1px solid rgba(255,68,102,0.2)">Admin</span>
+                </div>
+              </div>
+              <span style="color:var(--text-dim);font-size:12px;transition:transform .2s;margin-left:12px" class="ref-chev">▶</span>
+            </div>
+            <div class="ref-body">
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">PIN lockout — Admin &amp; Supervisor</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7;margin-bottom:8px">After 3 wrong PIN attempts a WhatsApp alert is sent to 60192091913. After 5 wrong attempts the account locks for 15 minutes automatically. The lockout clears itself — no action needed.</div>
+                <div style="background:#050910;border:1px solid var(--border);border-left:3px solid rgba(255,68,102,0.3);border-radius:6px;padding:10px 14px">
+                  <div style="font-size:9px;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">WhatsApp alert message</div>
+                  <div style="font-size:11px;color:var(--text-dim);line-height:1.8">🚨 CTS PRODUCTION SECURITY ALERT<br>ADMIN PIN failed 3 times.<br>Time: 18/05/2026, 10:30 am<br>Please check Admin Panel → Activity Log.</div>
+                </div>
+              </div>
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Password lockout — Admin</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7">Same rules apply to the admin password. 3 wrong attempts → WhatsApp alert. 5 wrong attempts → locked 15 minutes. If you forgot the password go to Firebase Console → cts/state → systemSettings → adminPwd to read or replace it.</div>
+              </div>
+              <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Worker PIN lockout</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7">After 3 wrong attempts the worker is blocked and a WhatsApp is sent to all contacts in the project's WA Contacts list. Admin resets the PIN from Admin Panel → PIN Management → Change → Reset to Default.</div>
+              </div>
+              <div style="padding:14px 18px">
+                <div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:6px">Emergency Reset — Life Jacket URL</div>
+                <div style="font-size:11px;color:#B0BCC8;line-height:1.7;margin-bottom:8px">If you are locked out and cannot login as Admin, use the emergency URL saved privately on your phone. It resets the Admin PIN back to the default silently. After reset, login with the default PIN and change it immediately from Admin Panel → PIN Management.</div>
+                <div style="background:#050910;border:1px solid var(--border);border-left:3px solid rgba(255,184,0,0.3);border-radius:6px;padding:10px 14px">
+                  <div style="font-size:9px;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Recovery procedure</div>
+                  <div style="font-size:11px;color:var(--text-dim);line-height:1.8">
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:#FFB800;font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span><span>Open the emergency URL from your private notes</span></div>
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:#FFB800;font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span><span>Wait for green toast: <span style="color:#00FF88">✓ Admin PIN reset to default</span></span></div>
+                    <div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:#FFB800;font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span><span>Login normally with the default Admin PIN</span></div>
+                    <div style="display:flex;gap:8px"><span style="min-width:18px;height:18px;border-radius:50%;background:#1E2D45;color:#FFB800;font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">4</span><span>Admin Panel → PIN Management → change your PIN immediately</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Back to top button -->
+        <button onclick="refJump('ref-top')" style="position:sticky;bottom:20px;float:right;margin:0 20px 20px 0;background:var(--cyan);color:#070B14;border:none;border-radius:999px;padding:8px 16px;font-family:var(--font-mono);font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">↑ Top</button>
+
+      </div>
     </div>
 
   </div><!-- end admin-content -->
@@ -1449,6 +1808,21 @@ function adminResetAllSessions(){
   if(!_S.authConfig) _S.authConfig={};
   _S.authConfig.sessionResetToken = Date.now().toString();
   saveData(()=>{ toast('✓ All sessions reset — devices will re-login on next open','ok'); });
+}
+
+
+// ── App Reference tab ──
+function refTog(header){
+  var body = header.parentElement.querySelector('.ref-body');
+  var ch = header.querySelector('.ref-chev');
+  if(!body) return;
+  var hidden = body.style.display === 'none';
+  body.style.display = hidden ? '' : 'none';
+  if(ch) ch.style.transform = hidden ? 'rotate(90deg)' : '';
+}
+function refJump(id){
+  var el = document.getElementById(id);
+  if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function doLogout(){
