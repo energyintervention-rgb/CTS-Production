@@ -822,11 +822,13 @@ function renderDevices(manuals){
 }
 
 function loadDevices(){
+  initFirebase();
   if(!_db){ renderDevices(null); loadTechLinks(null); return; }
   _db.collection('cts').doc('state').onSnapshot(snap=>{
     const data = snap.exists ? snap.data() : {};
     renderDevices(data.manuals||{});
-  },()=>renderDevices(null));
+    loadTechLinks(data.manuals||{});
+  },()=>{ renderDevices(null); loadTechLinks(null); });
 }
 
 
