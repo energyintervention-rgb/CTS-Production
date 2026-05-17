@@ -2020,7 +2020,7 @@ function startRealtimeSync(){
     if(ind){ ind.textContent='📱 LOCAL'; ind.style.color='var(--amber)'; }
     _firstLoad = false;
     loadTheme();
-    if(restoreSession()) onLoginSuccess();
+    if(restoreSession()){ S.adminMode=(SESSION&&SESSION.role==='admin'); onLoginSuccess(); }
     else if(bridgeFromLanding()) onLoginSuccess();
     else showLoginScreen();
     return;
@@ -2031,8 +2031,8 @@ function startRealtimeSync(){
     if(!remote) return;
     // Don't overwrite if we just saved (within 2s)
     const merged = mergeState(remote);
-    // Preserve local adminMode and SESSION
-    merged.adminMode = S.adminMode || false;
+    // Preserve adminMode only if current session is admin
+    merged.adminMode = (SESSION && SESSION.role === 'admin') ? (S.adminMode || false) : false;
     S = merged;
     localStorage.setItem('cts_state_v3', JSON.stringify(S));
     if(_firstLoad){
@@ -2042,6 +2042,8 @@ function startRealtimeSync(){
       loadTheme();
       // Check for remembered session
       if(restoreSession()){
+        // Enforce adminMode by role — never let non-admin inherit admin state
+        S.adminMode = (SESSION && SESSION.role === 'admin');
         onLoginSuccess();
       } else if(bridgeFromLanding()){
         onLoginSuccess();
@@ -2068,7 +2070,7 @@ function startRealtimeSync(){
     if(_firstLoad){
       _firstLoad=false;
       loadTheme();
-      if(restoreSession()) onLoginSuccess();
+      if(restoreSession()){ S.adminMode=(SESSION&&SESSION.role==='admin'); onLoginSuccess(); }
       else if(bridgeFromLanding()) onLoginSuccess();
       else showLoginScreen();
     }
