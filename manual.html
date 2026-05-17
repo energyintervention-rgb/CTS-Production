@@ -594,6 +594,52 @@ body.light-mode .back-to-top:hover{background:#CCFBF1;border-color:#0F766E;color
   .back-to-top .arr{font-size:18px}
 }
 @media print{.back-to-top{display:none!important}}
+
+/* ── SIDE NAV ── */
+.sidenav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
+.sidenav-overlay.open{display:block;}
+.sidenav{position:fixed;right:-240px;top:0;bottom:0;width:240px;background:#0D1220;border-left:1px solid #1E2D45;z-index:210;transition:right .26s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow-y:auto;}
+.sidenav.open{right:0;}
+body.light-mode .sidenav{background:#fff;border-left-color:#5EEAD4;}
+.snav-head{padding:14px 14px 12px;border-bottom:1px solid #1E2D45;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+body.light-mode .snav-head{border-bottom-color:#5EEAD4;}
+.snav-brand{display:flex;align-items:center;gap:9px;}
+.snav-logo{width:32px;height:32px;border-radius:7px;background:#070B14;border:1px solid rgba(0,212,255,0.2);display:grid;place-items:center;flex-shrink:0;}
+.snav-logo svg{width:24px;height:24px;}
+.snav-title{font-size:13px;font-weight:700;color:#E2E8F0;}
+body.light-mode .snav-title{color:#134E4A;}
+.snav-sub{font-size:9px;color:#7A8BA0;letter-spacing:.12em;margin-top:1px;font-family:var(--font-mono);}
+.snav-close{background:none;border:none;cursor:pointer;padding:5px;color:#7A8BA0;font-size:18px;line-height:1;border-radius:5px;}
+.snav-close:hover{background:#1E2D45;color:#E2E8F0;}
+body.light-mode .snav-close:hover{background:#CCFBF1;color:#0D9488;}
+.snav-grp{font-size:9px;color:#3F4A5E;letter-spacing:.14em;text-transform:uppercase;padding:12px 14px 4px;font-family:var(--font-mono);flex-shrink:0;}
+body.light-mode .snav-grp{color:#5EEAD4;}
+.snav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;margin:1px 6px;border-radius:7px;cursor:pointer;font-size:13px;color:#7A8BA0;transition:background .15s,color .15s;border:none;background:none;width:calc(100% - 12px);text-align:left;}
+.snav-item svg{flex-shrink:0;width:16px;height:16px;}
+.snav-item:hover{background:#131C2E;color:#E2E8F0;}
+body.light-mode .snav-item:hover{background:#CCFBF1;color:#0D9488;}
+.snav-item.active{background:rgba(0,212,255,0.08);color:#00D4FF;border:0.5px solid rgba(0,212,255,0.15);}
+body.light-mode .snav-item.active{background:#CCFBF1;color:#0D9488;border-color:#5EEAD4;}
+.snav-item.amber{color:#FFB800;}
+.snav-item.amber:hover{background:rgba(255,184,0,0.08);color:#FFB800;}
+.snav-item.danger:hover{background:rgba(255,68,102,0.1);color:#FF4466;}
+.snav-divider{height:1px;background:#1E2D45;margin:6px 14px;flex-shrink:0;}
+body.light-mode .snav-divider{background:#5EEAD4;}
+.snav-foot{margin-top:auto;padding:10px 6px;border-top:1px solid #1E2D45;flex-shrink:0;}
+body.light-mode .snav-foot{border-top-color:#5EEAD4;}
+.snav-user{display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:4px;}
+.snav-avatar{width:30px;height:30px;border-radius:50%;background:rgba(255,184,0,0.1);border:1px solid rgba(255,184,0,0.25);display:grid;place-items:center;font-size:11px;font-weight:700;color:#FFB800;flex-shrink:0;font-family:var(--font-mono);}
+.snav-avatar.staff{background:rgba(0,212,255,0.1);border-color:rgba(0,212,255,0.25);color:#00D4FF;}
+body.light-mode .snav-avatar{background:#CCFBF1;border-color:#5EEAD4;color:#0D9488;}
+.snav-uname{font-size:12px;color:#E2E8F0;font-weight:600;}
+body.light-mode .snav-uname{color:#134E4A;}
+.snav-urole{font-size:10px;color:#7A8BA0;font-family:var(--font-mono);}
+.btn-hamburger{background:none;border:1px solid #1E2D45;border-radius:7px;padding:6px 8px;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center;transition:background .15s;min-height:36px;}
+.btn-hamburger:hover{background:#1E2D45;}
+body.light-mode .btn-hamburger{border-color:#5EEAD4;color:#134E4A;}
+body.light-mode .btn-hamburger:hover{background:#CCFBF1;}
+.btn-hamburger svg{width:18px;height:18px;display:block;}
+@media(max-width:480px){.sidenav{width:100%;right:-100%;}}
 </style>
 </head>
 <body>
@@ -611,11 +657,80 @@ body.light-mode .back-to-top:hover{background:#CCFBF1;border-color:#0F766E;color
       </div>
     </div>
     <div class="top-right">
-      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
-      <a href="index.html" class="back">← Back to Dashboard</a>
       <span class="live-pill"><span class="dot"></span>Live</span>
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
+      <button class="btn-hamburger" onclick="snavOpen()" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
     </div>
   </div>
+
+<!-- SIDENAV OVERLAY -->
+<div class="sidenav-overlay" id="snavOverlay" onclick="snavClose()"></div>
+
+<!-- SIDE NAV -->
+<nav class="sidenav" id="sidenav" aria-label="Main navigation">
+  <div class="snav-head">
+    <div class="snav-brand">
+      <div class="snav-logo">
+        <svg viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg"><rect width="38" height="38" rx="8" fill="#070B14"/><rect x="3" y="3" width="32" height="32" rx="6" fill="#131C2E" stroke="#00D4FF" stroke-width="1.5"/><text x="19" y="18" font-family="Arial,sans-serif" font-weight="900" font-size="10" fill="#00D4FF" text-anchor="middle" dominant-baseline="middle">CTS</text><text x="19" y="29" font-family="Arial,sans-serif" font-weight="600" font-size="5" fill="#7A8BA0" text-anchor="middle" dominant-baseline="middle" letter-spacing="1">PROD</text></svg>
+      </div>
+      <div>
+        <div class="snav-title">CTS Production</div>
+        <div class="snav-sub">MYT · UTC+8</div>
+      </div>
+    </div>
+    <button class="snav-close" onclick="snavClose()" aria-label="Close">✕</button>
+  </div>
+
+  <!-- Staff links (hidden for guest) -->
+  <div id="snav-staff-links" style="display:none">
+    <div class="snav-grp">Pages</div>
+    <button class="snav-item" onclick="window.location.href='dashboard.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </button>
+    <button class="snav-item" id="snav-inventory" onclick="window.location.href='inventory.html'" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      Inventory
+    </button>
+    <button class="snav-item" id="snav-admin" onclick="window.location.href='admin.html'" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      Admin Panel
+    </button>
+    <button class="snav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      Device Manual
+    </button>
+  </div>
+
+  <!-- Guest links -->
+  <div id="snav-guest-links" style="display:none">
+    <div class="snav-grp">You have access to</div>
+    <button class="snav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      Device Manual
+    </button>
+  </div>
+
+  <div class="snav-foot">
+    <div class="snav-user">
+      <div class="snav-avatar" id="snav-avatar">GU</div>
+      <div>
+        <div class="snav-uname" id="snav-uname">Guest</div>
+        <div class="snav-urole" id="snav-urole">Visitor</div>
+      </div>
+    </div>
+    <button class="snav-item amber" onclick="window.location.href='index.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#FFB800" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Back to Login
+    </button>
+    <button class="snav-item danger" id="snav-logout" onclick="doLogout()" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Logout
+    </button>
+  </div>
+</nav>
 
   <!-- SECTION TABS -->
 
@@ -1195,6 +1310,70 @@ window.addEventListener('DOMContentLoaded', initTheme);
   });
   update();
 })();
+
+// ── Side Nav ──
+function snavOpen(){
+  document.getElementById('sidenav').classList.add('open');
+  document.getElementById('snavOverlay').classList.add('open');
+}
+function snavClose(){
+  document.getElementById('sidenav').classList.remove('open');
+  document.getElementById('snavOverlay').classList.remove('open');
+}
+function doLogout(){
+  sessionStorage.clear();
+  window.location.href='index.html';
+}
+function initNav(){
+  const role = sessionStorage.getItem('cts_role') || '';
+  const name = sessionStorage.getItem('cts_name') || '';
+  // Try localStorage fallbacks
+  let finalRole = role, finalName = name;
+  if(!finalRole){
+    try{
+      const sess = localStorage.getItem('cts_session');
+      if(sess){ const d=JSON.parse(sess); finalRole=d.role||''; finalName=d.name||''; }
+    }catch(e){}
+  }
+  if(!finalRole){
+    try{
+      const rm = localStorage.getItem('cts_remember');
+      if(rm){ const d=JSON.parse(rm); finalRole=d.role||''; finalName=d.name||''; }
+    }catch(e){}
+  }
+
+  const isGuest = !finalRole || finalRole==='guest';
+  const isAdmin = finalRole==='admin';
+  const isSup   = finalRole==='supervisor';
+
+  // Show correct nav section
+  document.getElementById('snav-staff-links').style.display = isGuest?'none':'';
+  document.getElementById('snav-guest-links').style.display = isGuest?'':'none';
+
+  // Role-specific links
+  const inv = document.getElementById('snav-inventory');
+  const adm = document.getElementById('snav-admin');
+  const logout = document.getElementById('snav-logout');
+  if(inv) inv.style.display = (isAdmin||isSup)?'':'none';
+  if(adm) adm.style.display = isAdmin?'':'none';
+  if(logout) logout.style.display = isGuest?'none':'';
+
+  // Avatar
+  const av = document.getElementById('snav-avatar');
+  const un = document.getElementById('snav-uname');
+  const ur = document.getElementById('snav-urole');
+  if(isGuest){
+    if(av){ av.textContent='GU'; av.className='snav-avatar'; }
+    if(un) un.textContent='Guest';
+    if(ur) ur.textContent='Visitor / Customer';
+  } else {
+    const initials = finalName.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()||'?';
+    if(av){ av.textContent=initials; av.className='snav-avatar staff'; }
+    if(un) un.textContent=finalName||finalRole;
+    if(ur) ur.textContent=isAdmin?'Administrator':isSup?'Supervisor':'Worker';
+  }
+}
+window.addEventListener('DOMContentLoaded', initNav);
 </script>
 </body>
 </html>
