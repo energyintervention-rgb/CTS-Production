@@ -1558,6 +1558,14 @@ function loginAsGuest(){
 
 function loginAsRole(role){
   _loginRole=role; _loginWorker=role==='supervisor'?'Supervisor':'Admin';
+  // Check lockout immediately on role selection
+  const _lk = isLockedOut(role);
+  if(_lk){
+    setTimeout(()=>{
+      const el=document.getElementById('pinError');
+      if(el) el.textContent=`Locked out. Try again in ${_lk} min.`;
+    },300);
+  }
   document.getElementById('pinLabel').textContent = role==='supervisor'?'Supervisor PIN':'Admin PIN';
   document.getElementById('rememberRow').style.display='flex';
   showPinStep();
@@ -1588,10 +1596,47 @@ function updatePinDots(){
   }
 }
 
+// ── Lockout helpers ──
+const LOCKOUT_MS   = 15 * 60 * 1000; // 15 minutes
+const ADMIN_WA     = '60192091913';
+
+function getLockoutKey(role){ return 'cts_lockout_' + role; }
+
+function isLockedOut(role){
+  try{
+    const d = JSON.parse(localStorage.getItem(getLockoutKey(role))||'null');
+    if(!d) return false;
+    if(Date.now() < d.until){
+      const mins = Math.ceil((d.until - Date.now()) / 60000);
+      return mins;
+    }
+    localStorage.removeItem(getLockoutKey(role));
+  }catch(e){}
+  return false;
+}
+
+function setLockout(role){
+  localStorage.setItem(getLockoutKey(role), JSON.stringify({until: Date.now() + LOCKOUT_MS}));
+}
+
+function sendAdminWAAlert(role, attempts){
+  const now = new Date().toLocaleString('en-MY',{timeZone:'Asia/Kuala_Lumpur'});
+  const msg = `🚨 CTS PRODUCTION SECURITY ALERT\n${role.toUpperCase()} PIN failed ${attempts} times.\nTime: ${now}\nDevice: ${navigator.userAgent.substring(0,60)}\nPlease check Admin Panel → Activity Log.`;
+  window.open('https://wa.me/'+ADMIN_WA+'?text='+encodeURIComponent(msg),'_blank');
+}
+
 function submitPIN(){
   const cfg = getAuthConfig();
   const entered = hashPIN(_pinBuffer);
   let valid = false;
+
+  // Check lockout first
+  const lockedMins = isLockedOut(_loginRole);
+  if(lockedMins && (_loginRole==='admin'||_loginRole==='supervisor')){
+    _pinBuffer=''; updatePinDots();
+    document.getElementById('pinError').textContent=`Locked out. Try again in ${lockedMins} min.`;
+    return;
+  }
 
   if(_loginRole==='admin') valid = entered===cfg.adminPinHash;
   else if(_loginRole==='supervisor') valid = entered===cfg.supervisorPinHash;
@@ -1599,6 +1644,7 @@ function submitPIN(){
 
   if(valid){
     _pinAttempts=0;
+    localStorage.removeItem(getLockoutKey(_loginRole));
     document.getElementById('pinError').textContent='';
     const remember = document.getElementById('rememberMe').checked;
     const sess = {role:_loginRole, name:_loginWorker, projectId:_loginWorkerProject||null};
@@ -1608,14 +1654,36 @@ function submitPIN(){
   } else {
     _pinAttempts++;
     _pinBuffer=''; updatePinDots();
-    if(_pinAttempts>=3 && _loginRole==='worker'){
-      document.getElementById('pinError').textContent='3 failed attempts.';
-      // Show reset request button
-      sendPINResetRequest(_loginWorker, _loginWorkerProject);
+
+    if(_loginRole==='worker'){
+      if(_pinAttempts>=3){
+        document.getElementById('pinError').textContent='3 failed attempts.';
+        sendPINResetRequest(_loginWorker, _loginWorkerProject);
+      } else {
+        document.getElementById('pinError').textContent=`Incorrect PIN. ${3-_pinAttempts} attempts left.`;
+      }
     } else {
-      document.getElementById('pinError').textContent=`Incorrect PIN. ${_loginRole==='worker'?3-_pinAttempts+' attempts left':''}`;
+      // Admin or Supervisor
+      const maxAttempts = 5;
+      const left = maxAttempts - _pinAttempts;
+
+      if(_pinAttempts===3){
+        // WhatsApp alert at 3 fails
+        sendAdminWAAlert(_loginRole, _pinAttempts);
+        logActivity('LOGIN_FAIL',`⚠ WA alert sent — ${_loginRole} PIN failed 3 times`, _loginWorker);
+      }
+
+      if(_pinAttempts>=maxAttempts){
+        // Lock out at 5 fails
+        setLockout(_loginRole);
+        document.getElementById('pinError').textContent=`Too many attempts. Locked for 15 minutes.`;
+        logActivity('LOGIN_FAIL',`🔒 ${_loginRole} locked out for 15 min after 5 failed attempts`, _loginWorker);
+      } else {
+        document.getElementById('pinError').textContent=`Incorrect PIN. ${left} attempt${left===1?'':'s'} left.`;
+      }
     }
-    logActivity('LOGIN_FAIL',`Failed PIN attempt for ${_loginWorker} (${_pinAttempts}/3)`, _loginWorker);
+
+    logActivity('LOGIN_FAIL',`Failed PIN attempt for ${_loginWorker} (${_pinAttempts})`, _loginWorker);
   }
 }
 
