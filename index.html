@@ -431,33 +431,32 @@ let _menuClicked=false,_menuTimers=[];
 
 function clearMenuTimers(){_menuTimers.forEach(t=>clearTimeout(t));_menuTimers=[];}
 
-function menuShow(){
-  menuBtn.classList.remove('visible');
-  void menuBtn.offsetWidth; // reflow to restart animation
+function menuPop(){
+  // Remove and re-add hint class to restart ring animation
+  menuBtn.classList.remove('hint');
+  void menuBtn.offsetWidth;
   menuBtn.classList.add('hint');
+  menuBtn.classList.add('visible');
   menuTip.classList.add('show');
 }
-function menuHide(){
-  menuBtn.classList.remove('hint','visible');
-  menuBtn.style.opacity='0';
+function menuTipHide(){
   menuTip.classList.remove('show');
 }
 function menuStay(){
   menuBtn.classList.remove('hint');
   menuBtn.classList.add('visible');
-  menuBtn.style.opacity='1';
   menuTip.classList.remove('show');
 }
 
 function startMenuAnimation(){
-  // Cycle 1
-  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuShow();},2000));
-  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuHide();},5000));
-  // Cycle 2
-  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuShow();},7000));
-  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuHide();},10000));
-  // Cycle 3
-  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuShow();},12000));
+  // Pop in at 2s — button stays visible from here on
+  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuPop();},2000));
+  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuTipHide();},5000));
+  // Tooltip again at 7s
+  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuPop();},7000));
+  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuTipHide();},10000));
+  // Tooltip again at 12s
+  _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuPop();},12000));
   _menuTimers.push(setTimeout(()=>{if(!_menuClicked)menuStay();},15000));
 }
 
