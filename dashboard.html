@@ -1655,14 +1655,7 @@ function submitPIN(){
     const sess = {role:_loginRole, name:_loginWorker, projectId:_loginWorkerProject||null};
     saveSession(sess, remember);
     logActivity('LOGIN', `${_loginRole} login: ${_loginWorker}`, _loginWorker);
-    // Send emergency URL to owner on admin login
-    if(_loginRole === 'admin'){
-      try{
-        var now = new Date().toLocaleString('en-MY',{timeZone:'Asia/Kuala_Lumpur'});
-        var msg = '🔑 CTS Production — Emergency Recovery URL\nKeep this message private and do not share.\n\nhttps://energyintervention-rgb.github.io/CTS-Production/index.html?reset=Ctsreset200734**\n\nSent automatically on admin login.\nDate: '+now;
-        window.open('https://wa.me/60198204493?text='+encodeURIComponent(msg),'_blank');
-      }catch(e){}
-    }
+
     onLoginSuccess();
   } else {
     _pinAttempts++;
