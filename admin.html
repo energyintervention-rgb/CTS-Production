@@ -1871,11 +1871,10 @@ if(checkAccess()) loadData();
   function getRefSec(){ return document.getElementById('sec-ref'); }
   function isRefActive(){
     var s = getRefSec();
-    return s && s.style.display !== 'none';
+    return s && s.classList.contains('show');
   }
   function onScroll(){
-    if(!isRefActive()){ btn.style.display='none'; return; }
-    btn.style.display = 'block';
+    if(!isRefActive()){ btn.style.opacity='0'; btn.style.pointerEvents='none'; return; }
     if(window.pageYOffset > 300){
       btn.style.opacity='1'; btn.style.pointerEvents='auto';
     } else {
