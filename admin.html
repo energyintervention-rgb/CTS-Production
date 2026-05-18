@@ -1877,7 +1877,7 @@ if(checkAccess()) loadData();
 <!-- App Reference floating back to top -->
 
 <button type="button" class="ref-back-top" id="refBackTop"
-  onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">
+  onclick="window.scrollTo({top:0,behavior:'smooth'});document.documentElement.scrollTop=0;document.body.scrollTop=0;" aria-label="Back to top">
   <span class="arr">↑</span>
   <span class="lbl">TOP</span>
 </button>
