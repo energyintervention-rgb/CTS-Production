@@ -1834,10 +1834,11 @@ function refJump(id){
   var el = document.getElementById(id);
   if(!el) return;
   if(id === 'ref-top'){
-    window.scrollTo({top:0, behavior:'smooth'});
+    window.scrollTo({top:0,behavior:'smooth'});
+    document.documentElement.scrollTop=0;
+    document.body.scrollTop=0;
   } else {
-    var top = el.getBoundingClientRect().top + window.pageYOffset - 80;
-    window.scrollTo({top:top, behavior:'smooth'});
+    el.scrollIntoView({behavior:'smooth', block:'start'});
   }
 }
 
