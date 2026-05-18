@@ -412,13 +412,15 @@ body{overflow-x:hidden}
 img,svg,table{max-width:100%}
 
 @media print {
-  .topbar,.tab-bar,.sidenav,.sidenav-overlay,#refBackTop{display:none!important}
-  #admin-content{display:block!important}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  .topbar,.tab-bar,.sidenav,.sidenav-overlay,#refBackTop,.ref-chev{display:none!important}
+  #admin-content{display:block!important;padding:0!important}
   .sec{display:none!important}
-  #sec-ref{display:block!important}
+  #sec-ref{display:block!important;padding:0!important}
   .ref-body{display:block!important}
-  body{background:#fff!important;color:#000!important;font-size:11px}
-  .page-section,#sec-ref>div{page-break-inside:avoid}
+  body{background:#070B14!important;margin:0;padding:0}
+  .main{padding:0!important}
+  #sec-ref>div>div:first-child button[onclick*="refPrint"]{display:none!important}
 }
 
 </style>
@@ -759,7 +761,7 @@ img,svg,table{max-width:100%}
 
           <!-- index.html -->
           <div id="rs-index" style="margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden;scroll-margin-top:80px">
-            <div onclick="refTog(this)" style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+            <div style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
               <div>
                 <div style="font-size:13px;font-weight:700;color:var(--text)">index.html — Landing &amp; Login</div>
                 <div style="font-size:10px;color:var(--text-dim);margin-top:3px">First page everyone sees. Staff login here, guests view the manual.</div>
@@ -768,7 +770,7 @@ img,svg,table{max-width:100%}
                   <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(122,139,160,0.1);color:#7A8BA0;border:1px solid rgba(122,139,160,0.2)">Guest</span>
                 </div>
               </div>
-              <span style="color:var(--text-dim);font-size:12px;transition:transform .2s;margin-left:12px" class="ref-chev">▶</span>
+              
             </div>
             <div class="ref-body">
               <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
@@ -797,7 +799,7 @@ img,svg,table{max-width:100%}
 
           <!-- dashboard.html -->
           <div id="rs-dashboard" style="margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden;scroll-margin-top:80px">
-            <div onclick="refTog(this)" style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+            <div style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
               <div>
                 <div style="font-size:13px;font-weight:700;color:var(--text)">dashboard.html — Production Dashboard</div>
                 <div style="font-size:10px;color:var(--text-dim);margin-top:3px">Main workspace for all staff. Three tabs: Attendance, Assembly, Charts.</div>
@@ -807,7 +809,7 @@ img,svg,table{max-width:100%}
                   <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(0,255,136,0.1);color:#00FF88;border:1px solid rgba(0,255,136,0.2)">Worker</span>
                 </div>
               </div>
-              <span style="color:var(--text-dim);font-size:12px;transition:transform .2s;margin-left:12px" class="ref-chev">▶</span>
+              
             </div>
             <div class="ref-body">
               <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
@@ -859,7 +861,7 @@ img,svg,table{max-width:100%}
 
           <!-- admin.html -->
           <div id="rs-admin" style="margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden;scroll-margin-top:80px">
-            <div onclick="refTog(this)" style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+            <div style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
               <div>
                 <div style="font-size:13px;font-weight:700;color:var(--text)">admin.html — Admin Panel</div>
                 <div style="font-size:10px;color:var(--text-dim);margin-top:3px">Full system management. 6 tabs. Admin login required.</div>
@@ -867,7 +869,7 @@ img,svg,table{max-width:100%}
                   <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(255,68,102,0.1);color:#FF4466;border:1px solid rgba(255,68,102,0.2)">Admin only</span>
                 </div>
               </div>
-              <span style="color:var(--text-dim);font-size:12px;transition:transform .2s;margin-left:12px" class="ref-chev">▶</span>
+              
             </div>
             <div class="ref-body">
               <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
@@ -933,7 +935,7 @@ img,svg,table{max-width:100%}
 
           <!-- inventory.html -->
           <div id="rs-inventory" style="margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden;scroll-margin-top:80px">
-            <div onclick="refTog(this)" style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+            <div style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
               <div>
                 <div style="font-size:13px;font-weight:700;color:var(--text)">inventory.html — Inventory</div>
                 <div style="font-size:10px;color:var(--text-dim);margin-top:3px">Stock management, purchase orders, and product list.</div>
@@ -942,7 +944,7 @@ img,svg,table{max-width:100%}
                   <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(255,184,0,0.1);color:#FFB800;border:1px solid rgba(255,184,0,0.2)">Supervisor</span>
                 </div>
               </div>
-              <span style="color:var(--text-dim);font-size:12px;transition:transform .2s;margin-left:12px" class="ref-chev">▶</span>
+              
             </div>
             <div class="ref-body">
               <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
@@ -974,7 +976,7 @@ img,svg,table{max-width:100%}
 
           <!-- manual.html -->
           <div id="rs-manual" style="margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden;scroll-margin-top:80px">
-            <div onclick="refTog(this)" style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+            <div style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
               <div>
                 <div style="font-size:13px;font-weight:700;color:var(--text)">manual.html — Device Manuals</div>
                 <div style="font-size:10px;color:var(--text-dim);margin-top:3px">Public device manual index. No login required.</div>
@@ -983,7 +985,7 @@ img,svg,table{max-width:100%}
                   <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(122,139,160,0.1);color:#7A8BA0;border:1px solid rgba(122,139,160,0.2)">Guest</span>
                 </div>
               </div>
-              <span style="color:var(--text-dim);font-size:12px;transition:transform .2s;margin-left:12px" class="ref-chev">▶</span>
+              
             </div>
             <div class="ref-body">
               <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
@@ -1010,7 +1012,7 @@ img,svg,table{max-width:100%}
 
           <!-- Security -->
           <div id="rs-security" style="margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden;scroll-margin-top:80px">
-            <div onclick="refTog(this)" style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+            <div style="padding:14px 18px;background:#070B14;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
               <div>
                 <div style="font-size:13px;font-weight:700;color:var(--text)">Security &amp; Recovery</div>
                 <div style="font-size:10px;color:var(--text-dim);margin-top:3px">Lockouts, WhatsApp alerts, and emergency procedures.</div>
@@ -1018,7 +1020,7 @@ img,svg,table{max-width:100%}
                   <span style="font-size:9px;padding:2px 8px;border-radius:999px;background:rgba(255,68,102,0.1);color:#FF4466;border:1px solid rgba(255,68,102,0.2)">Admin</span>
                 </div>
               </div>
-              <span style="color:var(--text-dim);font-size:12px;transition:transform .2s;margin-left:12px" class="ref-chev">▶</span>
+              
             </div>
             <div class="ref-body">
               <div style="border-bottom:1px solid #131C2E;padding:14px 18px">
@@ -1186,8 +1188,9 @@ function toast(msg, type=''){
 function switchTab(el, sec){
   if(sec==='ref'){
     setTimeout(function(){
-      document.querySelectorAll('.ref-body').forEach(function(b){ b.style.display=''; });
+      document.querySelectorAll('.ref-body').forEach(function(b){ b.style.display='block'; });
       document.querySelectorAll('.ref-chev').forEach(function(ch){ ch.style.transform='rotate(90deg)'; });
+      window.scrollTo(0,0);
     }, 50);
   }
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -1829,19 +1832,15 @@ function adminResetAllSessions(){
 
 // ── App Reference tab ──
 function refPrint(){
-  document.querySelectorAll('.ref-body').forEach(function(b){ b.style.display=''; });
+  // Expand all sections
+  document.querySelectorAll('.ref-body').forEach(function(b){ b.style.display='block'; });
   document.querySelectorAll('.ref-chev').forEach(function(ch){ ch.style.transform='rotate(90deg)'; });
-  setTimeout(function(){ window.print(); }, 300);
+  // Scroll to top then print
+  window.scrollTo(0,0);
+  setTimeout(function(){ window.print(); }, 500);
 }
 
-function refTog(header){
-  var body = header.parentElement.querySelector('.ref-body');
-  var ch = header.querySelector('.ref-chev');
-  if(!body) return;
-  var hidden = body.style.display === 'none';
-  body.style.display = hidden ? '' : 'none';
-  if(ch) ch.style.transform = hidden ? 'rotate(90deg)' : '';
-}
+function refTog(header){ /* collapsed disabled */ }
 function refJump(id){
   var el = document.getElementById(id);
   if(!el) return;
@@ -1888,22 +1887,30 @@ if(checkAccess()) loadData();
 
 <!-- App Reference floating back to top -->
 <button id="refBackTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top"
-  style="display:none;position:fixed;bottom:28px;right:24px;z-index:500;
+  style="display:none;position:fixed;bottom:28px;right:24px;z-index:9999;
     background:var(--cyan);color:#070B14;border:none;border-radius:999px;
     font-family:var(--font-mono);font-size:11px;font-weight:700;
-    padding:9px 18px;cursor:pointer;box-shadow:0 2px 12px rgba(0,212,255,0.25)">↑ TOP</button>
+    padding:9px 18px;cursor:pointer">↑ TOP</button>
 <script>
 (function(){
   var btn = document.getElementById('refBackTop');
+  function show(){ btn.style.display='block'; }
+  function hide(){ btn.style.display='none'; }
   function check(){
     var s = document.getElementById('sec-ref');
     var active = s && s.classList.contains('show');
-    var scrolled = (window.pageYOffset || document.documentElement.scrollTop) > 120;
-    btn.style.display = (active && scrolled) ? 'block' : 'none';
+    var y = window.pageYOffset || document.documentElement.scrollTop;
+    if(active && y > 150){ show(); } else { hide(); }
   }
   window.addEventListener('scroll', check, {passive:true});
-  document.querySelectorAll('.tab').forEach(function(t){
-    t.addEventListener('click', function(){ setTimeout(check, 300); });
+  // Also check when tab is clicked
+  var orig = window.switchTab;
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    while(t && t !== document.body){
+      if(t.classList && t.classList.contains('tab')){ setTimeout(check, 400); break; }
+      t = t.parentElement;
+    }
   });
 })();
 </script>
