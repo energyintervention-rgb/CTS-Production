@@ -412,15 +412,17 @@ body{overflow-x:hidden}
 img,svg,table{max-width:100%}
 
 @media print {
-  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-  .topbar,.tab-bar,.sidenav,.sidenav-overlay,#refBackTop,.ref-chev{display:none!important}
+  body{background:white;color:black;}
+  body::before,body::after{display:none;}
+  .topbar,.tab-bar,.sidenav,.sidenav-overlay,#refBackTop,.ref-chev,
+  button[onclick*="refPrint"]{display:none!important}
   #admin-content{display:block!important;padding:0!important}
   .sec{display:none!important}
   #sec-ref{display:block!important;padding:0!important}
   .ref-body{display:block!important}
-  body{background:#070B14!important;margin:0;padding:0}
   .main{padding:0!important}
-  #sec-ref>div>div:first-child button[onclick*="refPrint"]{display:none!important}
+  #sec-ref .page-section, #sec-ref>div>div{break-inside:avoid;}
+  @page{size:A4;margin:15mm;}
 }
 
 </style>
@@ -1886,32 +1888,58 @@ if(checkAccess()) loadData();
 </script>
 
 <!-- App Reference floating back to top -->
-<button id="refBackTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top"
-  style="display:none;position:fixed;bottom:28px;right:24px;z-index:9999;
-    background:var(--cyan);color:#070B14;border:none;border-radius:999px;
-    font-family:var(--font-mono);font-size:11px;font-weight:700;
-    padding:9px 18px;cursor:pointer">↑ TOP</button>
+<style>
+.ref-back-top{
+  position:fixed;
+  right:max(20px,env(safe-area-inset-right));
+  bottom:max(20px,env(safe-area-inset-bottom));
+  z-index:9999;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-width:44px;min-height:44px;
+  padding:10px 14px;border-radius:12px;
+  background:rgba(13,18,32,0.92);
+  border:1px solid var(--cyan);
+  color:var(--cyan);
+  font-family:var(--font-mono);
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  cursor:pointer;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  box-shadow:0 8px 24px rgba(0,212,255,0.18),0 0 0 1px rgba(0,212,255,0.08);
+  opacity:0;visibility:hidden;transform:translateY(12px);
+  transition:opacity .25s ease,transform .25s ease,visibility .25s ease,background .15s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.ref-back-top.show{opacity:1;visibility:visible;transform:translateY(0)}
+.ref-back-top:hover{background:rgba(0,212,255,0.12);border-color:#5DEBFF;color:#5DEBFF;box-shadow:0 10px 30px rgba(0,212,255,0.32)}
+.ref-back-top:active{transform:translateY(0) scale(0.96)}
+.ref-back-top .arr{font-size:14px;line-height:1;display:inline-block;transition:transform .2s ease}
+.ref-back-top:hover .arr{transform:translateY(-2px)}
+@media print{.ref-back-top{display:none!important}}
+</style>
+<button type="button" class="ref-back-top" id="refBackTop"
+  onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">
+  <span class="arr">↑</span>
+  <span class="lbl">TOP</span>
+</button>
 <script>
 (function(){
   var btn = document.getElementById('refBackTop');
-  function show(){ btn.style.display='block'; }
-  function hide(){ btn.style.display='none'; }
-  function check(){
+  var ticking = false;
+  function update(){
     var s = document.getElementById('sec-ref');
     var active = s && s.classList.contains('show');
-    var y = window.pageYOffset || document.documentElement.scrollTop;
-    if(active && y > 150){ show(); } else { hide(); }
-  }
-  window.addEventListener('scroll', check, {passive:true});
-  // Also check when tab is clicked
-  var orig = window.switchTab;
-  document.addEventListener('click', function(e){
-    var t = e.target;
-    while(t && t !== document.body){
-      if(t.classList && t.classList.contains('tab')){ setTimeout(check, 400); break; }
-      t = t.parentElement;
+    if(active && window.pageYOffset > 300){
+      btn.classList.add('show');
+    } else {
+      btn.classList.remove('show');
     }
-  });
+    ticking = false;
+  }
+  function onScroll(){
+    if(!ticking){ window.requestAnimationFrame(update); ticking=true; }
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  update();
 })();
 </script>
 </body>
