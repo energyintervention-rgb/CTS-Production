@@ -1224,6 +1224,24 @@ img,svg,table{max-width:100%}
   </div>
 </div>
 
+<!-- ── AUTO CLOCK-OUT REASON MODAL ── -->
+<div class="modal-overlay" id="autoClockOutModal" style="z-index:1100">
+  <div class="modal-box" style="max-width:340px">
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:2rem;margin-bottom:8px">⚠️</div>
+      <h3 style="color:var(--amber);font-size:1rem;margin-bottom:6px">Auto Clock-Out Applied</h3>
+      <p id="autoClockOutMsg" style="font-size:0.8rem;color:var(--text-dim);line-height:1.6;margin-bottom:14px"></p>
+    </div>
+    <label style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:1px;display:block;margin-bottom:6px;color:var(--text-dim)">REASON FOR NOT CLOCKING OUT <span style="color:var(--red)">*</span></label>
+    <input class="modal-input" id="autoClockOutReason" placeholder="e.g. Forgot, Emergency, No access to phone..." 
+      onkeydown="if(event.key==='Enter')confirmAutoClockOutReason()">
+    <div id="autoClockOutHint" style="font-family:var(--font-mono);font-size:0.65rem;color:var(--red);margin-bottom:8px;display:none;">⚠ Please provide a reason.</div>
+    <div class="modal-btns" style="margin-top:12px">
+      <button class="btn-confirm" onclick="confirmAutoClockOutReason()" style="width:100%;background:var(--amber);border-color:var(--amber)">Submit Reason</button>
+    </div>
+  </div>
+</div>
+
 <!-- WA Contact Picker Modal -->
 <div class="modal-overlay" id="waPickerModal">
   <div class="modal">
@@ -1705,6 +1723,105 @@ function sendPINResetRequest(name, projectId){
   showToast('⚠ PIN reset request sent to supervisor','warn');
 }
 
+
+// ══════════════════════════════════════════
+// AUTO CLOCK-OUT (max 12 hours)
+// ══════════════════════════════════════════
+const MAX_WORK_HOURS = 12;
+
+function checkAutoClockOut(){
+  if(!SESSION || SESSION.role !== 'worker') return;
+  const name = SESSION.name;
+  const pr = attProject();
+  if(!pr) return;
+
+  // Check all attendance records for this worker — look for yesterday or earlier with open session
+  const att = pr.attendance || {};
+  const keys = Object.keys(att).filter(k => k.startsWith(name + '_') && k !== name + '_' + TODAY);
+
+  keys.forEach(key => {
+    const rec = att[key];
+    const dateStr = key.replace(name + '_', '');
+
+    // Check flex sessions for open session
+    const flexKey = 'flex_' + name + '_' + pr.id + '_' + dateStr;
+    const sessions = pr.flexSessions && pr.flexSessions[flexKey] ? pr.flexSessions[flexKey] : [];
+
+    // Check for open session in flex
+    const openFlex = sessions.find(s => s.clockIn && !s.clockOut);
+    // Check main record
+    const openMain = rec.clockIn && !rec.clockOut;
+
+    if(openFlex || openMain) {
+      const clockInTime = openFlex ? openFlex.clockIn : rec.clockIn;
+      // Calculate auto clock-out time = clockIn + 12 hours
+      const [h, m, s] = clockInTime.split(':').map(Number);
+      const autoH = (h + MAX_WORK_HOURS) % 24;
+      const autoTime = String(autoH).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s||0).padStart(2,'0');
+
+      // Apply auto clock-out
+      if(openFlex) {
+        openFlex.clockOut = autoTime;
+        openFlex.autoClockOut = true;
+        if(pr.flexSessions) pr.flexSessions[flexKey] = sessions;
+      }
+      if(openMain) {
+        rec.clockOut = autoTime;
+        rec.autoClockOut = true;
+        att[key] = rec;
+      }
+
+      // Show reason modal
+      const msg = 'You did not clock out on ' + dateStr + '. You have been automatically clocked out at ' + autoTime + ' (' + MAX_WORK_HOURS + 'h limit).';
+      document.getElementById('autoClockOutMsg').textContent = msg;
+      document.getElementById('autoClockOutModal').style.display = 'flex';
+      document.getElementById('autoClockOutReason').value = '';
+      document.getElementById('autoClockOutHint').style.display = 'none';
+
+      // Store which record needs the reason
+      window._autoClockOutKey = key;
+      window._autoClockOutDate = dateStr;
+      window._autoClockOutName = name;
+      window._autoClockOutTime = autoTime;
+
+      // Log it
+      logActivity('AUTO_CLOCKOUT', 'Auto clocked out ' + name + ' on ' + dateStr + ' at ' + autoTime + ' (12h limit)', name);
+      saveState();
+    }
+  });
+}
+
+function confirmAutoClockOutReason(){
+  const reason = document.getElementById('autoClockOutReason').value.trim();
+  if(!reason){
+    document.getElementById('autoClockOutHint').style.display = 'block';
+    return;
+  }
+
+  // Save reason to the record
+  const pr = attProject();
+  if(pr && window._autoClockOutKey){
+    const rec = pr.attendance[window._autoClockOutKey];
+    if(rec){
+      rec.autoClockOutReason = reason;
+      rec.clockOutReason = reason;
+      pr.attendance[window._autoClockOutKey] = rec;
+      saveState();
+    }
+    // Also save to flex session reason
+    const flexKey = 'flex_' + window._autoClockOutName + '_' + pr.id + '_' + window._autoClockOutDate;
+    const sessions = pr.flexSessions && pr.flexSessions[flexKey] ? pr.flexSessions[flexKey] : [];
+    const autoSess = sessions.find(s => s.autoClockOut);
+    if(autoSess){ autoSess.reason = reason; if(pr.flexSessions) pr.flexSessions[flexKey] = sessions; saveState(); }
+  }
+
+  logActivity('AUTO_CLOCKOUT_REASON', 'Reason for missing clock-out on ' + window._autoClockOutDate + ': ' + reason, window._autoClockOutName);
+
+  document.getElementById('autoClockOutModal').style.display = 'none';
+  showToast('✓ Reason submitted. Record updated.');
+  renderAttendance();
+}
+
 function onLoginSuccess(){
   hideLoginScreen();
   // Record last login timestamp
@@ -1723,6 +1840,7 @@ function onLoginSuccess(){
     S.activeProjectId = SESSION.projectId;
     S.chartProjectId  = SESSION.projectId;
     showWorkerView();
+    setTimeout(checkAutoClockOut, 800);
   } else if(SESSION.role==='supervisor'){
     showSupervisorView();
   } else {
