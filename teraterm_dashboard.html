@@ -1,0 +1,2638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0e1014">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CTS Energy Eye — TeraTerm Log">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMzYgMzYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjM2IiBoZWlnaHQ9IjM2Ij48cmVjdCB3aWR0aD0iMzYiIGhlaWdodD0iMzYiIHJ4PSI4IiBmaWxsPSIjMTExODIwIi8+PHRleHQgeD0iMTgiIHk9IjI0IiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssQXJpYWwsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjkwMCIgZmlsbD0iIzAwRTVGRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Q1RTPC90ZXh0Pjwvc3ZnPg==">
+<title>CTS Energy Eye — TeraTerm Log Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   CTS ENERGY EYE — TERATERM LOG DASHBOARD
+   Visual identity matches the Energy Eye Live Dashboard:
+   - Same CSS variables, both themes
+   - Same Space Grotesk / JetBrains Mono pairing
+   - Same panel chrome, KPI cards, button styling, table density
+   - Orange #ff7a4d remains the dashboard accent
+   - Cyan #00E5FF reserved exclusively for the logo mark
+   ===================================================================== */
+:root {
+  --bg: #f4f1ea;
+  --bg-grid: rgba(0,0,0,0.04);
+  --surface: #ffffff;
+  --surface-2: #ebe6dc;
+  --ink: #1a1a1a;
+  --ink-soft: #5a5a5a;
+  --line: #d8d2c4;
+  --accent: #ff5b2e;
+  --accent-2: #2d6a4f;
+  --good: #2d6a4f;
+  --warn: #d4a017;
+  --bad: #c1311e;
+  --info: #2a5f9e;
+  --shadow: 0 1px 0 rgba(0,0,0,0.04), 0 8px 24px -12px rgba(0,0,0,0.18);
+  --brand: #00E5FF;
+  --brand-bg: #111820;
+}
+[data-theme="dark"] {
+  --bg: #0e1014;
+  --bg-grid: rgba(255,255,255,0.04);
+  --surface: #171a21;
+  --surface-2: #1f2330;
+  --ink: #f0ece3;
+  --ink-soft: #9aa0aa;
+  --line: #2a2f3c;
+  --accent: #ff7a4d;
+  --accent-2: #5ce0a0;
+  --good: #5ce0a0;
+  --warn: #f0c75e;
+  --bad: #ff6b5a;
+  --info: #6fb5ff;
+  --shadow: 0 1px 0 rgba(255,255,255,0.04), 0 8px 24px -8px rgba(0,0,0,0.6);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+  min-height: 100vh;
+  line-height: 1.5;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--bg-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 32px 60px;
+}
+
+/* HEADER ============================================================ */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--brand-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.logo-text-wrap { display: flex; flex-direction: column; line-height: 1.2; }
+.logo-text {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: var(--ink);
+}
+.logo-sub {
+  font-size: 10px;
+  color: var(--ink-soft);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+}
+
+.hdr-right { display: flex; align-items: center; gap: 8px; }
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  background: color-mix(in srgb, var(--good) 12%, transparent);
+  color: var(--good);
+  border: 1px solid color-mix(in srgb, var(--good) 30%, transparent);
+  padding: 0 10px;
+  height: 30px;
+  border-radius: 2px;
+  white-space: nowrap;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--good);
+  animation: blink 1.4s ease-in-out infinite;
+}
+.live-dot.off { background: var(--ink-soft); animation: none; }
+@keyframes blink { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.8); } }
+
+/* BUTTONS =========================================================== */
+.btn {
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  padding: 0 14px;
+  height: 30px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
+}
+.btn:hover { opacity: 0.88; }
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 0 14px;
+  height: 30px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-ghost:hover {
+  border-color: var(--ink-soft);
+  color: var(--ink);
+}
+.btn-ghost.danger { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 40%, var(--line)); }
+.btn-ghost.danger:hover { border-color: var(--bad); color: var(--bad); }
+
+.btn.small, .btn-ghost.small {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 10px;
+}
+
+.sel {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 0 10px;
+  height: 30px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+}
+
+/* STATUS BAR ======================================================== */
+.sbar {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  flex-wrap: wrap;
+}
+.sbar span { color: var(--ink-soft); }
+.sbar strong { color: var(--ink); margin-left: 4px; font-weight: 500; }
+.sep { color: var(--line); }
+#lastUpdate { color: var(--accent); }
+#fileStatus { color: var(--ink-soft); font-style: italic; }
+
+/* PANELS ============================================================ */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.panel-head h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--ink);
+}
+.panel-head .meta {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-soft);
+  letter-spacing: 0.5px;
+}
+
+/* CHART ============================================================= */
+.chart-wrap { position: relative; height: 200px; }
+canvas { background: transparent !important; }
+.legend {
+  display: flex;
+  gap: 12px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-soft);
+  flex-wrap: wrap;
+  align-items: center;
+}
+.legend span { display: flex; align-items: center; gap: 5px; }
+.leg-dot { width: 10px; height: 10px; border-radius: 1px; flex-shrink: 0; }
+
+/* ALERT CARD ======================================================== */
+.alert-card {
+  background: color-mix(in srgb, var(--bad) 6%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--bad) 30%, var(--line));
+  border-left: 3px solid var(--bad);
+  border-radius: 2px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  display: none;
+}
+.alert-card.show { display: block; }
+.alert-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bad);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+/* TABLE ============================================================= */
+.tcontrols {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 12px;
+  flex-wrap: wrap;
+}
+.t-input {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  width: 200px;
+}
+.t-input::placeholder { color: var(--ink-soft); }
+.t-sel {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+}
+.tbl-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+th {
+  text-align: left;
+  padding: 8px 10px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+  background: var(--surface);
+}
+td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+  color: var(--ink);
+}
+tr:last-child td { border-bottom: none; }
+tr.flash td { animation: flashRow 1.4s ease-out; }
+tr.unusual-row td { background: color-mix(in srgb, var(--bad) 6%, transparent); }
+@keyframes flashRow {
+  0% { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+  100% { background: transparent; }
+}
+
+/* PILLS — themed via accent semantics ============================== */
+.pill {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 2px;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.3px;
+}
+.p-hi {
+  background: color-mix(in srgb, var(--bad) 15%, transparent);
+  color: var(--bad);
+  border: 1px solid color-mix(in srgb, var(--bad) 30%, transparent);
+}
+.p-lo {
+  background: color-mix(in srgb, var(--info) 15%, transparent);
+  color: var(--info);
+  border: 1px solid color-mix(in srgb, var(--info) 30%, transparent);
+}
+.p-pulse {
+  background: color-mix(in srgb, var(--good) 15%, transparent);
+  color: var(--good);
+  border: 1px solid color-mix(in srgb, var(--good) 30%, transparent);
+}
+.p-zero {
+  background: color-mix(in srgb, var(--ink-soft) 12%, transparent);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+.p-date {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.p-rtc {
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  color: var(--warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 25%, transparent);
+}
+.p-none {
+  background: color-mix(in srgb, var(--ink-soft) 10%, transparent);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  font-style: italic;
+}
+.p-unusual {
+  background: color-mix(in srgb, var(--bad) 15%, transparent);
+  color: var(--bad);
+  border: 1px solid color-mix(in srgb, var(--bad) 40%, transparent);
+}
+.p-kwh {
+  background: color-mix(in srgb, var(--info) 10%, transparent);
+  color: var(--info);
+  border: 1px solid color-mix(in srgb, var(--info) 25%, transparent);
+}
+.p-peak {
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  color: var(--warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 25%, transparent);
+}
+.p-off {
+  background: color-mix(in srgb, var(--ink-soft) 12%, transparent);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+}
+.pg-btn {
+  background: var(--surface);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pg-btn:hover { border-color: var(--ink-soft); color: var(--ink); }
+.pg-btn.active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.row-count {
+  font-size: 11px;
+  color: var(--ink-soft);
+  font-family: 'JetBrains Mono', monospace;
+  margin-left: auto;
+}
+
+/* SPLASH ============================================================ */
+#splash {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  z-index: 100;
+  transition: opacity 0.4s;
+}
+#splash.hidden { opacity: 0; pointer-events: none; }
+.splash-icon {
+  width: 120px;
+  height: 120px;
+  border-radius: 24px;
+  background: var(--brand-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-weight: 900;
+  font-size: 42px;
+  color: var(--brand);
+  letter-spacing: 2px;
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--brand) 40%, transparent));
+}
+.splash-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.splash-sub {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-soft);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.splash-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 2px;
+  padding: 12px 28px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+/* SETUP PANEL ======================================================= */
+.setup-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 2px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.setup-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+}
+.field-label {
+  font-size: 10px;
+  color: var(--ink-soft);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.t-text {
+  width: 100%;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 7px 10px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.t-text::placeholder { color: var(--ink-soft); opacity: 0.6; }
+.pulse-radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 2px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  transition: all 0.15s;
+}
+.pulse-radio:hover { border-color: var(--ink-soft); }
+.pulse-radio.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+.pulse-radio.active .pr-rate { color: var(--accent); }
+
+/* SITE INFO CARD ==================================================== */
+.site-info-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.site-info-grid {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.site-info-item {
+  min-width: 0;
+}
+.site-info-item .label {
+  font-size: 10px;
+  color: var(--ink-soft);
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 4px;
+}
+.site-info-item .value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+.site-info-item .value.mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+.site-info-item .value.accent { color: var(--accent); }
+.site-info-item .value.link {
+  color: var(--info);
+  text-decoration: none;
+}
+
+/* CONNECTION CHAIN ================================================== */
+.conn-chain {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.conn-chain-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.conn-chain-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--ink);
+}
+.conn-chain-status {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+}
+.ccs-ok {
+  background: color-mix(in srgb, var(--good) 12%, transparent);
+  color: var(--good);
+  border: 1px solid color-mix(in srgb, var(--good) 30%, transparent);
+}
+.ccs-warn {
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  color: var(--warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent);
+}
+.ccs-fail {
+  background: color-mix(in srgb, var(--bad) 10%, transparent);
+  color: var(--bad);
+  border: 1px solid color-mix(in srgb, var(--bad) 25%, transparent);
+}
+.chain-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.chain-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 64px;
+  flex: 1;
+}
+.chain-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+.chain-lbl {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+  line-height: 1.4;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+/* PAYLOAD PANEL ===================================================== */
+.payload-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.payload-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.payload-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--ink);
+}
+.payload-badge {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 3px 10px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+}
+.pb-ok {
+  background: color-mix(in srgb, var(--good) 12%, transparent);
+  color: var(--good);
+  border: 1px solid color-mix(in srgb, var(--good) 30%, transparent);
+}
+.pb-fail {
+  background: color-mix(in srgb, var(--bad) 10%, transparent);
+  color: var(--bad);
+  border: 1px solid color-mix(in srgb, var(--bad) 25%, transparent);
+}
+.pb-none {
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+.payload-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.pp {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 3px 9px;
+  border-radius: 2px;
+  letter-spacing: 0.3px;
+}
+.pp-g {
+  background: color-mix(in srgb, var(--good) 10%, transparent);
+  color: var(--good);
+  border: 1px solid color-mix(in srgb, var(--good) 22%, transparent);
+}
+.pp-b {
+  background: color-mix(in srgb, var(--info) 10%, transparent);
+  color: var(--info);
+  border: 1px solid color-mix(in srgb, var(--info) 22%, transparent);
+}
+.pp-a {
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  color: var(--warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 22%, transparent);
+}
+.pp-p {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.payload-box {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--good);
+  word-break: break-all;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+/* DEVICE STATUS GRID ================================================ */
+.device-status-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.dsp-hdr {
+  background: var(--surface-2);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+}
+.dsp-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.dsp-updated {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-soft);
+}
+.dsp-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  border-bottom: 1px solid var(--line);
+}
+.dsp-cell {
+  padding: 12px 14px;
+  border-right: 1px solid var(--line);
+}
+.dsp-cell:last-child { border-right: none; }
+.dsp-cell .label {
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 5px;
+}
+.dsp-cell .value {
+  color: var(--ink);
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+}
+.dsp-events-wrap { padding: 12px 16px; }
+.dsp-events-label {
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.dsp-events {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.dsp-events-empty {
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 4px 0;
+  font-style: italic;
+}
+
+/* TX PAYLOAD LOG ==================================================== */
+.tx-log-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.tx-log-hdr {
+  background: var(--surface-2);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tx-log-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.tx-log-badge {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 3px 10px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+}
+.tlb-ok {
+  background: color-mix(in srgb, var(--good) 12%, transparent);
+  color: var(--good);
+  border: 1px solid color-mix(in srgb, var(--good) 30%, transparent);
+}
+.tlb-fail {
+  background: color-mix(in srgb, var(--bad) 10%, transparent);
+  color: var(--bad);
+  border: 1px solid color-mix(in srgb, var(--bad) 25%, transparent);
+}
+.tlb-none {
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+.tx-log-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid var(--line);
+}
+.tls-cell {
+  padding: 10px 14px;
+  border-right: 1px solid var(--line);
+}
+.tls-cell:last-child { border-right: none; }
+.tls-lbl {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 3px;
+}
+.tls-val {
+  font-size: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: var(--ink);
+}
+.tx-log-list {
+  display: flex;
+  flex-direction: column;
+}
+.tx-log-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.tx-log-row:last-child { border-bottom: none; }
+.tx-log-row:hover .tx-log-main {
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+.tx-log-accent { width: 3px; flex-shrink: 0; }
+.tla-ok { background: var(--good); }
+.tla-hello { background: var(--good); }
+.tla-fail { background: var(--bad); }
+.tla-warn { background: var(--warn); }
+.tx-log-main {
+  flex: 1;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tl-ts {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-soft);
+  min-width: 60px;
+  flex-shrink: 0;
+}
+.tl-type {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 2px 7px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.tlt-hello {
+  background: color-mix(in srgb, var(--good) 12%, transparent);
+  color: var(--good);
+  border: 1px solid color-mix(in srgb, var(--good) 22%, transparent);
+}
+.tlt-mqtt {
+  background: color-mix(in srgb, var(--info) 10%, transparent);
+  color: var(--info);
+  border: 1px solid color-mix(in srgb, var(--info) 22%, transparent);
+}
+.tlt-fail {
+  background: color-mix(in srgb, var(--bad) 10%, transparent);
+  color: var(--bad);
+  border: 1px solid color-mix(in srgb, var(--bad) 22%, transparent);
+}
+.tl-topic {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-soft);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tl-bytes {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-soft);
+  min-width: 56px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.tl-chevron {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-left: 4px;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.tl-chevron.open { transform: rotate(180deg); }
+.tx-log-detail {
+  display: none;
+  padding: 4px 14px 12px 18px;
+  background: color-mix(in srgb, var(--surface-2) 50%, var(--surface));
+}
+.tx-log-detail.show { display: block; }
+.tld-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.tld-cell {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 6px 10px;
+}
+.tld-cell.span2 { grid-column: span 2; }
+.tld-lbl {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 3px;
+}
+.tld-val {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink);
+  word-break: break-all;
+  line-height: 1.5;
+}
+.tld-payload {
+  background: var(--surface-2);
+  border: 1px solid color-mix(in srgb, var(--good) 20%, var(--line));
+  border-radius: 2px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--good);
+  word-break: break-all;
+  line-height: 1.6;
+  margin-top: 6px;
+  white-space: pre-wrap;
+}
+.tx-log-empty {
+  padding: 18px 16px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-soft);
+  font-style: italic;
+  text-align: center;
+}
+
+/* COMPLIANCE FOOTER ================================================= */
+.compliance-footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cf-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-soft);
+  letter-spacing: 0.3px;
+}
+.cf-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+}
+
+/* THEME TOGGLE ====================================================== */
+.theme-toggle {
+  background: transparent;
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, color 0.15s;
+}
+.theme-toggle:hover { border-color: var(--ink-soft); color: var(--ink); }
+
+/* PRINT ============================================================= */
+@media print {
+  body { background: #fff; color: #000; }
+  body::before { display: none; }
+  header .hdr-right { display: none !important; }
+  .wrap { padding: 0; max-width: 100%; }
+  .sbar, .panel, .conn-chain, .payload-card, .device-status-card, .tx-log-card { border: 1px solid #ccc; background: #f9f9f9; box-shadow: none; }
+  table { font-size: 10px; }
+  td, th { color: #000; border-color: #ddd; }
+  .pill { border: 1px solid #999; background: #f0f0f0; color: #333; }
+  .splash, #splash { display: none !important; }
+}
+
+/* MOBILE ============================================================ */
+@media screen and (max-width: 599px) and (orientation: portrait) {
+  .wrap { padding: 12px 12px 80px; }
+  header { flex-wrap: wrap; gap: 8px; padding-bottom: 10px; }
+  .logo { flex: 1; min-width: 0; }
+  .logo-text { font-size: 13px; }
+  .logo-sub { font-size: 9px; white-space: normal; }
+  .hdr-right { width: 100%; flex-wrap: wrap; gap: 6px; }
+  .hdr-right .sel, .hdr-right .btn, .hdr-right .btn-ghost { font-size: 10px; padding: 0 10px; height: 28px; }
+  .live-badge { height: 28px; font-size: 10px; padding: 0 10px; }
+  .sbar { font-size: 10px; flex-direction: column; gap: 4px; padding: 8px 12px; align-items: flex-start; }
+  .sbar > .sep { display: none; }
+  .panel-head h2 { font-size: 12px; }
+  .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { font-size: 10px; }
+  th { font-size: 9px; padding: 6px 6px; }
+  td { padding: 6px 6px; }
+  .tcontrols { flex-wrap: wrap; gap: 6px; }
+  .t-input { width: 130px; font-size: 10px; }
+  .t-sel { font-size: 10px; }
+  .dsp-grid { grid-template-columns: repeat(2, 1fr); }
+  .dsp-cell { border-bottom: 1px solid var(--line); }
+  .tx-log-summary { grid-template-columns: repeat(2, 1fr); }
+  .tls-cell { border-bottom: 1px solid var(--line); }
+  .tld-grid { grid-template-columns: 1fr; }
+  .tld-cell.span2 { grid-column: span 1; }
+}
+@media screen and (min-width: 600px) and (max-width: 980px) {
+  .dsp-grid { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+</head>
+<body data-theme="dark">
+
+<!-- SPLASH =========================================================== -->
+<div id="splash">
+  <div class="splash-icon">CTS</div>
+  <div class="splash-title">CTS Energy Eye — TeraTerm Log Dashboard</div>
+  <div class="splash-sub">Live parser · 1 pulse = 1 Wh · TNB tariff July 2025</div>
+  <button class="splash-btn" onclick="pickFile()">Select teraterm.log</button>
+</div>
+
+<div class="wrap">
+
+  <!-- HEADER ========================================================= -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
+          <text x="18" y="24" font-family="Arial Black,Arial,sans-serif" font-size="13" font-weight="900" fill="#00E5FF" text-anchor="middle" style="filter: drop-shadow(0 0 3px rgba(0,229,255,0.6));">CTS</text>
+        </svg>
+      </div>
+      <div class="logo-text-wrap">
+        <div class="logo-text">CTS Energy Eye — TeraTerm Log</div>
+        <div class="logo-sub" id="logoSub">energy-test-001 · 1 pulse = 1 Wh · TNB tariff July 2025</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <select class="sel" id="intervalSel" onchange="changeInterval()">
+        <option value="3000">Refresh · 3s</option>
+        <option value="5000">Refresh · 5s</option>
+        <option value="10000">Refresh · 10s</option>
+        <option value="30000">Refresh · 30s</option>
+      </select>
+      <button id="stopResumeBtn" class="btn-ghost danger" onclick="togglePolling()">⏹ Stop</button>
+      <div class="live-badge"><div class="live-dot off" id="liveDot"></div><span id="liveLabel">WAITING</span></div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <button class="btn-ghost" onclick="savePDF()" title="Save as PDF">⎙</button>
+      <button class="btn" onclick="pickFile()">Change file</button>
+    </div>
+  </header>
+
+  <!-- SETUP PANEL ==================================================== -->
+  <div id="setupPanel" class="setup-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:13px;font-weight:600;color:var(--ink);text-transform:uppercase;letter-spacing:1.5px;">⚡ Setup</div>
+      <button onclick="toggleSetupPanel()" id="setupCollapseBtn" class="btn-ghost small">▲ Collapse</button>
+    </div>
+    <div id="setupBody">
+      <div class="setup-section-label">1 · Pulse Rate</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px;">
+        <label id="pr-lbl-1000" class="pulse-radio active"><input type="radio" name="setupPulse" value="1000" checked style="accent-color:var(--accent);"><div><div class="pr-rate" style="font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:600;">1000 p/kWh</div><div style="font-size:10px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;margin-top:2px;">1 pulse = 1 Wh</div></div></label>
+        <label id="pr-lbl-500" class="pulse-radio"><input type="radio" name="setupPulse" value="500" style="accent-color:var(--accent);"><div><div class="pr-rate" style="font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:600;">500 p/kWh</div><div style="font-size:10px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;margin-top:2px;">1 pulse = 2 Wh</div></div></label>
+        <label id="pr-lbl-250" class="pulse-radio"><input type="radio" name="setupPulse" value="250" style="accent-color:var(--accent);"><div><div class="pr-rate" style="font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:600;">250 p/kWh</div><div style="font-size:10px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;margin-top:2px;">1 pulse = 4 Wh</div></div></label>
+        <label id="pr-lbl-100" class="pulse-radio"><input type="radio" name="setupPulse" value="100" style="accent-color:var(--accent);"><div><div class="pr-rate" style="font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:600;">100 p/kWh</div><div style="font-size:10px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;margin-top:2px;">1 pulse = 10 Wh</div></div></label>
+      </div>
+      <div class="setup-section-label">2 · Customer / Site Info</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div>
+          <div class="field-label">Customer Name <span style="color:var(--ink-soft);font-size:9px;" id="nameCount">0/40</span></div>
+          <input id="setupCustomerName" type="text" maxlength="40" placeholder="e.g. Ahmad bin Ali" class="t-text" oninput="document.getElementById('nameCount').textContent=this.value.length+'/40'">
+        </div>
+        <div>
+          <div class="field-label">TNB Account No. <span style="color:var(--ink-soft);font-size:9px;" id="accCount">0/16</span></div>
+          <input id="setupAccNo" type="text" maxlength="16" placeholder="e.g. 7100012345678" class="t-text" oninput="document.getElementById('accCount').textContent=this.value.length+'/16'">
+        </div>
+        <div style="grid-column:span 2;">
+          <div class="field-label">Site Address <span style="color:var(--ink-soft);font-size:9px;" id="addrCount">0/80</span></div>
+          <input id="setupAddress" type="text" maxlength="80" placeholder="e.g. No. 12, Jalan Maju, 55100 KL" class="t-text" oninput="document.getElementById('addrCount').textContent=this.value.length+'/80'">
+        </div>
+      </div>
+      <div class="setup-section-label">3 · GPS Location <span style="color:var(--ink-soft);font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <input id="setupLat" type="text" placeholder="Lat e.g. 3.1390" class="t-text" style="flex:1;min-width:120px;">
+        <input id="setupLng" type="text" placeholder="Lng e.g. 101.6869" class="t-text" style="flex:1;min-width:120px;">
+        <button onclick="getGPS()" class="btn-ghost small" style="color:var(--info);border-color:color-mix(in srgb,var(--info) 30%,var(--line));">📍 Find Me</button>
+      </div>
+      <div id="gpsStatus" style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--ink-soft);margin-bottom:16px;min-height:14px;"></div>
+      <button onclick="applySetup()" class="btn">✓ Apply</button>
+      <span id="setupApplied" style="font-size:11px;color:var(--good);font-family:'JetBrains Mono',monospace;margin-left:12px;display:none;">✓ Saved</span>
+    </div>
+  </div>
+
+  <!-- SITE INFO CARD ================================================ -->
+  <div id="siteInfoCard" class="site-info-card" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div class="site-info-grid">
+        <div class="site-info-item">
+          <div class="label">Customer</div>
+          <div class="value" id="cardName" title="">—</div>
+        </div>
+        <div class="site-info-item">
+          <div class="label">Address</div>
+          <div class="value" id="cardAddress" title="" style="max-width:260px;">—</div>
+        </div>
+        <div class="site-info-item">
+          <div class="label">TNB Acc No.</div>
+          <div class="value mono accent" id="cardAccNo" title="">—</div>
+        </div>
+        <div class="site-info-item" id="cardGpsWrap" style="display:none;">
+          <div class="label">GPS</div>
+          <a id="cardGps" href="#" target="_blank" class="value mono link">—</a>
+        </div>
+        <div class="site-info-item">
+          <div class="label">Pulse Rate</div>
+          <div class="value mono accent" id="cardPulse">—</div>
+        </div>
+        <div class="site-info-item">
+          <div class="label">Device</div>
+          <div id="cardDeviceStatus" onclick="cardDeviceClick()" style="margin-top:2px;cursor:pointer;">
+            <span id="cardDevicePill" style="display:inline-flex;align-items:center;gap:6px;border-radius:2px;padding:3px 9px;font-size:11px;font-family:'JetBrains Mono',monospace;background:color-mix(in srgb,var(--ink-soft) 12%,transparent);color:var(--ink-soft);border:1px solid var(--line);">
+              <span id="cardDeviceDot" style="width:7px;height:7px;border-radius:50%;background:var(--ink-soft);display:inline-block;"></span>
+              <span id="cardDeviceLabel">—</span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <button onclick="toggleSetupPanel()" class="btn-ghost small">✎ Edit</button>
+    </div>
+  </div>
+
+  <!-- CONNECTION CHAIN ============================================== -->
+  <div class="conn-chain" id="connChain">
+    <div class="conn-chain-hdr">
+      <span class="conn-chain-title">Connection Chain</span>
+      <span class="conn-chain-status pb-none" id="chainStatus">— Waiting for log</span>
+    </div>
+    <div class="chain-row" id="chainRow">
+      <div class="chain-step"><div class="chain-dot" style="background:var(--ink-soft);"></div><div class="chain-lbl" style="color:var(--ink-soft);">BOOT</div></div>
+      <div style="flex:1;height:2px;background:var(--line);margin-top:-18px;"></div>
+      <div class="chain-step"><div class="chain-dot" style="background:var(--ink-soft);"></div><div class="chain-lbl" style="color:var(--ink-soft);">eSIM</div></div>
+      <div style="flex:1;height:2px;background:var(--line);margin-top:-18px;"></div>
+      <div class="chain-step"><div class="chain-dot" style="background:var(--ink-soft);"></div><div class="chain-lbl" style="color:var(--ink-soft);">CEREG</div></div>
+      <div style="flex:1;height:2px;background:var(--line);margin-top:-18px;"></div>
+      <div class="chain-step"><div class="chain-dot" style="background:var(--ink-soft);"></div><div class="chain-lbl" style="color:var(--ink-soft);">PDP/IP</div></div>
+      <div style="flex:1;height:2px;background:var(--line);margin-top:-18px;"></div>
+      <div class="chain-step"><div class="chain-dot" style="background:var(--ink-soft);"></div><div class="chain-lbl" style="color:var(--ink-soft);">CCLK</div></div>
+      <div style="flex:1;height:2px;background:var(--line);margin-top:-18px;"></div>
+      <div class="chain-step"><div class="chain-dot" style="background:var(--ink-soft);"></div><div class="chain-lbl" style="color:var(--ink-soft);">TLS</div></div>
+      <div style="flex:1;height:2px;background:var(--line);margin-top:-18px;"></div>
+      <div class="chain-step"><div class="chain-dot" style="background:var(--ink-soft);"></div><div class="chain-lbl" style="color:var(--ink-soft);">MQTT</div></div>
+      <div style="flex:1;height:2px;background:var(--line);margin-top:-18px;"></div>
+      <div class="chain-step"><div class="chain-dot" style="background:var(--ink-soft);"></div><div class="chain-lbl" style="color:var(--ink-soft);">TX</div></div>
+    </div>
+  </div>
+
+  <!-- PAYLOAD CARD ================================================== -->
+  <div class="payload-card" id="payloadCard">
+    <div class="payload-hdr">
+      <span class="payload-title">Last Payload — MQTT Publish</span>
+      <span class="payload-badge pb-none" id="payloadBadge">— No TX yet</span>
+    </div>
+    <div id="payloadTopicRow" class="payload-pills" style="display:none;">
+      <span class="pp pp-b" id="payloadTopic">TOPIC: —</span>
+    </div>
+    <div class="payload-pills" id="payloadPills"></div>
+    <div class="payload-box" id="payloadBox" style="display:none;"></div>
+    <div id="sasRow" style="display:none;margin-top:10px;">
+      <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--ink-soft);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">SAS Token / Identity</div>
+      <div class="payload-pills" id="sasPills"></div>
+    </div>
+  </div>
+
+  <!-- DEVICE STATUS ================================================= -->
+  <div class="device-status-card" id="deviceStatusCard">
+    <div class="dsp-hdr">
+      <span class="dsp-title">Device Status</span>
+      <span id="dsp-updated" class="dsp-updated">—</span>
+    </div>
+    <div class="dsp-grid" id="dspGrid">
+      <div class="dsp-cell"><div class="label">Modem</div><div id="dsp-modem" class="value" style="color:var(--ink-soft);">—</div></div>
+      <div class="dsp-cell"><div class="label">SIM</div><div id="dsp-sim" class="value" style="color:var(--ink-soft);">—</div></div>
+      <div class="dsp-cell"><div class="label">Last TX</div><div id="dsp-tx" class="value" style="color:var(--ink-soft);">—</div></div>
+      <div class="dsp-cell"><div class="label">Battery</div><div id="dsp-batt" class="value" style="color:var(--ink-soft);">—</div></div>
+      <div class="dsp-cell"><div class="label">Clock Sync</div><div id="dsp-cclk" class="value" style="color:var(--ink-soft);">—</div></div>
+      <div class="dsp-cell"><div class="label">TX Cycles</div><div id="dsp-cycles" class="value" style="color:var(--ink-soft);">—</div></div>
+    </div>
+    <div class="dsp-events-wrap">
+      <div class="dsp-events-label">Recent Events</div>
+      <div id="dsp-events" class="dsp-events"></div>
+      <div id="dsp-no-events" class="dsp-events-empty">Load a log file to see device events.</div>
+    </div>
+  </div>
+
+  <!-- STATUS BAR ==================================================== -->
+  <div class="sbar">
+    <span>File:<strong id="fileName">—</strong></span><span class="sep">|</span>
+    <span>Size:<strong id="fileSize">—</strong></span><span class="sep">|</span>
+    <span>Date:<strong id="logDate">—</strong> <span id="dateSource" title="RTC time source" style="font-size:10px;font-family:'JetBrains Mono',monospace;padding:1px 7px;border-radius:2px;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 25%,transparent);">⚠ PC Clock</span></span><span class="sep">|</span>
+    <span>Buckets:<strong id="bucketCount">—</strong></span><span class="sep">|</span>
+    <span>Last read:<strong id="lastUpdate">—</strong></span><span class="sep">|</span>
+    <span style="display:flex;align-items:center;gap:6px;">
+      Pulse rate:
+      <select id="pulseRateSel" onchange="setPulseRate(this.value)" style="background:var(--surface);color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:2px;padding:2px 7px;font-size:11px;font-family:'JetBrains Mono',monospace;cursor:pointer;">
+        <option value="1000">1000 pulses = 1 kWh</option>
+        <option value="500">500 pulses = 1 kWh</option>
+        <option value="250">250 pulses = 1 kWh</option>
+        <option value="100">100 pulses = 1 kWh</option>
+        <option value="custom">Custom…</option>
+      </select>
+      <span id="pulseRateLabel" style="color:var(--accent);font-weight:500;">1 pulse = 1 Wh</span>
+    </span><span class="sep">|</span>
+    <span id="fileStatus">No file selected</span>
+  </div>
+
+  <!-- UNUSUAL ALERT CARD ============================================ -->
+  <div class="alert-card" id="alertCard">
+    <div class="alert-title">
+      <span>⚠ Unusual pulse activity</span>
+      <button id="alertToggleBtn" onclick="
+        const b=document.getElementById('alertBody');
+        const hidden=b.style.display==='none';
+        b.style.display=hidden?'block':'none';
+        this.textContent=hidden?'Hide ▲':'Show ▼';
+      " class="btn-ghost danger small">Hide ▲</button>
+    </div>
+    <div id="alertBody">
+      <div id="alertSummary" style="display:flex;gap:10px;margin:8px 0;flex-wrap:wrap;"></div>
+      <div style="overflow-x:auto;overflow-y:auto;max-height:180px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Time (MYT)</th>
+              <th>Log TS</th>
+              <th style="text-align:right;">Pulse</th>
+              <th style="text-align:right;">Energy (Wh)</th>
+              <th style="text-align:right;">HI</th>
+              <th style="text-align:right;">LO</th>
+            </tr>
+          </thead>
+          <tbody id="alertTableBody"></tbody>
+        </table>
+      </div>
+      <div id="alertMore" style="font-size:10px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;margin-top:8px;display:none;"></div>
+    </div>
+  </div>
+
+  <!-- TX LOG ======================================================== -->
+  <div class="tx-log-card" id="txLogCard">
+    <div class="tx-log-hdr">
+      <span class="tx-log-title">TX Payload Log</span>
+      <span class="tx-log-badge tlb-none" id="txLogBadge">— No TX yet</span>
+    </div>
+    <div class="tx-log-summary">
+      <div class="tls-cell"><div class="tls-lbl">Total TX</div><div class="tls-val" id="txTotal">0</div></div>
+      <div class="tls-cell"><div class="tls-lbl">Success</div><div class="tls-val" style="color:var(--good);" id="txOkCount">0</div></div>
+      <div class="tls-cell"><div class="tls-lbl">Failed</div><div class="tls-val" style="color:var(--bad);" id="txFailCount">0</div></div>
+      <div class="tls-cell"><div class="tls-lbl">Last TX</div><div class="tls-val" id="txLastTs">—</div></div>
+    </div>
+    <div class="tx-log-list" id="txLogList">
+      <div class="tx-log-empty">Load a teraterm.log file to see TX history.</div>
+    </div>
+  </div>
+
+  <!-- PULSE CHART =================================================== -->
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Pulse Count · HI / LO Thresholds</h2>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div class="legend">
+          <span><span class="leg-dot" style="background:var(--good);"></span>Pulses</span>
+          <span><span class="leg-dot" style="background:var(--bad);"></span>HI</span>
+          <span><span class="leg-dot" style="background:var(--info);"></span>LO</span>
+        </div>
+        <span class="meta">scroll · drag</span>
+        <button onclick="if(mainChart){mainChart.resetZoom();}" class="btn-ghost small">Reset</button>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+  </div>
+
+  <!-- BUCKET DETAIL TABLE =========================================== -->
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Bucket Detail</h2>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="meta">Date · RTC (MYT) · HI · LO · Pulse · Energy</span>
+        <button onclick="toggleBucketDetail()" id="bucketToggleBtn" class="btn-ghost small">▼ Show</button>
+      </div>
+    </div>
+    <div id="bucketDetailBody" style="display:none;">
+      <div class="tcontrols">
+        <input class="t-input" id="filterInput" type="text" placeholder="Search date, RTC, HI, pulse…" oninput="applyFilter()">
+        <select class="t-sel" id="pulseFilter" onchange="applyFilter()">
+          <option value="all">All buckets</option>
+          <option value="active">Pulse > 0</option>
+          <option value="zero">No pulse</option>
+          <option value="unusual">Unusual only</option>
+        </select>
+        <select class="t-sel" id="hiFilter" onchange="applyFilter()"><option value="all">All HI</option></select>
+        <select class="t-sel" id="loFilter" onchange="applyFilter()"><option value="all">All LO</option></select>
+        <select class="t-sel" id="dateFilter" onchange="applyFilter()"><option value="all">All dates</option></select>
+        <label style="font-size:11px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;margin-left:auto;display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" id="latestFirst" checked onchange="applyFilter()" style="accent-color:var(--accent);"> Latest first
+        </label>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Date</th><th>RTC (MYT)</th><th>Log TS</th>
+            <th>HI</th><th>LO</th><th>hw</th><th>d</th>
+            <th>Pulse</th><th>Wh</th><th>kWh Total</th>
+            <th>Flag</th><th>Dur</th>
+          </tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+        <div class="pagination" id="pagination"></div>
+        <div class="row-count" id="rowCount"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPLIANCE FOOTER ============================================= -->
+  <footer class="compliance-footer">
+    <div class="cf-line">
+      <span class="cf-badge">ISO 8601</span>
+      Timestamps in <code style="background:var(--surface-2);padding:1px 4px;border-radius:1px;">YYYY-MM-DD HH:MM+08:00</code> format · Intervals use <code style="background:var(--surface-2);padding:1px 4px;border-radius:1px;">start/end</code> notation per ISO 8601-1:2019 · Timezone: <span id="cfTimezoneLabel">UTC+8</span>
+    </div>
+    <div class="cf-line">
+      <span class="cf-badge">SI Units</span>
+      Power in kW · Energy in kWh · Voltage in V · Per SI / IEC 80000 conventions
+    </div>
+  </footer>
+
+</div>
+
+<script>
+/* =====================================================================
+   All JS below preserved from the original TeraTerm dashboard.
+   No parsing or business logic was changed — only the surrounding chrome.
+   ===================================================================== */
+
+window.onerror = function(msg, src, line, col, err){
+  if(typeof logCrash === 'function') logCrash('uncaught@'+line, err||{message:msg});
+  return false;
+};
+window.onunhandledrejection = function(e){
+  if(typeof logCrash === 'function') logCrash('promise', e.reason);
+};
+
+Chart.defaults.backgroundColor='transparent';
+Chart.defaults.plugins.legend.display=false;
+
+let PULSE_PER_KWH=1000;
+const PEAK_START=14, PEAK_END=22;
+
+function calcUnusualThreshold(data){
+  const ps=data.map(r=>r.p).filter(p=>p>0);
+  if(!ps.length)return 3;
+  const mean=ps.reduce((a,b)=>a+b,0)/ps.length;
+  const std=Math.sqrt(ps.reduce((s,p)=>s+(p-mean)**2,0)/ps.length);
+  return Math.max(3,Math.round(mean+2*std));
+}
+
+let fileHandle=null,allData=[];
+let intervalId=null,intervalMs=3000;
+let mainChart=null;
+
+window.addEventListener('load',()=>{
+  try{
+    const dates=JSON.parse(localStorage.getItem('ee_history_dates')||'[]');
+    dates.forEach(d=>localStorage.removeItem('ee_hist_'+d));
+    localStorage.removeItem('ee_history_dates');
+  }catch(e){}
+});
+
+let _lastText='';
+
+async function pickFile(){
+  try{
+    if(window.showOpenFilePicker){
+      const[h]=await window.showOpenFilePicker({types:[{description:'Log',accept:{'text/plain':['.log','.txt']}}],multiple:false});
+      fileHandle=h;set('fileName',h.name);
+      document.getElementById('splash').classList.add('hidden');
+      setLive('LIVE',true);await readAndRender();startPolling();
+    } else {
+      const inp=document.createElement('input');inp.type='file';inp.accept='.log,.txt';
+      inp.onchange=async e=>{
+        const file=e.target.files[0];if(!file)return;
+        set('fileName',file.name);set('fileSize',fmtBytes(file.size));
+        document.getElementById('splash').classList.add('hidden');
+        const text=await file.text();
+        setLive('STATIC',false);set('fileStatus','Loaded (static)');processText(text);
+      };inp.click();
+    }
+  }catch(e){if(e.name!=='AbortError')set('fileStatus','Error: '+e.message);}
+}
+
+function setLive(l,a){
+  set('liveLabel',l);
+  const dot=document.getElementById('liveDot');
+  dot.classList.toggle('off',!a);
+  // dot color follows status via inline styles
+  if(l==='STALE') dot.style.background='var(--warn)';
+  else if(l==='PAUSED') dot.style.background='var(--ink-soft)';
+  else dot.style.background='var(--good)';
+}
+function changeInterval(){intervalMs=parseInt(document.getElementById('intervalSel').value);if(fileHandle){clearInterval(intervalId);startPolling();}}
+
+let _crashLog=[], _crashCount=0;
+function logCrash(src, err){
+  const now=new Date();
+  const msg=`[${now.toLocaleTimeString()}] ${src}: ${err?.message||String(err)}`;
+  _crashLog.unshift(msg);
+  if(_crashLog.length>20) _crashLog.pop();
+  _crashCount++;
+  console.error('EnergyEye crash:', msg, err);
+}
+
+let _watchdogTimer=null;
+function resetWatchdog(){
+  clearTimeout(_watchdogTimer);
+  if(!intervalId) return;
+  _watchdogTimer=setTimeout(()=>{
+    if(fileHandle && intervalId){
+      logCrash('watchdog','Polling stalled — restarting');
+      startPolling();
+    }
+  }, intervalMs*5 + 10000);
+}
+
+function startPolling(){
+  clearInterval(intervalId);
+  intervalId=setInterval(()=>{
+    readAndRender().catch(e=>logCrash('readAndRender',e));
+    resetWatchdog();
+  }, intervalMs);
+  resetWatchdog();
+}
+let _lastFileBytes=0,_lastFileBytesTime=0;
+
+async function readAndRender(){
+  if(!fileHandle)return;
+  try{
+    const file=await fileHandle.getFile();
+    const nowMs2=Date.now();
+    set('fileSize',fmtBytes(file.size));
+    if(file.size!==_lastFileBytes){
+      _lastFileBytes=file.size;
+      _lastFileBytesTime=nowMs2;
+      if(document.getElementById('liveLabel')?.textContent==='STALE'){
+        setLive('LIVE',true);
+        set('fileStatus','Live · polling every '+(intervalMs/1000)+'s');
+      }
+    } else if(nowMs2-_lastFileBytesTime>120000){
+      const mins=Math.floor((nowMs2-_lastFileBytesTime)/60000);
+      set('fileStatus','⚠ No new data for '+mins+'m — TeraTerm may have stopped');
+      setLive('STALE',false);
+    }
+    const text=await file.text();
+    processText(text);
+    set('lastUpdate',new Date().toLocaleTimeString());
+    if(document.getElementById('liveLabel')?.textContent!=='STALE')
+      set('fileStatus','Live · polling every '+(intervalMs/1000)+'s');
+  }catch(e){
+    logCrash('readAndRender',e);
+    set('fileStatus','⚠ Read error: '+e.message+' — retrying...');
+  }
+}
+
+// ── PARSE (preserved from original) ────────────────────────────────
+function parseLogTs(ts){if(!ts)return null;const[hms,ms]=ts.split('.');const[h,m,s]=hms.split(':').map(Number);return h*3600+m*60+s+(ms?parseFloat('0.'+ms):0);}
+
+function parseLog(text){
+  const lines=text.split('\n');
+  const lpRe=/t=(\d+)s\s+d=(\d+)\s+hw=(\d+)\s+p=(\d+)\s+env=[\d]+\.\.[\d]+\s+HI=(\d+)\s+LO=(\d+)/;
+  const rtcRe=/RTC Time!\s*(\d+):(\d+):(\d+)/;
+  const rtcDateRe=/RTC Date!\s*(\d+):(\d+):(\d+)/;
+
+  let rtcDateStr='';
+  for(let i=lines.length-1;i>=0;i--){
+    const dm=rtcDateRe.exec(lines[i]);
+    if(dm){
+      const day=parseInt(dm[1]),mon=parseInt(dm[2]),yr=parseInt(dm[3]);
+      const fullYr=yr<100?(yr>=0&&yr<=50?2000+yr:1900+yr):yr;
+      if(fullYr>=2020&&mon>=1&&mon<=12&&day>=1&&day<=31){
+        rtcDateStr=`${fullYr}-${String(mon).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        break;
+      }
+    }
+  }
+
+  const tsRe=/\[\d+ (\d{2}:\d{2}:\d{2}\.\d+)\]/;
+  const cclkRe=/\+CCLK:\s*"(\d+)\/(\d+)\/(\d+),(\d+):(\d+):(\d+)/;
+  let cclkDate='',cclkFound=false,cclkTime='';
+  {
+    const _nowYear=new Date().getFullYear();
+    for(const l of lines){
+      const m=cclkRe.exec(l);
+      if(m){
+        const yy=parseInt(m[1]);
+        const fullYr=yy<100?(2000+yy):yy;
+        const mon=parseInt(m[2]),day=parseInt(m[3]);
+        if(fullYr>=2020&&fullYr<=_nowYear+1&&mon>=1&&mon<=12&&day>=1&&day<=31){
+          cclkDate=`${fullYr}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+          cclkTime=`${m[4].padStart(2,'0')}:${m[5].padStart(2,'0')}:${m[6].padStart(2,'0')}`;
+          cclkFound=true;
+        }
+        break;
+      }
+    }
+  }
+
+  const nowMs=Date.now();
+  const nowD=new Date();
+
+  const _devRtcMap=new Map();
+  {
+    const allRtcLines=[];
+    for(let i=0;i<lines.length;i++){
+      const rm=rtcRe.exec(lines[i]);
+      if(rm) allRtcLines.push({i, secs:parseInt(rm[1])*3600+parseInt(rm[2])*60+parseInt(rm[3])});
+    }
+    let rtcPtr=0;
+    for(let i=0;i<lines.length;i++){
+      if(!lpRe.test(lines[i])) continue;
+      while(rtcPtr<allRtcLines.length && allRtcLines[rtcPtr].i<=i) rtcPtr++;
+      if(rtcPtr<allRtcLines.length) _devRtcMap.set(i, allRtcLines[rtcPtr].secs);
+    }
+  }
+
+  const _devRtcEntries=[..._devRtcMap.entries()].sort((a,b)=>a[0]-b[0]);
+  const _lastDevRtcSec = _devRtcEntries.length ? _devRtcEntries[_devRtcEntries.length-1][1] : null;
+
+  const _bucketCum=new Map();
+  if(_lastDevRtcSec!==null && _devRtcEntries.length>0){
+    _bucketCum.set(_devRtcEntries[_devRtcEntries.length-1][0], 0);
+    let runningAgo=0;
+    for(let k=_devRtcEntries.length-2;k>=0;k--){
+      let diff=_devRtcEntries[k+1][1]-_devRtcEntries[k][1];
+      if(diff<0) diff+=86400;
+      runningAgo+=diff;
+      _bucketCum.set(_devRtcEntries[k][0], runningAgo);
+    }
+  }
+
+  const _allBucketLines=[];
+  for(let i=0;i<lines.length;i++){
+    const lm=lpRe.exec(lines[i]);
+    if(lm) _allBucketLines.push({lineIdx:i, tSec:parseInt(lm[1])});
+  }
+
+  for(let k=0;k<_allBucketLines.length;k++){
+    const {lineIdx}=_allBucketLines[k];
+    if(_bucketCum.has(lineIdx)) continue;
+    let beforeIdx=-1, afterIdx=-1;
+    for(let j=k-1;j>=0;j--){ if(_bucketCum.has(_allBucketLines[j].lineIdx)){beforeIdx=j;break;} }
+    for(let j=k+1;j<_allBucketLines.length;j++){ if(_bucketCum.has(_allBucketLines[j].lineIdx)){afterIdx=j;break;} }
+    if(beforeIdx!==-1 && afterIdx!==-1){
+      const bT=_allBucketLines[beforeIdx].tSec, aT=_allBucketLines[afterIdx].tSec;
+      const kT=_allBucketLines[k].tSec;
+      const bAgo=_bucketCum.get(_allBucketLines[beforeIdx].lineIdx);
+      const aAgo=_bucketCum.get(_allBucketLines[afterIdx].lineIdx);
+      const tSpan = Math.abs(aT - bT) > 0 ? Math.abs(aT - bT) : (afterIdx - beforeIdx);
+      const frac = tSpan > 0 ? Math.abs(kT - bT) / tSpan : (k - beforeIdx) / (afterIdx - beforeIdx);
+      _bucketCum.set(lineIdx, bAgo + frac*(aAgo - bAgo));
+    } else if(afterIdx!==-1){
+      const aT=_allBucketLines[afterIdx].tSec;
+      const kT=_allBucketLines[k].tSec;
+      const aAgo=_bucketCum.get(_allBucketLines[afterIdx].lineIdx);
+      let tDelta = aT - kT;
+      if(tDelta < 0 || tDelta > 300) tDelta = (afterIdx - k) * 11;
+      _bucketCum.set(lineIdx, aAgo + tDelta);
+    } else if(beforeIdx!==-1){
+      const bT=_allBucketLines[beforeIdx].tSec;
+      const kT=_allBucketLines[k].tSec;
+      const bAgo=_bucketCum.get(_allBucketLines[beforeIdx].lineIdx);
+      let tDelta = kT - bT;
+      if(tDelta < 0 || tDelta > 300) tDelta = (k - beforeIdx) * 11;
+      _bucketCum.set(lineIdx, bAgo - tDelta);
+    } else {
+      _bucketCum.set(lineIdx, 0);
+    }
+  }
+
+  let _anchorMs;
+  if(cclkFound && cclkDate && cclkTime){
+    _anchorMs = new Date(cclkDate+'T'+cclkTime).getTime();
+    const dsEl=document.getElementById('dateSource');
+    if(dsEl){
+      dsEl.textContent='✓ CCLK (Tera Term)';
+      dsEl.style.cssText='font-size:10px;font-family:\'JetBrains Mono\',monospace;padding:1px 7px;border-radius:2px;background:color-mix(in srgb,var(--good) 12%,transparent);color:var(--good);border:1px solid color-mix(in srgb,var(--good) 25%,transparent);';
+      dsEl.title='Date/time anchored to +CCLK from Tera Term: '+cclkDate+' '+cclkTime;
+    }
+  } else {
+    _anchorMs = nowMs;
+    const dsEl=document.getElementById('dateSource');
+    if(dsEl){
+      if(rtcDateStr){
+        dsEl.textContent='⌚ RTC Date (device)';
+        dsEl.style.cssText='font-size:10px;font-family:\'JetBrains Mono\',monospace;padding:1px 7px;border-radius:2px;background:color-mix(in srgb,var(--info) 12%,transparent);color:var(--info);border:1px solid color-mix(in srgb,var(--info) 25%,transparent);';
+        dsEl.title='Date anchored from device RTC Date line: '+rtcDateStr+' · Time still from PC clock';
+      } else {
+        dsEl.textContent='⚠ PC Clock fallback';
+        dsEl.style.cssText='font-size:10px;font-family:\'JetBrains Mono\',monospace;padding:1px 7px;border-radius:2px;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 25%,transparent);';
+        dsEl.title='No valid +CCLK or RTC Date found in log — using PC clock as time reference';
+      }
+    }
+  }
+
+  let _hasTeraTermTs=false;
+  const res=[];
+  for(let i=0;i<lines.length;i++){
+    const lm=lpRe.exec(lines[i]);if(!lm)continue;
+    const tsm=tsRe.exec(lines[i]);
+    const thisLogTs=tsm?parseLogTs(tsm[1]):null;
+    if(tsm) _hasTeraTermTs=true;
+
+    let actualTime='',rtcHour=-1,isWeekday=true;
+    let bucketDate=`${nowD.getFullYear()}-${String(nowD.getMonth()+1).padStart(2,'0')}-${String(nowD.getDate()).padStart(2,'0')}`;
+
+    {
+      const secondsAgo = _bucketCum.has(i) ? _bucketCum.get(i) : 0;
+      const d = new Date(_anchorMs - secondsAgo*1000);
+      const h=d.getHours(), m2=d.getMinutes(), s=d.getSeconds();
+      actualTime=`${String(h).padStart(2,'0')}:${String(m2).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      rtcHour=h; isWeekday=d.getDay()>=1&&d.getDay()<=5;
+      bucketDate=rtcDateStr||`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    let deviceRtc='';
+    if(thisLogTs!==null){
+      deviceRtc=lines[i].match(/(\d{2}:\d{2}:\d{2})\.\d+/)?.[1]||'';
+    } else if(_devRtcMap.has(i)){
+      const s=_devRtcMap.get(i);
+      const rh=String(Math.floor(s/3600)).padStart(2,'0');
+      const rm2=String(Math.floor((s%3600)/60)).padStart(2,'0');
+      const rs=String(s%60).padStart(2,'0');
+      deviceRtc=`${rh}:${rm2}:${rs}`;
+    } else {
+      deviceRtc=`t=${lm[1]}s`;
+    }
+
+    const isPeak=isWeekday&&rtcHour>=PEAK_START&&rtcHour<PEAK_END;
+    const wh=+lm[4]*(1000/PULSE_PER_KWH);
+    const kwh=wh/1000;
+    res.push({date:bucketDate,rtc:actualTime,rtcHour,log_ts:deviceRtc,isPeak,isWeekday,
+      t:+lm[1],d:+lm[2],HI:+lm[5],LO:+lm[6],hw:+lm[3],p:+lm[4],wh,kwh});
+  }
+  let runKwh=0;for(const r of res){runKwh+=r.kwh;r.kwhTotal=runKwh;}
+  parseLog._hasTeraTermTs = _hasTeraTermTs;
+  return res;
+}
+
+function processText(text){
+  try{
+    _lastText=text;
+    const fresh=parseLog(text);
+    allData=fresh;
+    set('bucketCount',allData.length);
+    const dates=[...new Set(allData.map(r=>r.date).filter(Boolean))];
+    set('logDate',dates[dates.length-1]||'—');
+  }catch(e){ logCrash('processText',e); }
+  try{ updateCharts(); }catch(e){ logCrash('updateCharts',e); }
+  try{ updateDeviceStatus(_lastText); }catch(e){ logCrash('updateDeviceStatus',e); }
+  try{ updateAlertCard(); }catch(e){ logCrash('updateAlertCard',e); }
+  try{ if(typeof applyFilter==='function') applyFilter(); }catch(e){ logCrash('applyFilter',e); }
+  try{ updateConnectionChain(_lastText); }catch(e){ logCrash('updateConnectionChain',e); }
+  try{ buildTxLog(_lastText); }catch(e){ logCrash('buildTxLog',e); }
+}
+
+function updateDeviceStatus(text){
+  if(!text) return;
+  const lines=text.split('\n');
+  const tsRe2=/\[\d+ (\d{2}:\d{2}:\d{2})\.\d+\]/;
+  const rtcLineRe=/RTC Time!\s*(\d+):(\d+):(\d+)/;
+  const lineRtc=[];let curRtc='';
+  for(let i=0;i<lines.length;i++){
+    const rm=rtcLineRe.exec(lines[i]);
+    if(rm) curRtc=rm[1].padStart(2,'0')+':'+rm[2].padStart(2,'0')+':'+rm[3].padStart(2,'0');
+    lineRtc[i]=curRtc;
+  }
+  const getTime=(idx)=>{
+    if(lineRtc[idx]) return lineRtc[idx];
+    const m=tsRe2.exec(lines[idx]||'');
+    return m?m[1]:'—';
+  };
+  let modem='—',sim='—',txResult='—',battery='—',cclk='—';
+  let txOk=0,txFail=0;
+  const events=[];
+  for(let i=0;i<lines.length;i++){
+    const l=lines[i];const ts=getTime(i);
+    if(l.includes('Cold boot path')){modem='Cold boot';events.push({ts,type:'BOOT',msg:'Cold boot — modem powering up',col:'var(--warn)'});}
+    if(l.includes('PWRKEY PRESS')){modem='PWRKEY pressed';}
+    if(l.includes('Running autobaud')){modem='Baud lock…';events.push({ts,type:'MODEM',msg:'Autobaud/baud-lock running',col:'var(--ink-soft)'});}
+    if(l.includes('Autobaud/baud-lock failed')){modem='Baud lock FAIL';events.push({ts,type:'ERR',msg:'Autobaud failed — skip publish',col:'var(--bad)'});}
+    if(l.match(/^[^[]*RDY\s*$/)){modem='RDY';events.push({ts,type:'MODEM',msg:'Modem RDY',col:'var(--good)'});}
+    if(l.includes('+CFUN: 1')){modem='CFUN:1 (full)';}
+    if(l.includes('+CPIN: READY')){sim='READY';events.push({ts,type:'SIM',msg:'SIM: CPIN READY',col:'var(--good)'});}
+    if(l.includes('+CPIN: NOT READY')||l.includes('+CPIN: NO SIM')){sim='NOT READY';events.push({ts,type:'SIM',msg:'SIM: NOT READY',col:'var(--bad)'});}
+    if(l.includes('SMS Ready')){modem='SMS Ready';}
+    if(l.includes('+CREG: 1')||l.includes('+CREG: 5')){modem='Registered';events.push({ts,type:'NET',msg:'Network registered',col:'var(--good)'});}
+    if(l.includes('+CGATT: 1')){modem='GPRS attached';events.push({ts,type:'NET',msg:'GPRS attached',col:'var(--good)'});}
+    if(l.includes('[TX] result = OK')||l.includes('result = OK')){txResult='OK';txOk++;events.push({ts,type:'TX',msg:'Data published OK',col:'var(--good)'});}
+    if(l.includes('[HELLO]')&&l.includes('SUCCESS')){txResult='OK';txOk++;events.push({ts,type:'TX',msg:'HELLO published OK',col:'var(--good)'});}
+    if(l.includes('[MQTT][PUB][OK]')){txResult='OK';events.push({ts,type:'TX',msg:'MQTT publish completed',col:'var(--good)'});}
+    if(l.includes('[CELL][ENGINE][COMPLETE]')){events.push({ts,type:'NET',msg:'Cell engine startup complete',col:'var(--good)'});}
+    if(l.includes('[CELL][STEP 6][OK]')){events.push({ts,type:'NET',msg:'MQTT connected — step 6 OK',col:'var(--good)'});}
+    if(l.includes('CEREG stat=5')||l.includes('CEREG stat=1')){events.push({ts,type:'NET',msg:'Network registered (roaming)',col:'var(--good)'});}
+    if(l.includes('+CGATT: 1')){modem='GPRS attached';}
+    if(l.includes('PDP up via')){const m=l.match(/via "([^"]+)"/);events.push({ts,type:'NET',msg:'PDP up: '+(m?m[1]:'iot'),col:'var(--good)'});}
+    if(l.includes('[BUCKET] idx=')){const bm=l.match(/idx=(\d+)/);if(bm) events.push({ts,type:'BUCKET',msg:'Bucket idx='+bm[1]+' transmitted',col:'var(--ink-soft)'});}
+    if(l.includes('[TX] result = FAIL')||l.includes('result = FAIL')){txResult='FAIL';txFail++;events.push({ts,type:'TX',msg:'Publish FAILED — skip cycle',col:'var(--bad)'});}
+    if(l.includes('Cellular engine failed')){txResult='ENGINE FAIL';events.push({ts,type:'ERR',msg:'Cellular engine failed',col:'var(--bad)'});}
+    const battM=l.match(/Battery\s*:\s*([\d.]+)/);
+    if(battM){battery=parseFloat(battM[1]).toFixed(2)+'V';}
+    if(l.includes('[TIME][CCLK]')){cclk='Querying…';}
+    if(l.includes('+CCLK:')){const cm=l.match(/\+CCLK: "(.+)"/);if(cm){const _raw=cm[1];const _yp=_raw.match(/^(\d+)\/(\d+)\/(\d+),(.+)/);const _nowYr=new Date().getFullYear();let _cclkOk=false;if(_yp){const _fy=2000+parseInt(_yp[1]);if(_fy>=2020&&_fy<=_nowYr+1){cclk=_fy+'/'+_yp[2]+'/'+_yp[3]+','+_yp[4].slice(0,5);_cclkOk=true;}}if(!_cclkOk){cclk='BAD-YEAR('+_raw.slice(0,8)+')';}events.push({ts,type:'CLOCK',msg:'CCLK: '+cclk,col:_cclkOk?'var(--info)':'var(--warn)'});}else{cclk='Synced';}}
+    if(l.includes('[PAYLOAD] V2')){events.push({ts,type:'DATA',msg:'Payload sent to server',col:'var(--accent)'});}
+    const bucketM=l.match(/\[BUCKET\] idx=(\d+)/);
+    if(bucketM&&parseInt(bucketM[1])%50===0){events.push({ts,type:'BUCKET',msg:'Bucket #'+bucketM[1],col:'var(--ink-soft)'});}
+  }
+  const setEl=(id,txt,col)=>{const e=document.getElementById(id);if(e){e.textContent=txt;e.style.color=col||'var(--ink-soft)';}};
+  setEl('dsp-modem',modem,modem.includes('FAIL')||modem.toLowerCase().includes('fail')?'var(--bad)':modem==='—'?'var(--ink-soft)':'var(--good)');
+  setEl('dsp-sim',sim,sim==='READY'?'var(--good)':sim.includes('NOT')?'var(--bad)':'var(--ink-soft)');
+  setEl('dsp-tx',txResult,txResult==='OK'?'var(--good)':txResult.includes('FAIL')?'var(--bad)':'var(--ink-soft)');
+  setEl('dsp-batt',battery,'var(--good)');
+  const cclkFailed=cclk==='—'||cclk==='Querying…';
+  setEl('dsp-cclk',cclkFailed?'No CCLK — PC clock':cclk,cclkFailed?'var(--warn)':'var(--info)');
+  setEl('dsp-cycles','OK:'+txOk+' / Fail:'+txFail,txFail>0?'var(--warn)':'var(--good)');
+  const now=new Date();
+  setEl('dsp-updated','Updated '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0'),'var(--ink-soft)');
+  const el=document.getElementById('dsp-events');
+  if(el){
+    if(events.length){
+      const last=events.slice(-20).reverse();
+      el.innerHTML=last.map(e=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--line);">
+        <span style="color:var(--ink-soft);font-size:10px;min-width:60px;font-family:'JetBrains Mono',monospace;">${e.ts||'—'}</span>
+        <span style="background:color-mix(in srgb,${e.col} 12%,transparent);color:${e.col};border-radius:2px;padding:1px 6px;font-size:9px;min-width:46px;text-align:center;font-family:'JetBrains Mono',monospace;letter-spacing:0.3px;font-weight:500;">${e.type}</span>
+        <span style="color:var(--ink);font-size:10px;font-family:'JetBrains Mono',monospace;">${e.msg}</span>
+      </div>`).join('');
+    }
+    var noEvEl=document.getElementById('dsp-no-events');
+    if(noEvEl) noEvEl.style.display=events.length?'none':'block';
+    if(el&&!events.length) el.innerHTML='';
+  }
+  const pill=document.getElementById('cardDevicePill');
+  const dot=document.getElementById('cardDeviceDot');
+  const lbl=document.getElementById('cardDeviceLabel');
+  const cardDiv=document.getElementById('cardDeviceStatus');
+  if(pill&&dot&&lbl){
+    const isOk=txFail===0&&!modem.includes('FAIL')&&!modem.toLowerCase().includes('fail')&&sim!=='NOT READY';
+    if(isOk){
+      pill.style.cssText='display:inline-flex;align-items:center;gap:6px;border-radius:2px;padding:3px 9px;font-size:11px;font-family:\'JetBrains Mono\',monospace;background:color-mix(in srgb,var(--good) 12%,transparent);color:var(--good);border:1px solid color-mix(in srgb,var(--good) 25%,transparent);';
+      dot.style.cssText='width:7px;height:7px;border-radius:50%;background:var(--good);display:inline-block;animation:blink 1.3s ease-in-out infinite;';
+      lbl.textContent='Device OK';if(cardDiv)cardDiv.style.cursor='default';
+    }else{
+      pill.style.cssText='display:inline-flex;align-items:center;gap:6px;border-radius:2px;padding:3px 9px;font-size:11px;font-family:\'JetBrains Mono\',monospace;background:color-mix(in srgb,var(--bad) 10%,transparent);color:var(--bad);border:1px solid color-mix(in srgb,var(--bad) 25%,transparent);cursor:pointer;';
+      dot.style.cssText='width:7px;height:7px;border-radius:50%;background:var(--bad);display:inline-block;animation:none;';
+      lbl.textContent='Device Fail — see Status ↗';if(cardDiv)cardDiv.style.cursor='pointer';
+    }
+  }
+}
+
+// ── CHARTS — refactored to read theme tokens ───────────────────────
+function themeColors(){
+  const cs=getComputedStyle(document.body);
+  return {
+    accent: cs.getPropertyValue('--accent').trim() || '#ff7a4d',
+    good: cs.getPropertyValue('--good').trim() || '#5ce0a0',
+    warn: cs.getPropertyValue('--warn').trim() || '#f0c75e',
+    bad: cs.getPropertyValue('--bad').trim() || '#ff6b5a',
+    info: cs.getPropertyValue('--info').trim() || '#6fb5ff',
+    inkSoft: cs.getPropertyValue('--ink-soft').trim() || '#9aa0aa',
+    line: cs.getPropertyValue('--line').trim() || '#2a2f3c',
+  };
+}
+
+function updateCharts(){
+  const d=allData;if(!d.length)return;
+  const c=themeColors();
+  const threshold=calcUnusualThreshold(d);
+  const labels=d.map((r,i)=>r.rtc||String(i+1));
+  const pulses=d.map(r=>r.p);
+  const his=d.map(r=>r.HI),los=d.map(r=>r.LO);
+  const showXLabels=d.length<=300;
+  const xTickCfg=showXLabels?{display:true,color:c.inkSoft,font:{size:9,family:'JetBrains Mono'},maxRotation:45,autoSkip:true,maxTicksLimit:24,callback:(_,idx)=>d[idx]?d[idx].rtc?.slice(0,5):''}:{display:false};
+  const pBg=pulses.map(p=>p>0?c.good:c.good+'22');
+  if(mainChart){
+    mainChart.data.labels=labels;
+    mainChart.data.datasets[0].data=pulses;
+    mainChart.data.datasets[0].backgroundColor=pBg;
+    mainChart.data.datasets[1].data=his;
+    mainChart.data.datasets[1].borderColor=c.bad;
+    mainChart.data.datasets[2].data=los;
+    mainChart.data.datasets[2].borderColor=c.info;
+    mainChart.options.scales.x.ticks=xTickCfg;
+    mainChart.update('none');
+  } else {
+    mainChart=new Chart(document.getElementById('mainChart'),{
+      type:'bar',
+      data:{labels,datasets:[
+        {type:'bar',label:'Pulse',data:pulses,backgroundColor:pBg,yAxisID:'yP',order:2,borderRadius:2},
+        {type:'line',label:'HI',data:his,borderColor:c.bad,borderWidth:1.5,pointRadius:0,yAxisID:'yT',order:1,tension:0.15,fill:false},
+        {type:'line',label:'LO',data:los,borderColor:c.info,borderWidth:1.5,pointRadius:0,yAxisID:'yT',order:1,tension:0.15,fill:false,borderDash:[4,3]}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:250},
+        plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(20,20,20,0.92)',titleColor:'#fff',bodyColor:'#fff',titleFont:{family:'Space Grotesk',size:11},bodyFont:{family:'JetBrains Mono',size:11}}},
+        scales:{
+          x:{ticks:{display:false},grid:{color:c.line,drawBorder:false}},
+          yP:{position:'left',beginAtZero:true,ticks:{color:c.inkSoft,font:{size:10,family:'JetBrains Mono'},stepSize:1},grid:{color:c.line,drawBorder:false}},
+          yT:{position:'right',grid:{drawOnChartArea:false},ticks:{color:c.inkSoft,font:{size:10,family:'JetBrains Mono'}}}
+        }}
+    });
+  }
+}
+
+function updateAlertCard(){
+  const card=document.getElementById('alertCard');
+  const tbody=document.getElementById('alertTableBody');
+  const sumEl=document.getElementById('alertSummary');
+  const moreEl=document.getElementById('alertMore');
+  if(!card||!tbody||!sumEl||!moreEl) return;
+  const threshold=calcUnusualThreshold(allData);
+  const hasTs = parseLog._hasTeraTermTs;
+  let unusualBuckets;
+  let alertLabel;
+  if(hasTs){
+    let lastTs=null;
+    for(let i=allData.length-1;i>=0;i--){
+      if(allData[i].log_ts){lastTs=parseLogTs(allData[i].log_ts);break;}
+    }
+    const all15=lastTs!=null ? allData.filter(function(r){
+      return r.log_ts && (lastTs-parseLogTs(r.log_ts))*1000<=15*60*1000;
+    }) : allData;
+    unusualBuckets=all15.filter(r=>r.p>threshold).sort((a,b)=>b.p-a.p);
+    alertLabel='⚠ Unusual pulse activity — last 15 min';
+  } else {
+    unusualBuckets=allData.filter(r=>r.p>threshold).sort((a,b)=>b.p-a.p);
+    alertLabel='⚠ Unusual pulse activity — entire log (no TeraTerm TS)';
+  }
+  const titleEl=card.querySelector('.alert-title span');
+  if(titleEl) titleEl.textContent=alertLabel;
+  if(unusualBuckets.length){
+    card.classList.add('show');
+    const totalWh=unusualBuckets.reduce((s,r)=>s+r.wh,0);
+    const maxPulse=unusualBuckets[0].p;
+    const rest=unusualBuckets.length-5;
+    sumEl.innerHTML='<span class="pp pp-p">⚠ '+unusualBuckets.length+' unusual bucket'+(unusualBuckets.length>1?'s':'')+'</span> '
+      +'<span class="pp pp-a">Total: '+totalWh.toFixed(0)+' Wh</span> '
+      +'<span class="pp pp-p">Max pulse: '+maxPulse+'</span> '
+      +'<span style="font-size:10px;font-family:\'JetBrains Mono\',monospace;color:var(--ink-soft);">threshold: >'+threshold+' p</span>';
+    tbody.innerHTML=unusualBuckets.slice(0,5).map(function(r){
+      return '<tr>'
+        +'<td style="color:var(--warn);">'+(r.rtc||'—')+'</td>'
+        +'<td><span style="color:var(--accent);font-size:10px;font-family:\'JetBrains Mono\',monospace;">'+(r.log_ts||'—')+'</span></td>'
+        +'<td style="text-align:right;"><span class="pill p-unusual">'+r.p+'</span></td>'
+        +'<td style="text-align:right;"><span class="pill p-peak">'+r.wh.toFixed(0)+' Wh</span></td>'
+        +'<td style="text-align:right;color:var(--ink-soft);">'+r.HI+'</td>'
+        +'<td style="text-align:right;color:var(--ink-soft);">'+r.LO+'</td>'
+        +'</tr>';
+    }).join('');
+    if(rest>0){moreEl.style.display='block';moreEl.textContent='…and '+rest+' more unusual bucket'+(rest>1?'s':'')+' in log';}
+    else{moreEl.style.display='none';}
+  } else {
+    card.classList.remove('show');
+    tbody.innerHTML='';
+    sumEl.innerHTML='';
+    moreEl.style.display='none';
+  }
+}
+
+var PAGE_ROWS=25;
+var filtered=[];
+var tablePageNum=0;
+
+function applyFilter(){
+  var q=(document.getElementById('filterInput')||{value:''}).value.toLowerCase();
+  var pf=(document.getElementById('pulseFilter')||{value:'all'}).value;
+  var hf=(document.getElementById('hiFilter')||{value:'all'}).value;
+  var lf=(document.getElementById('loFilter')||{value:'all'}).value;
+  var df=(document.getElementById('dateFilter')||{value:'all'}).value;
+  var rev=document.getElementById('latestFirst') ? document.getElementById('latestFirst').checked : true;
+  var threshold=calcUnusualThreshold(allData);
+  filtered=allData.filter(function(r){
+    var mQ=!q||String(r.date||'').includes(q)||String(r.rtc||'').includes(q)||String(r.HI).includes(q)||String(r.p).includes(q);
+    var mP=pf==='all'||(pf==='active'&&r.p>0)||(pf==='zero'&&r.p===0)||(pf==='unusual'&&r.p>threshold);
+    var mH=hf==='all'||String(r.HI)===hf;
+    var mL=lf==='all'||String(r.LO)===lf;
+    var mD=df==='all'||r.date===df;
+    return mQ&&mP&&mH&&mL&&mD;
+  });
+  if(rev) filtered=filtered.slice().reverse();
+  tablePageNum=0;
+  var hiVals=[...new Set(allData.map(function(r){return r.HI;}))].sort(function(a,b){return a-b;});
+  var hiSel=document.getElementById('hiFilter');
+  if(hiSel){var c=hiSel.value;hiSel.innerHTML='<option value="all">All HI</option>'+hiVals.map(function(v){return '<option value="'+v+'"'+(c==v?' selected':'')+'>'+v+'</option>';}).join('');}
+  var loVals=[...new Set(allData.map(function(r){return r.LO;}))].sort(function(a,b){return a-b;});
+  var loSel=document.getElementById('loFilter');
+  if(loSel){var cl=loSel.value;loSel.innerHTML='<option value="all">All LO</option>'+loVals.map(function(v){return '<option value="'+v+'"'+(cl==v?' selected':'')+'>'+v+'</option>';}).join('');}
+  var dates=[...new Set(allData.map(function(r){return r.date;}).filter(Boolean))];
+  var dSel=document.getElementById('dateFilter');
+  if(dSel){var c2=dSel.value;dSel.innerHTML='<option value="all">All dates</option>'+dates.map(function(v){return '<option value="'+v+'"'+(c2===v?' selected':'')+'>'+v+'</option>';}).join('');}
+  renderTable();
+}
+
+function renderTable(){
+  var threshold=calcUnusualThreshold(allData);
+  var rev=document.getElementById('latestFirst') ? document.getElementById('latestFirst').checked : true;
+  var slice=filtered.slice(tablePageNum*PAGE_ROWS,(tablePageNum+1)*PAGE_ROWS);
+  var tbody=document.getElementById('tableBody');
+  if(!tbody) return;
+  tbody.innerHTML=slice.map(function(r,si){
+    var origIdx=allData.indexOf(r);
+    var dH=r.date?'<span class="pill p-date">'+r.date+'</span>':'<span class="pill p-none">—</span>';
+    var rH=r.rtc?'<span class="pill p-rtc">'+r.rtc+'</span>':'<span class="pill p-none">—</span>';
+    var lH=r.log_ts?'<span style="color:var(--accent);font-size:10px;font-family:\'JetBrains Mono\',monospace;">'+r.log_ts+'</span>':'<span style="color:var(--ink-soft);font-size:10px;">—</span>';
+    var pC=r.p>threshold?'p-unusual':r.p>0?'p-pulse':'p-zero';
+    var flagH=r.p>threshold?'<span class="pill p-unusual">⚠</span>':'<span style="color:var(--ink-soft);font-size:10px;">—</span>';
+    var flash=(si<3&&tablePageNum===0&&rev)?'flash':'';
+    var unusual=r.p>threshold?'unusual-row':'';
+    return '<tr class="'+flash+' '+unusual+'">'
+      +'<td style="color:var(--ink-soft);">'+(origIdx+1)+'</td>'
+      +'<td>'+dH+'</td><td>'+rH+'</td><td>'+lH+'</td>'
+      +'<td><span class="pill p-hi">'+r.HI+'</span></td>'
+      +'<td><span class="pill p-lo">'+r.LO+'</span></td>'
+      +'<td style="color:var(--ink-soft);">'+r.hw+'</td>'
+      +'<td style="color:'+(r.d>0?'var(--warn)':'var(--ink-soft)')+';">'+r.d+'</td>'
+      +'<td><span class="pill '+pC+'">'+r.p+'</span></td>'
+      +'<td><span class="pill p-kwh">'+r.wh.toFixed(0)+'Wh</span></td>'
+      +'<td style="color:var(--ink-soft);font-size:10px;">'+r.kwhTotal.toFixed(4)+'</td>'
+      +'<td>'+flagH+'</td>'
+      +'<td style="color:var(--ink-soft);">'+r.t+'s</td>'
+      +'</tr>';
+  }).join('');
+  var total=Math.ceil(filtered.length/PAGE_ROWS);
+  set('rowCount',filtered.length+' rows');
+  var pg=document.getElementById('pagination');
+  if(pg){
+    pg.innerHTML='';
+    if(total<=1) return;
+    var mk=function(lbl,t,active){
+      var b=document.createElement('button');
+      b.className='pg-btn'+(active?' active':'');
+      b.textContent=lbl;
+      b.onclick=function(){tablePageNum=t;renderTable();};
+      pg.appendChild(b);
+    };
+    if(tablePageNum>0) mk('‹',tablePageNum-1,false);
+    var s=Math.max(0,tablePageNum-2),e=Math.min(total,s+5);
+    for(var i=s;i<e;i++) mk(i+1,i,i===tablePageNum);
+    if(tablePageNum<total-1) mk('›',tablePageNum+1,false);
+  }
+}
+
+function savePDF(){
+  const style=document.createElement('style');
+  style.id='pdf-hint';
+  style.textContent='@page{size:A4 landscape;margin:10mm;}';
+  document.head.appendChild(style);
+  window.print();
+  setTimeout(()=>{const s=document.getElementById('pdf-hint');if(s)s.remove();},1000);
+}
+
+function setPulseRate(val){
+  if(val==='custom'){
+    const input=prompt('Enter pulses per kWh (e.g. 1000, 500, 250, 100):');
+    const n=parseInt(input);
+    if(!n||n<=0){document.getElementById('pulseRateSel').value='1000';return;}
+    PULSE_PER_KWH=n;
+    const sel=document.getElementById('pulseRateSel');
+    let opt=sel.querySelector('[value="custom_val"]');
+    if(!opt){opt=document.createElement('option');opt.value='custom_val';sel.insertBefore(opt,sel.lastChild);}
+    opt.textContent=`${n} pulses = 1 kWh`;
+    sel.value='custom_val';
+  } else {
+    PULSE_PER_KWH=parseInt(val);
+  }
+  const wh=(1000/PULSE_PER_KWH).toFixed(4).replace(/\.?0+$/,'');
+  document.getElementById('pulseRateLabel').textContent=`1 pulse = ${wh} Wh`;
+  if(allData.length) processText(_lastText);
+}
+function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function fmtBytes(b){if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';return(b/1048576).toFixed(2)+'MB';}
+
+// ── THEME TOGGLE ────────────────────────────────────────────────────
+function toggleTheme(){
+  const cur=document.body.getAttribute('data-theme');
+  const next=cur==='dark'?'light':'dark';
+  document.body.setAttribute('data-theme',next);
+  try{localStorage.setItem('cts_theme',next);}catch(e){}
+  // Force chart recolor on theme change
+  if(mainChart){mainChart.destroy();mainChart=null;}
+  if(allData.length) updateCharts();
+}
+(function(){
+  try{
+    const saved=localStorage.getItem('cts_theme');
+    if(saved==='light'||saved==='dark') document.body.setAttribute('data-theme',saved);
+  }catch(e){}
+})();
+
+// ── SETUP PANEL ─────────────────────────────────────────────────────
+let siteInfo={name:'',address:'',accNo:'',lat:'',lng:''};
+
+function toggleSetupPanel(){
+  var body=document.getElementById('setupBody');
+  var btn=document.getElementById('setupCollapseBtn');
+  if(!body||!btn) return;
+  var collapsed=body.style.display==='none';
+  body.style.display=collapsed?'block':'none';
+  btn.textContent=collapsed?'▲ Collapse':'▼ Expand';
+}
+
+function applySetup(){
+  var sel=document.querySelector('input[name="setupPulse"]:checked');
+  if(sel){
+    PULSE_PER_KWH=parseInt(sel.value);
+    var wh=(1000/PULSE_PER_KWH).toFixed(4).replace(/\.?0+$/,'');
+    document.getElementById('pulseRateLabel').textContent='1 pulse = '+wh+' Wh';
+    var psel=document.getElementById('pulseRateSel');
+    if(psel&&[1000,500,250,100].indexOf(PULSE_PER_KWH)!==-1) psel.value=String(PULSE_PER_KWH);
+    ['1000','500','250','100'].forEach(function(v){
+      var lbl=document.getElementById('pr-lbl-'+v);
+      if(lbl) lbl.classList.toggle('active', v===String(PULSE_PER_KWH));
+    });
+  }
+  siteInfo.name=(document.getElementById('setupCustomerName')||{value:''}).value.trim();
+  siteInfo.accNo=(document.getElementById('setupAccNo')||{value:''}).value.trim();
+  siteInfo.address=(document.getElementById('setupAddress')||{value:''}).value.trim();
+  siteInfo.lat=(document.getElementById('setupLat')||{value:''}).value.trim();
+  siteInfo.lng=(document.getElementById('setupLng')||{value:''}).value.trim();
+  var wh2=(1000/PULSE_PER_KWH).toFixed(4).replace(/\.?0+$/,'');
+  if(siteInfo.name) set('logoSub',siteInfo.name+' · 1 pulse = '+wh2+' Wh · TNB tariff July 2025');
+  set('cardName',siteInfo.name||'—');
+  set('cardAddress',siteInfo.address||'—');
+  set('cardAccNo',siteInfo.accNo||'—');
+  var elName=document.getElementById('cardName');if(elName) elName.title=siteInfo.name||'';
+  var elAddr=document.getElementById('cardAddress');if(elAddr) elAddr.title=siteInfo.address||'';
+  var elAcc=document.getElementById('cardAccNo');if(elAcc) elAcc.title=siteInfo.accNo||'';
+  set('cardPulse',PULSE_PER_KWH+' p = 1 kWh (1 p = '+wh2+' Wh)');
+  var gpsWrap=document.getElementById('cardGpsWrap');
+  var gpsLink=document.getElementById('cardGps');
+  if(siteInfo.lat&&siteInfo.lng){
+    if(gpsWrap) gpsWrap.style.display='block';
+    if(gpsLink){gpsLink.textContent=siteInfo.lat+', '+siteInfo.lng;gpsLink.href='https://maps.google.com/?q='+siteInfo.lat+','+siteInfo.lng;}
+  } else {
+    if(gpsWrap) gpsWrap.style.display='none';
+  }
+  var card=document.getElementById('siteInfoCard');
+  if(card) card.style.display=(siteInfo.name||siteInfo.address||siteInfo.accNo)?'block':'none';
+  if(allData.length) processText(_lastText);
+  var saved=document.getElementById('setupApplied');
+  if(saved){saved.style.display='inline';setTimeout(function(){saved.style.display='none';},2000);}
+  toggleSetupPanel();
+}
+
+document.addEventListener('change',function(e){
+  if(e.target.name!=='setupPulse') return;
+  ['1000','500','250','100'].forEach(function(v){
+    var lbl=document.getElementById('pr-lbl-'+v);
+    if(lbl) lbl.classList.toggle('active', v===e.target.value);
+  });
+});
+
+function togglePolling(){
+  var btn=document.getElementById('stopResumeBtn');
+  if(intervalId){
+    clearInterval(intervalId);
+    intervalId=null;
+    if(btn){btn.textContent='▶ Resume';btn.classList.remove('danger');}
+    setLive('PAUSED',false);
+    set('fileStatus','Paused');
+  } else {
+    startPolling();
+    if(btn){btn.textContent='⏹ Stop';btn.classList.add('danger');}
+    setLive('LIVE',true);
+  }
+}
+
+function getGPS(){
+  var st=document.getElementById('gpsStatus');
+  if(!st) return;
+  st.style.color='var(--warn)';st.textContent='Requesting location…';
+  if(!navigator.geolocation){st.style.color='var(--bad)';st.textContent='Geolocation not supported by this browser.';return;}
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var lat=pos.coords.latitude.toFixed(6);
+    var lng=pos.coords.longitude.toFixed(6);
+    var latEl=document.getElementById('setupLat');
+    var lngEl=document.getElementById('setupLng');
+    if(latEl) latEl.value=lat;
+    if(lngEl) lngEl.value=lng;
+    st.style.color='var(--good)';
+    st.textContent='✓ Located: '+lat+', '+lng+' (±'+Math.round(pos.coords.accuracy)+'m)';
+  },function(){
+    st.style.color='var(--bad)';
+    st.textContent='Location denied or unavailable. Enter coordinates manually.';
+  },{enableHighAccuracy:true,timeout:10000});
+}
+
+// ── CONNECTION CHAIN (preserved) ────────────────────────────────────
+function updateConnectionChain(text){
+  if(!text) return;
+  const lines=text.split('\n');
+  const C={boot:false,esim:false,cereg:false,pdp:false,cclk:false,tls:false,mqtt:false,tx:false,
+    ceregStat:0,csq:'—',ip:'—',txOk:0,txFail:0,imei:'—',iccid:'—',batt:'—',hello:false,
+    sasHost:'—',sasDevice:'—',sasExpiry:'—',topic:'—',payloadBytes:'—'};
+
+  for(const l of lines){
+    if(l.includes('Boot OK')) C.boot=true;
+    if(l.includes('+CPIN: READY')) C.esim=true;
+    if(l.includes('ICCID:')){const m=lines[lines.indexOf(l)+1];if(m) C.iccid=m.trim().slice(0,20);}
+    if(l.includes('IMEI:')){const m=l.match(/IMEI:\s*([\d]+)/);if(m) C.imei=m[1];}
+    const ceregM=l.match(/CEREG stat=(\d+)/);if(ceregM){C.ceregStat=parseInt(ceregM[1]);if(C.ceregStat===1||C.ceregStat===5)C.cereg=true;}
+    if(l.includes('+CGATT: 1')) C.pdp=true;
+    const cnactM=l.match(/CNACT.*"(\d+\.\d+\.\d+\.\d+)"/);if(cnactM&&cnactM[1]!=='0.0.0.0') C.ip=cnactM[1];
+    if(l.includes('cnact_has_real_ip=1')||l.includes('PDP up via')) {C.pdp=true;}
+    const csqM=l.match(/\+CSQ:\s*(\d+),/);if(csqM){C.csq=csqM[1];}
+    if(l.includes('[TIME][CCLK][OK]')||l.includes('CCLK set OK')||l.includes('time sync complete')) C.cclk=true;
+    if(l.includes('SMSSL')||l.includes('TLS enabled')||l.includes('[STEP 5][OK]')) C.tls=true;
+    if(l.includes('SMCONN')||l.includes('MQTT connected')||l.includes('[STEP 6][OK]')) C.mqtt=true;
+    if(l.includes('HELLO') && l.includes('SUCCESS')) {C.hello=true;C.tx=true;C.txOk++;}
+    if(l.includes('[MQTT][PUB][OK]')) {C.tx=true;if(!C.hello)C.txOk++;}
+    if(l.includes('[MQTT][PUB][DBG]')&&l.includes('topic=')){const tm=l.match(/topic=\[([^\]]+)\]/);if(tm)C.topic=tm[1];const bm=l.match(/len=(\d+)/);if(bm)C.payloadBytes=bm[1]+' bytes';}
+    if(l.includes('[TX] result = OK')||l.includes('result = OK')){C.tx=true;C.txOk++;}
+    if(l.includes('[TX] result = FAIL')||l.includes('result = FAIL')) C.txFail++;
+    if(l.includes('Cellular engine failed')) C.txFail++;
+    const battM=l.match(/Battery\s*:\s*([\d.]+)/);if(battM) C.batt=parseFloat(battM[1]).toFixed(2)+'V';
+    const hostM=l.match(/Host\s*:\s*([a-z0-9\-\.]+azure[\S]+)/i);if(hostM) C.sasHost=hostM[1];
+    const devM=l.match(/DeviceID\s*:\s*([a-zA-Z0-9\-]+)/);if(devM) C.sasDevice=devM[1];
+    if(l.includes('[COLD] IMEI:')){const im2=lines[lines.indexOf(l)+1]?.trim();if(im2&&/^\d+$/.test(im2))C.imei=im2;}
+    if(l.includes('IMEI=')&&l.includes('[HELLO]')){const im3=l.match(/IMEI=([\d]+)/);if(im3)C.imei=im3[1];}
+    if(l.includes('batt=')&&l.includes('[HELLO]')){const bm2=l.match(/batt=(\d+)mV/);if(bm2)C.batt=(parseInt(bm2[1])/1000).toFixed(3)+'V';}
+    const expM=l.match(/expiry\s*=\s*\[(\d+)\]/);if(expM) C.sasExpiry=expM[1];
+    const topicM=l.match(/topic=[\[(]([^\]\)]+)[\]\)]/);if(topicM) C.topic=topicM[1];
+    const bytesM=l.match(/len=(\d+)/);if(bytesM&&(l.includes('topic')||l.includes('SMPUB'))) C.payloadBytes=bytesM[1]+' bytes';
+  }
+
+  const steps=[
+    {id:'boot',ok:C.boot,lbl:'BOOT\nOK'},
+    {id:'esim',ok:C.esim,lbl:'eSIM\nREADY'},
+    {id:'cereg',ok:C.cereg,lbl:'CEREG\n'+(C.cereg?'STAT='+C.ceregStat:'WAIT')},
+    {id:'pdp',ok:C.pdp,lbl:'PDP\n'+(C.ip!=='—'?C.ip.slice(0,9):'—')},
+    {id:'cclk',ok:C.cclk,lbl:'CCLK\n'+(C.cclk?'SYNCED':'—')},
+    {id:'tls',ok:C.tls,lbl:'TLS\n'+(C.tls?'ON':'—')},
+    {id:'mqtt',ok:C.mqtt,lbl:'MQTT\n'+(C.mqtt?'CONN':'—')},
+    {id:'tx',ok:C.tx,lbl:'TX\n'+(C.txOk>0?'OK:'+C.txOk:C.txFail>0?'FAIL':'—')},
+  ];
+
+  const row=document.getElementById('chainRow');
+  if(row){
+    let html='';
+    steps.forEach((s,i)=>{
+      const col=s.ok?'var(--good)':s.id==='tx'&&C.txFail>0?'var(--bad)':'var(--ink-soft)';
+      const lblLines=s.lbl.split('\n');
+      html+=`<div class="chain-step"><div class="chain-dot" style="background:${col};${s.id==='tx'?'width:14px;height:14px;':''}"></div><div class="chain-lbl" style="color:${col};">${lblLines[0]}<br>${lblLines[1]}</div></div>`;
+      if(i<steps.length-1){
+        const lc=s.ok&&steps[i+1].ok?'var(--good)':s.ok?'var(--ink-soft)':'var(--line)';
+        html+=`<div style="flex:1;height:2px;background:${lc};margin-top:-18px;"></div>`;
+      }
+    });
+    row.innerHTML=html;
+  }
+
+  const badge=document.getElementById('chainStatus');
+  if(badge){
+    if(C.tx&&C.txOk>0){badge.textContent='✓ All systems go — TX OK:'+C.txOk;badge.className='conn-chain-status ccs-ok';}
+    else if(C.mqtt){badge.textContent='⚡ MQTT connected — awaiting TX';badge.className='conn-chain-status ccs-warn';}
+    else if(C.cereg){badge.textContent='🔗 Registered — setting up data path';badge.className='conn-chain-status ccs-warn';}
+    else if(C.esim){badge.textContent='🔍 Searching network (CSQ:'+C.csq+')';badge.className='conn-chain-status ccs-warn';}
+    else if(C.boot){badge.textContent='● Boot OK — modem not ready';badge.className='conn-chain-status ccs-fail';}
+    else{badge.textContent='— Waiting for log';badge.className='conn-chain-status pb-none';}
+  }
+
+  const pbadge=document.getElementById('payloadBadge');
+  const pbox=document.getElementById('payloadBox');
+  const ppills=document.getElementById('payloadPills');
+  const ptopicRow=document.getElementById('payloadTopicRow');
+  const ptopic=document.getElementById('payloadTopic');
+  const sasRow=document.getElementById('sasRow');
+  const sasPills=document.getElementById('sasPills');
+
+  if(pbadge){
+    if(C.txFail>0&&C.txOk===0){pbadge.textContent='✗ TX FAILED — '+C.txFail+' attempt'+(C.txFail>1?'s':'');pbadge.className='payload-badge pb-fail';}
+    else if(C.txOk>0){pbadge.textContent='✓ TX OK — '+C.txOk+' publish'+(C.txOk>1?'es':'');pbadge.className='payload-badge pb-ok';}
+    else if(C.txFail>0){pbadge.textContent='⚠ Partial — OK:'+C.txOk+' Fail:'+C.txFail;pbadge.className='payload-badge pb-fail';}
+    else{pbadge.textContent='— No TX yet';pbadge.className='payload-badge pb-none';}
+  }
+  if(ppills){
+    const pills=[];
+    if(C.imei!=='—') pills.push({cls:'pp-g',txt:'IMEI: '+C.imei});
+    if(C.iccid!=='—') pills.push({cls:'pp-b',txt:'ICCID: '+C.iccid.slice(0,12)+'…'});
+    if(C.batt!=='—') pills.push({cls:'pp-a',txt:'BATT: '+C.batt});
+    if(C.csq!=='—') pills.push({cls:'pp-g',txt:'CSQ: '+C.csq+(C.csq==='99'?' (no signal)':C.csq>='20'?' (ok)':'')});
+    if(C.ip!=='—') pills.push({cls:'pp-b',txt:'IP: '+C.ip});
+    if(C.payloadBytes!=='—') pills.push({cls:'pp-g',txt:C.payloadBytes});
+    ppills.innerHTML=pills.map(p=>`<span class="pp ${p.cls}">${p.txt}</span>`).join('');
+  }
+  if(ptopicRow&&ptopic&&(C.topic!=='—'||C.sasDevice!=='—')){
+    ptopicRow.style.display='flex';
+    ptopic.textContent='TOPIC: '+(C.topic!=='—'?C.topic:'devices/'+C.sasDevice+'/messages/events/');
+  }
+  if(pbox){
+    if(C.txOk>0||C.hello){
+      pbox.style.display='block';
+      const payload={};
+      if(C.imei!=='—') payload.imei=C.imei;
+      if(C.batt!=='—') payload.batt=C.batt;
+      if(C.sasDevice!=='—') payload.device=C.sasDevice;
+      if(C.topic!=='—') payload.topic=C.topic;
+      if(C.payloadBytes!=='—') payload.bytes=C.payloadBytes;
+      if(C.ip!=='—') payload.ip=C.ip;
+      pbox.textContent=JSON.stringify(payload,null,2);
+    } else if(C.imei!=='—'||C.sasHost!=='—'){
+      pbox.style.display='block';
+      const payload={};
+      if(C.imei!=='—') payload.imei=C.imei;
+      if(C.batt!=='—') payload.batt=C.batt;
+      if(C.sasDevice!=='—') payload.device=C.sasDevice;
+      payload.tx_status=C.txOk>0?'OK:'+C.txOk:C.txFail>0?'FAIL:'+C.txFail:'pending';
+      pbox.textContent=JSON.stringify(payload,null,2);
+    } else { pbox.style.display='none'; }
+  }
+  if(sasRow&&sasPills&&C.sasHost!=='—'){
+    sasRow.style.display='block';
+    const sp=[];
+    sp.push({cls:'pp-b',txt:'HOST: '+C.sasHost.slice(0,42)+'…'});
+    if(C.sasDevice!=='—') sp.push({cls:'pp-g',txt:'DEVICE: '+C.sasDevice});
+    if(C.sasExpiry!=='—') sp.push({cls:'pp-p',txt:'EXPIRY: '+C.sasExpiry});
+    sp.push({cls:'pp-a',txt:'PORT: 8883 (TLS)'});
+    sasPills.innerHTML=sp.map(p=>`<span class="pp ${p.cls}">${p.txt}</span>`).join('');
+  }
+
+  // SIGNAL + IP grid cells
+  const dspGrid=document.getElementById('dspGrid');
+  if(dspGrid&&!document.getElementById('dsp-signal')){
+    dspGrid.style.gridTemplateColumns='repeat(8,1fr)';
+    const sigCell=document.createElement('div');
+    sigCell.className='dsp-cell';
+    sigCell.innerHTML='<div class="label">Signal</div><div id="dsp-signal" class="value" style="color:var(--ink-soft);">—</div>';
+    const ipCell=document.createElement('div');
+    ipCell.className='dsp-cell';
+    ipCell.innerHTML='<div class="label">IP Addr</div><div id="dsp-ip" class="value" style="color:var(--ink-soft);font-size:11px;">—</div>';
+    dspGrid.insertBefore(sigCell, dspGrid.children[2]);
+    dspGrid.insertBefore(ipCell, dspGrid.children[4]);
+  }
+  const sigEl=document.getElementById('dsp-signal');
+  const ipEl=document.getElementById('dsp-ip');
+  if(sigEl){
+    const csqN=parseInt(C.csq);
+    sigEl.textContent='CSQ:'+C.csq+(C.csq==='99'?' (none)':'');
+    sigEl.style.color=C.csq==='99'?'var(--bad)':csqN>=15?'var(--good)':'var(--warn)';
+  }
+  if(ipEl){
+    ipEl.textContent=C.ip;
+    ipEl.style.color=C.ip!=='—'?'var(--info)':'var(--ink-soft)';
+  }
+}
+
+// ── TX PAYLOAD LOG (preserved) ──────────────────────────────────────
+let _txEntries = [];
+let _txExpanded = new Set();
+
+function buildTxLog(text){
+  if(!text) return;
+  const lines = text.split('\n');
+  const entries = [];
+  let curImei='—', curBatt='—', curBattMv='—', curDevice='—', curHost='—';
+  let curIp='—', curCsq='—', curApn='—', curCclk='—', curExpiry='—';
+  let curTopic='—', curBytes='—', curReset='—';
+
+  for(const l of lines){
+    const im=l.match(/IMEI[=:\s]+([0-9]{10,})/);if(im) curImei=im[1];
+    const dv=l.match(/DeviceID\s*:\s*([a-zA-Z0-9\-]+)/);if(dv) curDevice=dv[1];
+    const hm=l.match(/Host\s*:\s*([a-z0-9\-\.]+azure[^\s]+)/i);if(hm) curHost=hm[1];
+    const ip=l.match(/CNACT.*"(\d+\.\d+\.\d+\.\d+)"/);if(ip&&ip[1]!=='0.0.0.0') curIp=ip[1];
+    const csq=l.match(/\+CSQ:\s*(\d+),/);if(csq) curCsq=csq[1];
+    const apn=l.match(/APN.*attempt.*"([^"]+)"/i)||l.match(/PDP up via "([^"]+)"/);if(apn) curApn=apn[1];
+    const ck=l.match(/CCLK[^"]*"([^"]+)"/);if(ck) curCclk=ck[1].slice(0,22);
+    const ex=l.match(/expiry\s*=\s*\[(\d+)\]/);if(ex) curExpiry=ex[1];
+    const bt=l.match(/Battery\s*:\s*([\d.]+)/);if(bt){curBatt=parseFloat(bt[1]).toFixed(3)+'V';curBattMv=Math.round(parseFloat(bt[1])*1000)+' mV';}
+    if(l.includes('[HELLO]')&&l.includes('batt=')){
+      const bi=l.match(/batt=(\d+)mV/);if(bi){curBattMv=bi[1]+' mV';curBatt=(parseInt(bi[1])/1000).toFixed(3)+'V';}
+      const ri=l.match(/reset=(0x[0-9a-fA-F]+)/);if(ri) curReset=ri[1];
+      const ii=l.match(/IMEI=(\d+)/);if(ii) curImei=ii[1];
+    }
+    const tp=l.match(/topic=[\[(]([^\]\)]+)[\])]/);if(tp) curTopic=tp[1];
+    const by=l.match(/len=(\d+)/);if(by&&(l.includes('topic')||l.includes('SMPUB')||l.includes('PUB'))) curBytes=by[1]+' bytes';
+  }
+
+  const rtcLineRe=/RTC Time!\s*(\d+):(\d+):(\d+)/;
+  const lineRtc=[];let curRtc='';
+  for(let i=0;i<lines.length;i++){
+    const rm=rtcLineRe.exec(lines[i]);
+    if(rm) curRtc=`${rm[1].padStart(2,'0')}:${rm[2].padStart(2,'0')}:${rm[3].padStart(2,'0')}`;
+    lineRtc[i]=curRtc;
+  }
+
+  const cclkRe=/\+CCLK:\s*"(\d+)\/(\d+)\/(\d+),(\d+):(\d+):(\d+)/;
+  let anchorDate='',anchorTime='';
+  for(const l of lines){
+    const m=cclkRe.exec(l);
+    if(m){
+      const yy=2000+parseInt(m[1]);
+      const nowY=new Date().getFullYear();
+      if(yy>=2020&&yy<=nowY+1){
+        anchorDate=`${yy}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+        anchorTime=`${m[4].padStart(2,'0')}:${m[5].padStart(2,'0')}:${m[6].padStart(2,'0')}`;
+        break;
+      }
+    }
+  }
+
+  for(let i=0;i<lines.length;i++){
+    const l=lines[i];
+    const ts=lineRtc[i]||anchorTime||'—';
+    const dt=anchorDate||'—';
+    if(l.includes('[HELLO]')&&l.includes('SUCCESS')){
+      const topicM=l.match(/topic=([^\s\)]+)/);
+      entries.push({
+        id:entries.length+1, ts, date:dt, type:'HELLO', status:'ok',
+        topic: topicM?topicM[1]:curTopic,
+        bytes:curBytes, imei:curImei, device:curDevice,
+        batt:curBatt, batt_mv:curBattMv, reset:curReset,
+        ip:curIp, csq:curCsq, apn:curApn, host:curHost,
+        cclk:curCclk, sas_expiry:curExpiry,
+        broker_ack:'SMSTATE=1 (broker connected)',
+        session:'Cold boot → eSIM → CEREG → PDP → CCLK → TLS → SMCONN → HELLO',
+        payload:JSON.stringify({type:'hello',imei:curImei,batt_mv:parseInt(curBattMv)||0,reset:curReset},null,2),
+      });
+    }
+    if(l.includes('[MQTT][PUB][OK]')){
+      const last=entries[entries.length-1];
+      if(!last||last.type!=='HELLO'){
+        entries.push({
+          id:entries.length+1, ts, date:dt, type:'MQTT', status:'ok',
+          topic:curTopic, bytes:curBytes, imei:curImei, device:curDevice,
+          batt:curBatt, batt_mv:curBattMv, reset:curReset,
+          ip:curIp, csq:curCsq, apn:curApn, host:curHost,
+          cclk:curCclk, sas_expiry:curExpiry,
+          broker_ack:'SMSTATE=1 (broker connected)',
+          session:'Periodic publish',
+          payload:JSON.stringify({device:curDevice,imei:curImei,batt_mv:parseInt(curBattMv)||0},null,2),
+        });
+      }
+    }
+    if((l.includes('[TX] result = OK')||l.includes('result = OK'))&&!l.includes('HELLO')){
+      entries.push({
+        id:entries.length+1, ts, date:dt, type:'MQTT', status:'ok',
+        topic:curTopic, bytes:curBytes, imei:curImei, device:curDevice,
+        batt:curBatt, batt_mv:curBattMv, reset:curReset,
+        ip:curIp, csq:curCsq, apn:curApn, host:curHost,
+        cclk:curCclk, sas_expiry:curExpiry,
+        broker_ack:'OK',
+        session:'Periodic TX',
+        payload:JSON.stringify({device:curDevice,imei:curImei,batt_mv:parseInt(curBattMv)||0},null,2),
+      });
+    }
+    if(l.includes('[TX] result = FAIL')||l.includes('result = FAIL')||l.includes('Cellular engine failed')){
+      entries.push({
+        id:entries.length+1, ts, date:dt, type:'FAIL', status:'fail',
+        topic:curTopic, bytes:'—', imei:curImei, device:curDevice,
+        batt:curBatt, batt_mv:curBattMv, reset:curReset,
+        ip:curIp, csq:'99', apn:curApn, host:curHost,
+        cclk:'—', sas_expiry:'—',
+        broker_ack:'FAIL',
+        session:l.includes('Cellular engine failed')?'Cellular engine failed':'TX failed',
+        payload:'{}',
+      });
+    }
+  }
+  _txEntries = entries;
+  renderTxLog();
+}
+
+function renderTxLog(){
+  const list = document.getElementById('txLogList');
+  const badge = document.getElementById('txLogBadge');
+  const totalEl = document.getElementById('txTotal');
+  const okEl = document.getElementById('txOkCount');
+  const failEl = document.getElementById('txFailCount');
+  const lastEl = document.getElementById('txLastTs');
+  if(!list) return;
+  const ok = _txEntries.filter(e=>e.status==='ok').length;
+  const fail = _txEntries.filter(e=>e.status==='fail').length;
+  const last = _txEntries.length ? _txEntries[_txEntries.length-1] : null;
+  if(totalEl) totalEl.textContent = _txEntries.length;
+  if(okEl) okEl.textContent = ok;
+  if(failEl) failEl.textContent = fail;
+  if(lastEl) lastEl.textContent = last ? last.ts : '—';
+  if(badge){
+    if(!_txEntries.length){badge.textContent='— No TX yet';badge.className='tx-log-badge tlb-none';}
+    else if(fail===0){badge.textContent='OK:'+ok+' / Fail:0';badge.className='tx-log-badge tlb-ok';}
+    else if(ok===0){badge.textContent='FAIL:'+fail;badge.className='tx-log-badge tlb-fail';}
+    else{badge.textContent='OK:'+ok+' / Fail:'+fail;badge.className='tx-log-badge tlb-fail';}
+  }
+  if(!_txEntries.length){
+    list.innerHTML='<div class="tx-log-empty">No TX events found in this log.</div>';
+    return;
+  }
+  list.innerHTML = _txEntries.slice().reverse().map(tx=>{
+    const isExp = _txExpanded.has(tx.id);
+    const accCls = tx.type==='HELLO'?'tla-hello':tx.status==='ok'?'tla-ok':tx.type==='FAIL'?'tla-fail':'tla-warn';
+    const typCls = tx.type==='HELLO'?'tlt-hello':tx.status==='ok'?'tlt-mqtt':'tlt-fail';
+    const shortTopic = (tx.topic||'—').replace('devices/','…/').replace('/messages/events/','/msg/ev/');
+    return `<div class="tx-log-row${isExp?' selected':''}" onclick="toggleTx(${tx.id})">
+      <div class="tx-log-accent ${accCls}"></div>
+      <div class="tx-log-main">
+        <span class="tl-ts">${tx.ts}</span>
+        <span class="tl-type ${typCls}">${tx.type}</span>
+        <span class="tl-topic">${shortTopic}</span>
+        <span class="tl-bytes">${tx.bytes}</span>
+        <span class="tl-chevron${isExp?' open':''}">⌄</span>
+      </div>
+    </div>
+    <div class="tx-log-detail${isExp?' show':''}">
+      <div class="tld-grid">
+        <div class="tld-cell"><div class="tld-lbl">Timestamp (MYT)</div><div class="tld-val">${tx.date} ${tx.ts}</div></div>
+        <div class="tld-cell"><div class="tld-lbl">Status</div><div class="tld-val" style="color:${tx.status==='ok'?'var(--good)':'var(--bad)'};">${tx.status.toUpperCase()}</div></div>
+        <div class="tld-cell"><div class="tld-lbl">IMEI / Device</div><div class="tld-val">${tx.device}</div></div>
+        <div class="tld-cell"><div class="tld-lbl">Battery</div><div class="tld-val">${tx.batt} (${tx.batt_mv})</div></div>
+        <div class="tld-cell"><div class="tld-lbl">Signal (CSQ)</div><div class="tld-val">${tx.csq}${tx.csq==='99'?' — no signal':tx.csq>='20'?' — ok':''}</div></div>
+        <div class="tld-cell"><div class="tld-lbl">IP / APN</div><div class="tld-val">${tx.ip} · ${tx.apn}</div></div>
+        <div class="tld-cell"><div class="tld-lbl">CCLK</div><div class="tld-val">${tx.cclk}</div></div>
+        <div class="tld-cell"><div class="tld-lbl">SAS Expiry</div><div class="tld-val">unix ${tx.sas_expiry}</div></div>
+        <div class="tld-cell span2"><div class="tld-lbl">IoT Hub Host</div><div class="tld-val">${tx.host}</div></div>
+        <div class="tld-cell span2"><div class="tld-lbl">Topic</div><div class="tld-val">${tx.topic}</div></div>
+        <div class="tld-cell span2"><div class="tld-lbl">Broker ACK</div><div class="tld-val">${tx.broker_ack}</div></div>
+        <div class="tld-cell span2"><div class="tld-lbl">Session path</div><div class="tld-val">${tx.session}</div></div>
+      </div>
+      <div class="tld-lbl" style="margin-bottom:4px;">Payload JSON</div>
+      <div class="tld-payload">${tx.payload}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleTx(id){
+  if(_txExpanded.has(id)) _txExpanded.delete(id);
+  else{_txExpanded.clear();_txExpanded.add(id);}
+  renderTxLog();
+}
+
+function toggleBucketDetail(){
+  const body=document.getElementById('bucketDetailBody');
+  const btn=document.getElementById('bucketToggleBtn');
+  if(!body||!btn) return;
+  const hidden=body.style.display==='none';
+  body.style.display=hidden?'block':'none';
+  btn.textContent=hidden?'▲ Hide':'▼ Show';
+}
+
+// ── PWA ─────────────────────────────────────────────────────────────
+(function(){
+  var host=location.hostname;
+  var allowed=host.endsWith('.github.io')||host==='localhost'||host==='127.0.0.1';
+  if(!allowed||!('serviceWorker' in navigator)) return;
+  try{
+    var c=atob('c2VsZi5hZGRFdmVudExpc3RlbmVyKCdpbnN0YWxsJyxlPT5zZWxmLnNraXBXYWl0aW5nKCkpO3NlbGYuYWRkRXZlbnRMaXN0ZW5lcignYWN0aXZhdGUnLGU9PmNsaWVudHMuY2xhaW0oKSk7c2VsZi5hZGRFdmVudExpc3RlbmVyKCdmZXRjaCcsZT0+e2UucmVzcG9uZFdpdGgoZmV0Y2goZS5yZXF1ZXN0KS5jYXRjaCgoKT0+Y2FjaGVzLm1hdGNoKGUucmVxdWVzdCkpKTt9KTs=');
+    var b=new Blob([c],{type:'text/javascript'});
+    var u=URL.createObjectURL(b);
+    navigator.serviceWorker.register(u,{scope:'./'})
+      .then(function(r){console.log('[CTS PWA] installed, scope:',r.scope);})
+      .catch(function(e){console.warn('[CTS PWA] SW error:',e);});
+  }catch(e){console.warn('[CTS PWA]',e);}
+})();
+
+// Backward-compat stub: connector for the legacy cardDeviceClick handler
+function cardDeviceClick(){
+  // No-op — original code referenced an external Status page; preserved as harmless stub
+}
+</script>
+</body>
+</html>
