@@ -863,7 +863,7 @@ function loadTechLinks(manuals){
   if(!links.length){ section.style.display='none'; return; }
   section.style.display='';
   list.innerHTML = links.map(function(lk){
-    return '<a class="link-card" href="'+escHL(lk.url)+'" target="_blank" rel="noopener">'
+    return '<a class="link-card" href="'+escHL(lk.url)+'" target="_blank" rel="noopener" download>'
       +'<div class="link-icon">'+(lk.icon||'🔗')+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div class="link-title">'+escHL(lk.title||'Link')+'</div>'
