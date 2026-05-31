@@ -1,0 +1,4415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Energy Eye · Live Dashboard</title>
+
+<!-- CTS PROD branding: favicon (browser tab), apple-touch-icon (iOS home), PWA manifest (Android) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%3E%3Crect%20width%3D%2296%22%20height%3D%2296%22%20rx%3D%2222%22%20fill%3D%22%23111820%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2294%22%20height%3D%2294%22%20rx%3D%2221%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%221%22%20opacity%3D%220.4%22%2F%3E%3Ctext%20x%3D%2248%22%20y%3D%2256%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%20Black%2CArial%2Csans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2233%22%20fill%3D%22%2300E5FF%22%20letter-spacing%3D%221.5%22%3ECTS%3C%2Ftext%3E%3Ctext%20x%3D%2248%22%20y%3D%2271%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2Csans-serif%22%20font-size%3D%2210%22%20fill%3D%22%2300E5FF%22%20opacity%3D%220.7%22%20letter-spacing%3D%224.5%22%3EPROD%3C%2Ftext%3E%3C%2Fsvg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%3E%3Crect%20width%3D%2296%22%20height%3D%2296%22%20rx%3D%2222%22%20fill%3D%22%23111820%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2294%22%20height%3D%2294%22%20rx%3D%2221%22%20fill%3D%22none%22%20stroke%3D%22%2300E5FF%22%20stroke-width%3D%221%22%20opacity%3D%220.4%22%2F%3E%3Ctext%20x%3D%2248%22%20y%3D%2256%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%20Black%2CArial%2Csans-serif%22%20font-weight%3D%22900%22%20font-size%3D%2233%22%20fill%3D%22%2300E5FF%22%20letter-spacing%3D%221.5%22%3ECTS%3C%2Ftext%3E%3Ctext%20x%3D%2248%22%20y%3D%2271%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2Csans-serif%22%20font-size%3D%2210%22%20fill%3D%22%2300E5FF%22%20opacity%3D%220.7%22%20letter-spacing%3D%224.5%22%3EPROD%3C%2Ftext%3E%3C%2Fsvg%3E">
+<meta name="theme-color" content="#111820">
+<meta name="apple-mobile-web-app-title" content="Energy Eye">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Energy%20Eye%20%5Cu00b7%20CTS%20PROD%22%2C%22short_name%22%3A%22Energy%20Eye%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23111820%22%2C%22theme_color%22%3A%22%23111820%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NiA5NiI%2BPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiByeD0iMjIiIGZpbGw9IiMxMTE4MjAiLz48cmVjdCB4PSIxIiB5PSIxIiB3aWR0aD0iOTQiIGhlaWdodD0iOTQiIHJ4PSIyMSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDBFNUZGIiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjQ4IiB5PSI1NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsIEJsYWNrLEFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI5MDAiIGZvbnQtc2l6ZT0iMzMiIGZpbGw9IiMwMEU1RkYiIGxldHRlci1zcGFjaW5nPSIxLjUiPkNUUzwvdGV4dD48dGV4dCB4PSI0OCIgeT0iNzEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjMDBFNUZGIiBvcGFjaXR5PSIwLjciIGxldHRlci1zcGFjaW5nPSI0LjUiPlBST0Q8L3RleHQ%2BPC9zdmc%2B%22%2C%22sizes%22%3A%22192x192%20512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%22%7D%5D%7D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.1/dist/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --bg-grid: rgba(0,0,0,0.04);
+    --surface: #ffffff;
+    --surface-2: #ebe6dc;
+    --ink: #1a1a1a;
+    --ink-soft: #5a5a5a;
+    --line: #d8d2c4;
+    --accent: #ff5b2e;
+    --accent-2: #2d6a4f;
+    --good: #2d6a4f;
+    --warn: #d4a017;
+    --bad: #c1311e;
+    --shadow: 0 1px 0 rgba(0,0,0,0.04), 0 8px 24px -12px rgba(0,0,0,0.18);
+  }
+  [data-theme="dark"] {
+    --bg: #0e1014;
+    --bg-grid: rgba(255,255,255,0.04);
+    --surface: #171a21;
+    --surface-2: #1f2330;
+    --ink: #f0ece3;
+    --ink-soft: #9aa0aa;
+    --line: #2a2f3c;
+    --accent: #ff7a4d;
+    --accent-2: #5ce0a0;
+    --good: #5ce0a0;
+    --warn: #f0c75e;
+    --bad: #ff6b5a;
+    --shadow: 0 1px 0 rgba(255,255,255,0.04), 0 8px 24px -8px rgba(0,0,0,0.6);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    background-image:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 32px 32px;
+    transition: background-color .3s ease, color .3s ease;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Header */
+  header {
+    padding: 28px 32px 12px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand .logo {
+    width: 44px; height: 44px;
+    border-radius: 2px;
+    display: block; line-height: 0;
+  }
+  .brand .logo svg { width: 100%; height: 100%; display: block; }
+  .brand h1 { font-size: 24px; margin: 0; font-weight: 600; letter-spacing: -0.5px; }
+  .brand .sub {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--ink-soft); margin-top: 2px;
+  }
+
+  .controls { display: flex; gap: 10px; align-items: center; }
+
+  /* Page tabs (Live / Engineer / Analyst) — pill-shaped, full-row, equal thirds */
+  .page-tabs-wrap {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 12px 32px 0;
+    box-sizing: border-box;
+  }
+  .page-tabs {
+    display: flex;
+    width: 100%;
+    padding: 4px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    gap: 4px;
+    box-sizing: border-box;
+  }
+  .page-tab {
+    flex: 1 1 0;             /* equal thirds */
+    text-align: center;
+    padding: 9px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: var(--ink-soft);
+    text-decoration: none;
+    cursor: pointer;
+    border-radius: 999px;
+    transition: background .15s ease, color .15s ease;
+    user-select: none;
+  }
+  .page-tab:hover { color: var(--ink); background: var(--bg); }
+  .page-tab.active {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .page-tab.active:hover { background: var(--ink); color: var(--bg); }
+  @media (max-width: 720px) {
+    .page-tabs-wrap { padding: 8px 14px 0; }
+    .page-tab { padding: 7px 0; font-size: 11px; }
+  }
+
+  /* Page sections — only the active one is visible */
+  .page-section { display: none; }
+  .page-section.active { display: block; }
+  .btn {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    padding: 8px 14px;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    cursor: pointer; border-radius: 2px;
+    transition: all .15s ease;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn.primary:hover { filter: brightness(1.05); }
+  .btn.danger { color: var(--bad); border-color: var(--bad); }
+  .btn.danger:hover { background: var(--bad); color: white; }
+  .btn.small { padding: 5px 10px; font-size: 11px; }
+  .theme-toggle { width: 38px; height: 38px; padding: 0; justify-content: center; }
+
+  /* Export dropdown */
+  .export-wrap { position: relative; display: inline-block; }
+  .export-menu {
+    position: absolute; top: calc(100% + 6px); right: 0;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 4px; min-width: 220px; padding: 4px 0;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    z-index: 1000;
+  }
+  .export-menu[hidden] { display: none; }
+  .export-section {
+    padding: 8px 14px 4px; font-size: 10px;
+    color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .export-item {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 8px 14px;
+    background: transparent; border: none;
+    color: var(--ink); font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    text-align: left; cursor: pointer;
+  }
+  .export-item:hover { background: var(--surface-2); }
+  .export-item .ei-ic { color: var(--accent); width: 16px; display: inline-block; text-align: center; }
+  .export-divider { height: 1px; background: var(--line); margin: 4px 0; }
+
+  /* Device selector pill */
+  .device-pill {
+    background: var(--surface); border: 1px solid var(--line);
+    padding: 6px 6px 6px 12px; border-radius: 2px;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+  }
+  .device-pill select {
+    background: transparent; border: none; color: var(--ink);
+    font-family: inherit; font-size: 13px;
+    padding: 2px 4px; cursor: pointer;
+    outline: none;
+  }
+  .device-pill select option {
+    background: #ffffff; color: #1a1a1a;
+  }
+
+  main { padding: 24px 32px 80px; max-width: 1400px; margin: 0 auto; }
+
+  /* First-time welcome banner */
+  .welcome-banner {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-left: 4px solid var(--accent);
+    border-radius: 2px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+  }
+  .welcome-banner[hidden] { display: none; }
+  .welcome-banner .wb-icon {
+    flex-shrink: 0;
+    line-height: 0;
+  }
+  .welcome-banner .wb-text { flex: 1; min-width: 0; }
+  .welcome-banner h3 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .welcome-banner p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  .welcome-banner p b { color: var(--ink); font-weight: 600; }
+  .welcome-banner .btn { margin-top: 4px; }
+  @media (max-width: 540px) {
+    .welcome-banner { flex-direction: column; align-items: stretch; padding: 16px; }
+  }
+
+  /* Tariff peak/off-peak legend under Power Demand chart */
+  .tariff-legend {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    margin-top: 10px; padding-top: 8px;
+    border-top: 1px solid var(--line);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .tariff-legend .tl-item {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--ink);
+  }
+  .tariff-legend .tl-swatch {
+    display: inline-block; width: 14px; height: 10px; border-radius: 1px;
+  }
+  .tariff-legend .tl-peak { background: var(--accent); }
+  .tariff-legend .tl-offpeak { background: var(--ink-soft); }
+  .tariff-legend .tl-time { color: var(--ink-soft); }
+
+  /* Recent Intervals row-count toggle */
+  .table-mode { display: inline-flex; gap: 0; }
+  .table-mode .mode-btn {
+    border-radius: 0; padding: 4px 10px;
+    border-right-width: 0;
+  }
+  .table-mode .mode-btn:first-child { border-top-left-radius: 2px; border-bottom-left-radius: 2px; }
+  .table-mode .mode-btn:last-child {
+    border-top-right-radius: 2px; border-bottom-right-radius: 2px;
+    border-right-width: 1px;
+  }
+  .table-mode .mode-btn.active {
+    background: var(--ink); color: var(--bg);
+    border-color: var(--ink);
+  }
+
+  /* Compliance footer */
+  .compliance-footer {
+    margin-top: 28px; padding: 16px 18px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 2px;
+    font-size: 11px; color: var(--ink-soft); line-height: 1.6;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .compliance-footer .cf-line { margin-bottom: 4px; }
+  .compliance-footer .cf-line:last-child { margin-bottom: 0; }
+  .compliance-footer .cf-badge {
+    display: inline-block; background: var(--ink); color: var(--bg);
+    padding: 2px 8px; border-radius: 2px; font-weight: 600;
+    margin-right: 8px; letter-spacing: 0.5px;
+  }
+  .compliance-footer code {
+    background: var(--surface-2, rgba(127,127,127,0.12));
+    padding: 1px 5px; border-radius: 2px;
+    font-family: inherit; font-size: 10.5px;
+  }
+
+  /* Analyst page — statistics grid */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 6px;
+  }
+  .stat-item {
+    background: var(--bg);
+    padding: 10px 12px;
+    border-radius: 2px;
+    border: 1px solid var(--line);
+  }
+  .stat-item.highlight {
+    border-color: var(--accent);
+  }
+  .stat-item.highlight .stat-value { color: var(--accent); }
+  .stat-label {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--ink-soft);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    color: var(--ink);
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  @media (max-width: 980px) { .stat-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  /* Heatmap explainer banner */
+  .heatmap-note {
+    display: flex; gap: 10px;
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+  .heatmap-note .hn-icon {
+    color: var(--accent);
+    font-size: 14px;
+    line-height: 1.3;
+    flex-shrink: 0;
+  }
+  .heatmap-note .hn-text { flex: 1; }
+  .heatmap-note .hn-text b { color: var(--ink); font-weight: 600; }
+  .heatmap-note .hn-range {
+    display: block;
+    margin-top: 4px;
+    color: var(--ink);
+  }
+
+  /* Analyst page — 24x7 heatmap */
+  .heatmap {
+    position: relative;
+    display: grid;
+    grid-template-columns: 38px repeat(24, 1fr);
+    gap: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-soft);
+  }
+  .heatmap .hm-corner { }
+  .heatmap .hm-col-label,
+  .heatmap .hm-row-label {
+    color: var(--ink-soft);
+    display: flex; align-items: center; justify-content: center;
+    height: 22px;
+    user-select: none;
+  }
+  .heatmap .hm-row-label { justify-content: flex-end; padding-right: 6px; }
+  .heatmap .hm-cell {
+    height: 22px;
+    border-radius: 1px;
+    background: var(--line);
+    cursor: default;
+    transition: outline 0.1s ease;
+  }
+  .heatmap .hm-cell:hover { outline: 1px solid var(--ink); outline-offset: -1px; }
+  /* Peak-window overlay box — outline only, transparent fill, spans all 7 data rows
+     Uses --ink so it's high-contrast in both light (dark outline) and dark (cream outline) themes. */
+  .heatmap .hm-peak-box {
+    position: absolute;
+    pointer-events: none;
+    border: 2px solid var(--ink);
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.20);
+    z-index: 2;
+  }
+  /* Heat color scale — fade from line color (cold) to accent (hot) using opacity */
+  .heatmap-legend {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--ink-soft);
+  }
+  .heatmap-legend .hl-swatch {
+    display: inline-block; width: 18px; height: 10px; border-radius: 1px;
+    background: var(--accent);
+  }
+  .heatmap-legend .hl-1 { opacity: 0.10; }
+  .heatmap-legend .hl-2 { opacity: 0.30; }
+  .heatmap-legend .hl-3 { opacity: 0.55; }
+  .heatmap-legend .hl-4 { opacity: 0.80; }
+  .heatmap-legend .hl-5 { opacity: 1.00; }
+  .heatmap-legend .hl-spacer { flex: 1; }
+  .heatmap-legend .hl-peak-indicator {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-left: 16px;
+  }
+  .heatmap-legend .hl-peak-swatch {
+    display: inline-block; width: 18px; height: 10px;
+    border: 2px solid var(--ink);
+    box-sizing: border-box; border-radius: 1px;
+    background: transparent;
+  }
+
+  /* Engineer page — Device Diagnostics grid */
+  .diag-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .diag-item {
+    border-left: 2px solid var(--ink-soft);
+    padding: 4px 0 4px 12px;
+  }
+  .diag-item.diag-good { border-left-color: var(--good, #1D9E75); }
+  .diag-item.diag-warn { border-left-color: var(--warn, #EF9F27); }
+  .diag-item.diag-bad  { border-left-color: var(--bad, #E24B4A); }
+  .diag-item.diag-info { border-left-color: var(--ink-soft); }
+  .diag-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--ink-soft); font-family: 'JetBrains Mono', monospace;
+  }
+  .diag-value {
+    font-family: 'JetBrains Mono', monospace; font-size: 22px;
+    color: var(--ink); margin-top: 4px; font-weight: 600;
+  }
+  .diag-key {
+    font-size: 9px; color: var(--ink-soft);
+    font-family: 'JetBrains Mono', monospace; margin-top: 2px;
+  }
+  @media (max-width: 720px) {
+    .diag-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Engineer page — outage / peak pills */
+  .pill-cause {
+    display: inline-block; padding: 1px 6px; border-radius: 2px;
+    font-size: 10px; font-family: 'JetBrains Mono', monospace;
+    color: #fff;
+  }
+  .pill-cause.cause-gap    { background: var(--bad, #E24B4A); }
+  .pill-cause.cause-partial{ background: var(--warn, #EF9F27); }
+  .pill-cause.cause-other  { background: var(--ink-soft); }
+
+  /* Status banner */
+  .status-bar {
+    display: flex; align-items: center; gap: 16px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    margin-bottom: 20px;
+    font-size: 13px; flex-wrap: wrap;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot.good { background: var(--good); box-shadow: 0 0 8px var(--good); }
+  .dot.bad { background: var(--bad); }
+  .dot.warn { background: var(--warn); }
+  .status-bar .item { color: var(--ink-soft); }
+  .status-bar .item b { color: var(--ink); font-weight: 600; }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 16px; flex-wrap: wrap;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    margin-bottom: 20px;
+  }
+  .filter-presets { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-presets .btn.small.active {
+    background: var(--accent); color: white; border-color: var(--accent);
+  }
+  .filter-dates { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .filter-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--ink-soft); font-weight: 600;
+  }
+  .filter-dates input[type="date"] {
+    background: var(--bg); border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    padding: 6px 10px; border-radius: 2px;
+    color-scheme: light dark;
+  }
+  .filter-dates input[type="date"]:focus { outline: none; border-color: var(--accent); }
+
+  /* KPI cards */
+  /* All KPIs in one row · Location wider (2.2fr), others equal (1fr each) */
+  .kpis {
+    display: grid;
+    gap: 8px; margin-bottom: 20px;
+  }
+  .kpis-all {
+    grid-template-columns: 2.2fr repeat(5, 1fr);
+  }
+  .kpis-engineer {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  @media (max-width: 980px) {
+    .kpis-all { grid-template-columns: repeat(3, 1fr); }
+    .kpi-location { grid-column: span 3; }
+    .kpis-engineer { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .kpis-all { grid-template-columns: repeat(2, 1fr); }
+    .kpi-location { grid-column: span 2; }
+    .kpis-engineer { grid-template-columns: repeat(2, 1fr); }
+  }
+  .kpi {
+    background: var(--surface); border: 1px solid var(--line);
+    padding: 12px 14px; border-radius: 2px;
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+    min-height: 78px;
+  }
+  .kpi::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%; background: var(--accent);
+  }
+  /* Source-color accent: green for /status, orange for /data */
+  .kpi.kpi-status::before { background: var(--good); }
+  .kpi.kpi-data::before { background: var(--accent); }
+  .kpi .label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--ink-soft); margin-bottom: 6px;
+  }
+  .kpi .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px; font-weight: 700; letter-spacing: -0.5px;
+    margin-top: auto;
+  }
+  .kpi .unit { font-size: 11px; color: var(--ink-soft); margin-left: 4px; font-weight: 400; }
+  .kpi-location-value {
+    font-size: 14px !important; line-height: 1.4 !important; font-weight: 500 !important;
+    letter-spacing: 0 !important; word-break: break-word;
+  }
+
+  /* Health pill */
+  .health-pill {
+    display: inline-block; padding: 3px 10px; border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    color: #fff;
+  }
+  .health-good { background: var(--good); }
+  .health-warning { background: var(--warn); }
+  .health-critical { background: var(--bad); }
+  .health-unknown { background: var(--ink-soft); }
+
+  /* Status grid */
+  .status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+  }
+  .status-card {
+    background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: 2px; padding: 12px 14px;
+  }
+  .status-card .sc-label {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--ink-soft); margin-bottom: 6px;
+  }
+  .status-card .sc-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px; font-weight: 700; letter-spacing: -0.3px;
+    word-break: break-word;
+  }
+  .status-card .sc-sub {
+    font-size: 11px; color: var(--ink-soft); margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .status-card.good { border-left: 3px solid var(--good); }
+  .status-card.warn { border-left: 3px solid var(--warn); }
+  .status-card.bad  { border-left: 3px solid var(--bad); }
+
+  /* Status table */
+  .status-table-wrap { overflow-x: auto; }
+  .status-table {
+    width: 100%; border-collapse: collapse;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+  }
+  .status-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  .status-table tr:last-child td { border-bottom: none; }
+  .status-table tr:hover td { background: var(--surface-2); }
+  .status-table .st-field {
+    width: 220px;
+    color: var(--ink-soft);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .status-table .st-value {
+    color: var(--ink);
+    word-break: break-word;
+    font-weight: 500;
+  }
+  .status-table .st-value .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .status-table .st-value .pill.good { background: var(--good); color: #fff; }
+  .status-table .st-value .pill.warn { background: var(--warn); color: #1a1a1a; }
+  .status-table .st-value .pill.bad  { background: var(--bad); color: #fff; }
+  .status-table .st-value .sub {
+    color: var(--ink-soft);
+    font-size: 11px;
+    margin-left: 8px;
+  }
+
+  /* Chart panels */
+  .panel {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 2px; padding: 20px; margin-bottom: 20px;
+  }
+  .panel-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px; flex-wrap: wrap; gap: 10px;
+  }
+  .panel-head h2 {
+    margin: 0; font-size: 14px; text-transform: uppercase;
+    letter-spacing: 2px; font-weight: 600;
+  }
+  .panel-head .meta {
+    font-size: 11px; color: var(--ink-soft);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .chart-wrap { position: relative; height: 320px; }
+
+  /* Table */
+  .data-table { width: 100%; border-collapse: collapse;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .data-table th, .data-table td {
+    text-align: left; padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .data-table th {
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--ink-soft); font-size: 10px; font-weight: 600;
+    position: sticky; top: 0; background: var(--surface);
+  }
+  .data-table tr:hover td { background: var(--surface-2); }
+  .table-wrap { max-height: 380px; overflow-y: auto; }
+
+  /* Floating settings button */
+  .fab {
+    position: fixed; bottom: 24px; right: 24px;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--accent); color: white; border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    display: grid; place-items: center;
+    z-index: 100;
+    transition: transform .2s ease, box-shadow .2s ease, opacity .2s ease;
+  }
+  .fab:hover { transform: scale(1.08) rotate(45deg); box-shadow: 0 6px 22px rgba(0,0,0,0.28); }
+  .fab svg { width: 24px; height: 24px; }
+
+  /* Back-to-top FAB — same size and color as settings FAB, stacked above it.
+     No rotation on hover (rotation makes sense for a gear, not an arrow). */
+  .fab-top {
+    bottom: 92px;  /* stack above the 56px settings FAB + 12px gap */
+    opacity: 0;
+    pointer-events: none;
+  }
+  .fab-top.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .fab-top:hover {
+    transform: translateY(-2px);  /* lift, no rotation */
+  }
+  .fab-top[hidden] { display: none; }
+
+  /* Modal */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200; backdrop-filter: blur(4px);
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--line);
+    padding: 24px;
+    width: 95%; max-width: 640px;
+    max-height: 90vh; overflow-y: auto;
+    border-radius: 4px;
+    box-shadow: var(--shadow);
+    animation: pop .2s ease;
+  }
+  @keyframes pop {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .modal h3 { margin: 0 0 4px; font-size: 18px; letter-spacing: -0.3px; }
+  .modal .desc { font-size: 12px; color: var(--ink-soft); margin-bottom: 16px; }
+  .modal h4 {
+    margin: 18px 0 10px; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 2px; color: var(--ink-soft);
+  }
+
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 2px; color: var(--ink-soft);
+    margin-bottom: 6px; font-weight: 600;
+  }
+  .field input, .field select {
+    width: 100%; padding: 9px 12px;
+    background: var(--bg); border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    border-radius: 2px;
+    transition: border-color .15s ease;
+  }
+  .field input:focus, .field select:focus {
+    outline: none; border-color: var(--accent);
+  }
+  .field .hint { font-size: 10px; color: var(--ink-soft); margin-top: 4px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Device list cards */
+  .device-list { display: flex; flex-direction: column; gap: 10px; }
+  .device-card {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    padding: 12px 14px;
+    border-radius: 2px;
+    position: relative;
+  }
+  .device-card.active {
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+  }
+  .device-card-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px; gap: 8px;
+  }
+  .device-card-name {
+    font-weight: 600; font-size: 14px; flex: 1;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .device-card-name input {
+    background: transparent; border: none; color: var(--ink);
+    font: inherit; padding: 2px 4px;
+    border-bottom: 1px dashed var(--line); width: 100%;
+  }
+  .device-card-name input:focus { outline: none; border-bottom-color: var(--accent); }
+  .device-card-actions { display: flex; gap: 6px; }
+  .device-card-body { display: none; }
+  .device-card.expanded .device-card-body { display: block; margin-top: 8px; }
+  .device-tag {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 2px;
+    background: var(--accent); color: white;
+    padding: 2px 6px; border-radius: 2px;
+  }
+  .device-tariff {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+  }
+  .device-tariff-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--ink-soft); margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .day-picker {
+    display: flex; gap: 4px; flex-wrap: wrap; align-items: center;
+    margin-top: 6px;
+  }
+  .day-picker .day-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    padding: 6px 10px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+    user-select: none;
+  }
+  .day-picker .day-btn:hover {
+    border-color: var(--ink-soft);
+    color: var(--ink);
+  }
+  .day-picker .day-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .day-picker .day-quick {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    padding: 6px 10px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+  }
+  .day-picker .day-quick:hover {
+    border-color: var(--ink-soft);
+    color: var(--ink);
+  }
+
+  .modal-actions {
+    display: flex; gap: 10px; justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 16px; border-top: 1px solid var(--line);
+    position: sticky; bottom: 0; background: var(--surface);
+  }
+
+  /* Toasts */
+  .toast {
+    position: fixed; top: 24px; right: 24px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px; border-radius: 2px;
+    box-shadow: var(--shadow);
+    font-size: 13px; z-index: 300;
+    max-width: 380px;
+    animation: slidein .2s ease;
+    cursor: pointer;
+  }
+  .toast.error { border-left-color: var(--bad); }
+  .toast.success { border-left-color: var(--good); }
+  @keyframes slidein {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  /* Let a panel grow to match its taller sibling, with its chart filling
+     the available space so the visual bottoms align. */
+  .grid-2 .panel-fill { display: flex; flex-direction: column; }
+  .grid-2 .panel-fill .chart-wrap-fill {
+    flex: 1 1 auto;
+    min-height: 320px;   /* same baseline as default .chart-wrap */
+  }
+  @media (max-width: 880px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .field-row { grid-template-columns: 1fr; }
+    header { padding: 20px; }
+    main { padding: 16px 16px 80px; }
+  }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--line); border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }  /* =========================
+     Print A4 Report
+     ========================= */
+  @media print {
+    @page { size: A4; margin: 10mm; }
+    body { background: #fff !important; color: #000 !important; font-size: 10px !important; }
+    /* Hide non-essential UI */
+    header .controls,
+    .page-tabs-wrap,
+    .page-tabs,
+    .fab,
+    .filter-bar,
+    .chart-wrap,
+    .panel:has(canvas),
+    .modal-bg,
+    .export-wrap,
+    .export-menu,
+    #toggleStatusBtn,
+    #refreshBtn,
+    .theme-toggle { display: none !important; }
+    /* Hide the panels that contain only charts */
+    .grid-2 .panel:has(canvas) { display: none !important; }
+    /* Force light colors on everything */
+    body, main, header, .panel, .status-bar, .kpi, .status-card,
+    .data-table, .status-table {
+      background: #fff !important; color: #000 !important;
+      border-color: #ccc !important; box-shadow: none !important;
+    }
+    /* Let content flow naturally — don't force-break panels onto fresh pages */
+    .panel {
+      page-break-inside: auto;
+      border: 1px solid #ccc !important;
+      margin: 0 0 8px !important; padding: 8px 10px !important;
+    }
+    .panel-head { margin-bottom: 6px !important; padding: 0 !important; }
+    h1 { font-size: 16px !important; margin: 0 !important; }
+    h2 { font-size: 12px !important; margin: 0 !important; }
+    h3, h4, .label, .sc-label, b { color: #000 !important; }
+    .meta, .sub, .sc-sub, .status-bar .item, .unit, .kpi .label {
+      color: #555 !important; font-size: 9px !important;
+    }
+    /* Header — compact */
+    header {
+      padding: 4px 0 !important; margin-bottom: 6px !important;
+      border-bottom: 1px solid #ccc !important;
+    }
+    .brand .logo { width: 28px !important; height: 28px !important; }
+    .sub { font-size: 9px !important; }
+    /* Status bar — single compact line */
+    .status-bar {
+      padding: 4px 8px !important; margin-bottom: 6px !important;
+      font-size: 9px !important; gap: 10px !important;
+      border: 1px solid #ccc !important;
+    }
+    /* KPI cards — single row in print */
+    .kpis-all {
+      grid-template-columns: 2.2fr repeat(5, 1fr) !important;
+      gap: 4px !important; margin-bottom: 6px !important;
+    }
+    .kpi {
+      padding: 6px 8px !important; page-break-inside: avoid;
+      border: 1px solid #ccc !important; min-height: 0 !important;
+    }
+    .kpi .label { font-size: 8px !important; margin-bottom: 2px !important; }
+    .kpi .value { font-size: 13px !important; }
+    .kpi-location-value { font-size: 10px !important; }
+    .kpi .unit { font-size: 8px !important; }
+    .health-pill { padding: 1px 6px !important; font-size: 9px !important; background: #555 !important; color: #fff !important; }
+    /* Tables — compact, allow row-level breaks */
+    .data-table, .status-table {
+      font-size: 9px !important;
+    }
+    .data-table th, .data-table td,
+    .status-table th, .status-table td {
+      padding: 3px 6px !important;
+    }
+    .data-table th, .status-table th {
+      background: #f0f0f0 !important; color: #000 !important;
+    }
+    .data-table tr, .status-table tr { page-break-inside: avoid; }
+    .data-table thead, .status-table thead { display: table-header-group; }  /* repeat headers */
+    main { padding: 0 !important; max-width: 100% !important; }
+    /* Ensure all rows print (not just visible 50) */
+    .table-wrap, .status-table-wrap {
+      max-height: none !important; overflow: visible !important;
+    }
+    /* Pills/badges — readable on paper */
+    .pill { border: 1px solid #999 !important; padding: 1px 4px !important; font-size: 8px !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo" aria-label="CTS PROD">
+      <svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" role="img">
+        <title>CTS PROD</title>
+        <rect width="96" height="96" rx="22" fill="#111820"/>
+        <rect x="1" y="1" width="94" height="94" rx="21" fill="none" stroke="#00E5FF" stroke-width="1" opacity="0.4"/>
+        <text x="48" y="56" text-anchor="middle" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="33" fill="#00E5FF" letter-spacing="1.5">CTS</text>
+        <text x="48" y="71" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#00E5FF" opacity="0.7" letter-spacing="4.5">PROD</text>
+      </svg>
+    </div>
+    <div>
+      <h1>Energy Eye</h1>
+      <div class="sub">Live Telemetry Dashboard</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="device-pill">
+      <span style="color: var(--ink-soft); font-size:11px; text-transform:uppercase; letter-spacing:1.5px;">Device</span>
+      <select id="deviceSelect"></select>
+    </div>
+    <button class="btn" id="refreshBtn">
+      <span id="refreshIcon">↻</span> Refresh
+    </button>
+    <div class="export-wrap">
+      <button class="btn" id="exportBtn" title="Export data" aria-haspopup="true" aria-expanded="false">
+        <span style="font-size:14px;">⤓</span> Export <span style="font-size:9px; opacity:0.75; margin-left:2px;">▾</span>
+      </button>
+      <div class="export-menu" id="exportMenu" role="menu" hidden>
+        <!-- Live page exports -->
+        <div class="export-group" data-page="live">
+          <div class="export-section">Device Status</div>
+          <button class="export-item" data-export="status-csv" role="menuitem"><span class="ei-ic">⤓</span> Status as CSV</button>
+          <button class="export-item" data-export="status-pdf" role="menuitem"><span class="ei-ic">⤓</span> Status as PDF</button>
+          <div class="export-divider"></div>
+          <div class="export-section">Recent Intervals</div>
+          <button class="export-item" data-export="intervals-csv" role="menuitem"><span class="ei-ic">⤓</span> Intervals as CSV</button>
+          <button class="export-item" data-export="intervals-pdf" role="menuitem"><span class="ei-ic">⤓</span> Intervals as PDF</button>
+          <div class="export-divider"></div>
+          <button class="export-item" data-export="print-a4" role="menuitem"><span class="ei-ic">⎙</span> Print A4 Report</button>
+        </div>
+
+        <!-- Engineer page exports -->
+        <div class="export-group" data-page="engineer" hidden>
+          <div class="export-section">Engineer Report</div>
+          <button class="export-item" data-export="engineer-pdf" role="menuitem"><span class="ei-ic">⤓</span> Engineer report as PDF</button>
+          <div class="export-divider"></div>
+          <div class="export-section">Engineer Data</div>
+          <button class="export-item" data-export="engineer-kpis-csv" role="menuitem"><span class="ei-ic">⤓</span> KPIs as CSV</button>
+          <button class="export-item" data-export="engineer-peaks-csv" role="menuitem"><span class="ei-ic">⤓</span> Top peaks as CSV</button>
+          <button class="export-item" data-export="engineer-outages-csv" role="menuitem"><span class="ei-ic">⤓</span> Outages as CSV</button>
+        </div>
+
+        <!-- Analyst page exports -->
+        <div class="export-group" data-page="analyst" hidden>
+          <div class="export-section">Analyst Report</div>
+          <button class="export-item" data-export="analyst-pdf" role="menuitem"><span class="ei-ic">⤓</span> Analyst report as PDF</button>
+          <div class="export-divider"></div>
+          <div class="export-section">Analyst Data</div>
+          <button class="export-item" data-export="analyst-stats-csv" role="menuitem"><span class="ei-ic">⤓</span> Statistics as CSV</button>
+          <button class="export-item" data-export="analyst-hist-csv" role="menuitem"><span class="ei-ic">⤓</span> Distribution (histogram) as CSV</button>
+          <button class="export-item" data-export="analyst-heatmap-csv" role="menuitem"><span class="ei-ic">⤓</span> Heatmap matrix as CSV</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn theme-toggle" id="themeToggle" title="Toggle theme">
+      <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<div class="page-tabs-wrap">
+  <nav class="page-tabs" role="tablist" aria-label="Dashboard pages">
+    <a href="#live" class="page-tab active" data-page="live" role="tab">Live</a>
+    <a href="#engineer" class="page-tab" data-page="engineer" role="tab">Engineer</a>
+    <a href="#analyst" class="page-tab" data-page="analyst" role="tab">Analyst</a>
+  </nav>
+</div>
+
+<main>
+  <!-- First-time welcome banner (shown only when no device is configured).
+       Sits outside any page-section so it appears on whichever page is active. -->
+  <div class="welcome-banner" id="welcomeBanner" hidden>
+    <div class="wb-icon">
+      <svg viewBox="0 0 96 96" width="48" height="48" xmlns="http://www.w3.org/2000/svg">
+        <rect width="96" height="96" rx="22" fill="#111820"/>
+        <text x="48" y="56" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="33" fill="#00E5FF" letter-spacing="1.5">CTS</text>
+        <text x="48" y="71" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#00E5FF" opacity="0.7" letter-spacing="4.5">PROD</text>
+      </svg>
+    </div>
+    <div class="wb-text">
+      <h3>Welcome to Energy Eye</h3>
+      <p>This dashboard needs your device credentials to start showing live data. Tap the <b>⚙ settings button</b> (bottom-right) to enter your Device ID and API Key. The Azure endpoint is already filled in for you.</p>
+      <button class="btn primary" id="welcomeSetupBtn">⚙ Set up device</button>
+    </div>
+  </div>
+
+  <!-- Status bar + filter bar are SHARED across all pages (same data scope) -->
+  <div class="status-bar">
+    <span><span class="dot" id="connDot"></span> <span id="connText">Not connected</span></span>
+    <span class="item">Device <b id="deviceLabel">—</b></span>
+    <span class="item">Last frame <b id="lastFrame">—</b></span>
+    <span class="item">Battery <b id="battLabel">—</b></span>
+    <span class="item">Points <b id="pointCount">0</b></span>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-presets">
+      <button class="btn small" data-preset="today">Today</button>
+      <button class="btn small" data-preset="yesterday">Yesterday</button>
+      <button class="btn small" data-preset="7d">Last 7 days</button>
+      <button class="btn small" data-preset="30d">Last 30 days</button>
+      <button class="btn small" data-preset="thisMonth">This month</button>
+      <button class="btn small" data-preset="all">All saved</button>
+    </div>
+    <div class="filter-dates">
+      <label class="filter-label">From</label>
+      <input type="date" id="filterFrom" />
+      <label class="filter-label">To</label>
+      <input type="date" id="filterTo" />
+      <button class="btn small primary" id="applyFilter">Apply</button>
+    </div>
+  </div>
+
+  <section id="page-live" class="page-section active">
+
+  <!-- All KPIs in one row · green border = /status · orange border = /data -->
+  <div class="kpis kpis-all">
+    <div class="kpi kpi-status kpi-location">
+      <div class="label">Location</div>
+      <div class="value mono kpi-location-value"><span id="kpiLocation">—</span></div>
+    </div>
+    <div class="kpi kpi-status">
+      <div class="label">Health</div>
+      <div class="value"><span class="health-pill health-unknown" id="kpiHealth">—</span></div>
+    </div>
+    <div class="kpi kpi-data">
+      <div class="label">Battery</div>
+      <div class="value mono"><span id="kpiBattery">—</span><span class="unit">V</span></div>
+    </div>
+    <div class="kpi kpi-data">
+      <div class="label">Total kWh</div>
+      <div class="value mono"><span id="kpiTotal">0.00</span><span class="unit">kWh</span></div>
+    </div>
+    <div class="kpi kpi-data">
+      <div class="label">Avg kW</div>
+      <div class="value mono"><span id="kpiAvg">0.00</span><span class="unit">kW</span></div>
+    </div>
+    <div class="kpi kpi-data">
+      <div class="label">Total Pulses</div>
+      <div class="value mono"><span id="kpiPulses">0</span></div>
+    </div>
+  </div>
+
+  <div class="panel" id="statusPanel">
+    <div class="panel-head">
+      <h2>Device Status</h2>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="meta" id="statusMeta">—</div>
+        <button class="btn small" id="toggleStatusBtn" title="Hide/show status table">Hide</button>
+      </div>
+    </div>
+    <div class="status-table-wrap" id="statusTableWrap">
+      <table class="status-table" id="statusTable">
+        <tbody>
+          <tr><td colspan="2" style="text-align:center; padding:30px; color: var(--ink-soft);">Loading status…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2 id="kwChartTitle">Power Demand · 5-min intervals</h2>
+      <div class="meta" id="rangeMeta">—</div>
+    </div>
+    <div class="chart-wrap"><canvas id="kwChart"></canvas></div>
+    <div class="tariff-legend" id="tariffLegend">
+      <span class="tl-item"><span class="tl-swatch tl-peak"></span> Peak <span id="tlPeakDays" class="tl-time">Mon–Fri</span> <span id="tlPeakWindow" class="tl-time">08:00–22:00</span></span>
+      <span class="tl-item"><span class="tl-swatch tl-offpeak"></span> Off-peak <span class="tl-time">other times</span></span>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel panel-fill">
+      <div class="panel-head"><h2>Cumulative Energy</h2></div>
+      <div class="chart-wrap chart-wrap-fill"><canvas id="kwhChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Recent Intervals</h2>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div class="meta" id="tableMeta">—</div>
+          <div class="table-mode" role="group" aria-label="Row count">
+            <button class="btn small mode-btn active" data-mode="latest" id="modeLatest">Latest 50</button>
+            <button class="btn small mode-btn" data-mode="all" id="modeAll">Show all</button>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th data-tz-label="Timestamp ({tz})">Timestamp (UTC+8)</th><th>H</th><th>kWh</th><th>kW</th><th>Pulses</th></tr>
+          </thead>
+          <tbody id="dataTable">
+            <tr><td colspan="5" style="text-align:center; padding:40px; color: var(--ink-soft);">No data yet — configure devices via ⚙</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  </section><!-- /page-live -->
+
+  <section id="page-engineer" class="page-section">
+
+    <!-- Engineer KPIs: orange border = computed from /data, green = calibration/status -->
+    <div class="kpis kpis-engineer">
+      <div class="kpi kpi-data" title="Highest 30-min rolling average kW in the selected range">
+        <div class="label">Maximum Demand</div>
+        <div class="value"><span id="engKpiMd">—</span> <span class="unit">kW</span></div>
+        <div class="sub" id="engKpiMdTime">—</div>
+      </div>
+      <div class="kpi kpi-data" title="Lowest sustained kW (5th percentile) — your always-on draw">
+        <div class="label">Baseline Load</div>
+        <div class="value"><span id="engKpiBaseline">—</span> <span class="unit">kW</span></div>
+        <div class="sub">p5 · always-on draw</div>
+      </div>
+      <div class="kpi kpi-data" title="Average kW divided by peak kW — usage steadiness">
+        <div class="label">Load Factor</div>
+        <div class="value"><span id="engKpiLoadFactor">—</span> <span class="unit">%</span></div>
+        <div class="sub">Avg / Peak ratio</div>
+      </div>
+      <div class="kpi kpi-status" title="Average measured pulses-per-kWh vs configured pulseRate">
+        <div class="label">Calibration Drift</div>
+        <div class="value"><span id="engKpiCalDrift">—</span> <span class="unit">%</span></div>
+        <div class="sub" id="engKpiCalDriftSub">—</div>
+      </div>
+      <div class="kpi kpi-data" title="Detected gaps or missing frames in the selected range">
+        <div class="label">Total Outages</div>
+        <div class="value"><span id="engKpiOutages">—</span> <span class="unit">events</span></div>
+        <div class="sub" id="engKpiOutagesSub">—</div>
+      </div>
+      <div class="kpi kpi-status" title="Battery voltage change from first to last frame in range">
+        <div class="label">Battery Drift</div>
+        <div class="value"><span id="engKpiBattDrift">—</span> <span class="unit">mV</span></div>
+        <div class="sub" id="engKpiBattDriftSub">—</div>
+      </div>
+    </div>
+
+    <!-- Maximum Demand by Day -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Maximum Demand by Day</h2>
+        <div class="meta" data-tz-label="Highest 30-min rolling avg per {tz} day">Highest 30-min rolling avg per UTC+8 day</div>
+      </div>
+      <div class="chart-wrap"><canvas id="mdByDayChart"></canvas></div>
+    </div>
+
+    <!-- Top 10 Peak Intervals + Outages log (2-column) -->
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Top 10 Peak Intervals</h2>
+          <div class="meta">highest kW in range</div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:36px;">#</th>
+                <th data-tz-label="Timestamp ({tz})">Timestamp (UTC+8)</th>
+                <th>kW</th>
+                <th>kWh</th>
+              </tr>
+            </thead>
+            <tbody id="engPeakIntervalsBody">
+              <tr><td colspan="4" style="text-align:center; padding:30px; color: var(--ink-soft);">No data</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Outages / Gaps</h2>
+          <div class="meta">missing or incomplete frames</div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th data-tz-label="Started ({tz})">Started (UTC+8)</th>
+                <th>Duration</th>
+                <th>Cause</th>
+              </tr>
+            </thead>
+            <tbody id="engOutagesBody">
+              <tr><td colspan="3" style="text-align:center; padding:30px; color: var(--ink-soft);">No data</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Device Diagnostics: live values from latest frame -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Device Diagnostics</h2>
+        <div class="meta">from latest frame · live</div>
+      </div>
+      <div class="diag-grid">
+        <div class="diag-item diag-good">
+          <div class="diag-label">Consec Fails</div>
+          <div class="diag-value" id="engDiagConsec">—</div>
+          <div class="diag-key">consecutiveFailCount</div>
+        </div>
+        <div class="diag-item diag-info">
+          <div class="diag-label">Recal Count</div>
+          <div class="diag-value" id="engDiagRecal">—</div>
+          <div class="diag-key">recalCount</div>
+        </div>
+        <div class="diag-item diag-good">
+          <div class="diag-label">Zero Buckets</div>
+          <div class="diag-value" id="engDiagZero">—</div>
+          <div class="diag-key">zeroBucketCount</div>
+        </div>
+        <div class="diag-item diag-good">
+          <div class="diag-label">Min Contrast</div>
+          <div class="diag-value" id="engDiagContrast">—</div>
+          <div class="diag-key">minContrast</div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <section id="page-analyst" class="page-section">
+
+    <!-- Statistics block (kW) -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Statistics · kW</h2>
+        <div class="meta">5-min interval values over selected range</div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-item"><div class="stat-label">min</div><div class="stat-value" id="anStatMin">—</div></div>
+        <div class="stat-item"><div class="stat-label">max</div><div class="stat-value" id="anStatMax">—</div></div>
+        <div class="stat-item highlight"><div class="stat-label">mean</div><div class="stat-value" id="anStatMean">—</div></div>
+        <div class="stat-item"><div class="stat-label">median</div><div class="stat-value" id="anStatMedian">—</div></div>
+        <div class="stat-item"><div class="stat-label">p25</div><div class="stat-value" id="anStatP25">—</div></div>
+        <div class="stat-item"><div class="stat-label">p75</div><div class="stat-value" id="anStatP75">—</div></div>
+        <div class="stat-item"><div class="stat-label">p95</div><div class="stat-value" id="anStatP95">—</div></div>
+        <div class="stat-item"><div class="stat-label">p99</div><div class="stat-value" id="anStatP99">—</div></div>
+        <div class="stat-item"><div class="stat-label">stddev</div><div class="stat-value" id="anStatStddev">—</div></div>
+      </div>
+    </div>
+
+    <!-- Distribution + Hour-of-Day (2-col) -->
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Distribution</h2>
+          <div class="meta">kW frequency</div>
+        </div>
+        <div class="chart-wrap"><canvas id="anHistChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Hour-of-Day Profile</h2>
+          <div class="meta">avg kW per hour</div>
+        </div>
+        <div class="chart-wrap"><canvas id="anHodChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- 24x7 Heatmap (full width) -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>24 × 7 Usage Heatmap</h2>
+        <div class="meta" data-tz-label="avg kW · hour-of-day × day-of-week ({tz})">avg kW · hour-of-day × day-of-week (UTC+8)</div>
+      </div>
+      <div class="heatmap-note">
+        <span class="hn-icon" aria-hidden="true">ⓘ</span>
+        <div class="hn-text">
+          <b>Pattern view, not a calendar week.</b>
+          Each cell averages all readings from that weekday + hour across the entire range. The "Mon" row pools together every Monday in the range; "Tue" pools every Tuesday; and so on.
+          <span class="hn-range" id="anHeatmapNote">—</span>
+        </div>
+      </div>
+      <div id="anHeatmap" class="heatmap"></div>
+      <div class="heatmap-legend">
+        <span class="hl-label">low</span>
+        <span class="hl-swatch hl-1"></span>
+        <span class="hl-swatch hl-2"></span>
+        <span class="hl-swatch hl-3"></span>
+        <span class="hl-swatch hl-4"></span>
+        <span class="hl-swatch hl-5"></span>
+        <span class="hl-label">high</span>
+        <span class="hl-peak-indicator" title="Peak window outlined on the heatmap">
+          <span class="hl-peak-swatch"></span>
+          <span class="hl-label">Peak <span id="anHeatmapPeak">—</span></span>
+        </span>
+        <span class="hl-spacer"></span>
+        <span class="hl-label" id="anHeatmapRange">—</span>
+      </div>
+    </div>
+
+    <!-- Today vs Yesterday + Load Duration Curve (2-col) -->
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Today vs Yesterday</h2>
+          <div class="meta">
+            <span style="color: var(--accent);">●</span> Today
+            <span style="margin-left: 10px; color: var(--ink-soft);">●</span> Yesterday
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="anTvYChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Load Duration Curve</h2>
+          <div class="meta">kW sorted descending</div>
+        </div>
+        <div class="chart-wrap"><canvas id="anLdcChart"></canvas></div>
+      </div>
+    </div>
+
+  </section>
+
+  <footer class="compliance-footer">
+    <div class="cf-line">
+      <span class="cf-badge">ISO 8601</span>
+      Timestamps in <code id="cfTimestampFormat">YYYY-MM-DD HH:MM+08:00</code> format · Intervals use <code>start/end</code> notation per ISO 8601-1:2019 · Timezone: <span id="cfTimezoneLabel">UTC+8</span>
+    </div>
+    <div class="cf-line">
+      <span class="cf-badge">SI Units</span>
+      Power in kW · Energy in kWh · Voltage in V · Per SI / IEC 80000 conventions
+    </div>
+  </footer>
+</main>
+
+<button class="fab fab-top" id="backToTop" title="Back to top" aria-label="Back to top" hidden>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 19V5M5 12l7-7 7 7"></path>
+  </svg>
+</button>
+
+<button class="fab" id="settingsFab" title="Devices & API settings">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="12" cy="12" r="3"></circle>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+  </svg>
+</button>
+
+<!-- Scope picker for Intervals export -->
+<div class="modal-bg" id="scopeBg">
+  <div class="modal" style="max-width: 400px;">
+    <h3>Export Recent Intervals</h3>
+    <div class="desc">Choose which rows to include in the export.</div>
+    <div style="margin: 14px 0;">
+      <label style="display:flex; align-items:center; gap:10px; padding:10px 0; cursor:pointer; font-size:14px;">
+        <input type="radio" name="scopeChoice" value="visible" checked style="margin:0;" />
+        <span>Visible rows only <span id="scopeVisibleCount" style="color: var(--ink-soft); font-size:12px; margin-left:6px;"></span></span>
+      </label>
+      <label style="display:flex; align-items:center; gap:10px; padding:10px 0; cursor:pointer; font-size:14px;">
+        <input type="radio" name="scopeChoice" value="all" style="margin:0;" />
+        <span>All rows <span id="scopeAllCount" style="color: var(--ink-soft); font-size:12px; margin-left:6px;"></span></span>
+      </label>
+    </div>
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button class="btn small" id="scopeCancel">Cancel</button>
+      <button class="btn small primary" id="scopeConfirm">Export</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3>Devices & API</h3>
+    <div class="desc">Configured devices are saved locally in this browser. Each device has its own endpoints, timezone, default time range, resolution, and tariff schedule.</div>
+
+    <h4 style="display:flex; justify-content:space-between; align-items:center;">
+      <span>Devices</span>
+      <button class="btn small" id="addDeviceBtn">+ Add device</button>
+    </h4>
+    <div class="device-list" id="deviceList"></div>
+
+    <div class="modal-actions">
+      <button class="btn danger" id="resetModal" title="Clear all saved devices">Reset all</button>
+      <button class="btn" id="closeModal">Cancel</button>
+      <button class="btn primary" id="saveModal">Save & Fetch</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================
+   Multi-device config schema
+   =========================
+   {
+     activeId: 'dev1',
+     header: 'X-API-Key',
+     resolution: '5min',
+     from: '...', to: '...',
+     devices: [
+       { id, name, deviceId, key, dataUrl, statusUrl }
+     ]
+   }
+*/
+const LS_KEY = 'ee_dashboard_cfg_v2';
+const LS_THEME = 'ee_dashboard_theme';
+
+function uid() { return 'd' + Math.random().toString(36).slice(2, 9); }
+
+function makeDevice(over) {
+  const id = uid();
+  const base = 'https://energy-eye-functions-prod-7g42tsfywv4ro.azurewebsites.net';
+  return {
+    id,
+    name: 'Device ' + id.slice(1, 4),
+    deviceId: '',
+    key: '',
+    dataUrl: base + '/api/v1/devices/{deviceId}/data',
+    statusUrl: base + '/api/v1/devices/{deviceId}/status',
+    // Per-device defaults (added in v2 — multi-region support)
+    utcOffset: '+08:00',                       // ISO offset for display (e.g. +08:00, +10:00, +11:00)
+    resolution: '5min',                        // default resolution
+    from: '2026-01-01T16:00:00Z',              // default query FROM in ISO UTC
+    to:   '2028-12-31T16:00:00Z',              // default query TO in ISO UTC
+    // Tariff
+    peakStart: '08:00',
+    peakEnd: '22:00',
+    peakDays: [1, 2, 3, 4, 5],                 // ISO weekdays: 1=Mon..7=Sun (default = weekdays)
+    ...over
+  };
+}
+
+const defaultCfg = {
+  activeId: null,
+  devices: []
+};
+
+function loadCfg() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) {
+      // First run: seed with the known device
+      const seed = { ...defaultCfg };
+      const d = makeDevice({ name: 'Energy Eye 821' });
+      seed.devices = [d];
+      seed.activeId = d.id;
+      return seed;
+    }
+    const parsed = JSON.parse(raw);
+    const merged = { ...defaultCfg, ...parsed };
+    // Backfill per-device fields added in later versions
+    if (Array.isArray(merged.devices)) {
+      merged.devices.forEach(d => {
+        if (!d.peakStart) d.peakStart = '08:00';
+        if (!d.peakEnd) d.peakEnd = '22:00';
+        if (!d.peakDays) d.peakDays = [1, 2, 3, 4, 5];      // default = Mon..Fri
+        if (!d.utcOffset) d.utcOffset = '+08:00';            // default = MYT
+        if (!d.resolution) d.resolution = parsed.resolution || '5min';
+        if (!d.from) d.from = parsed.from || '2026-01-01T16:00:00Z';
+        if (!d.to)   d.to   = parsed.to   || '2028-12-31T16:00:00Z';
+      });
+    }
+    // Drop legacy global fields (now per-device); the in-memory cfg no longer carries them
+    delete merged.header;
+    delete merged.resolution;
+    delete merged.from;
+    delete merged.to;
+    return merged;
+  } catch { return { ...defaultCfg, devices: [makeDevice({ name: 'Default' })] }; }
+}
+function saveCfg(c) { localStorage.setItem(LS_KEY, JSON.stringify(c)); }
+
+let cfg = loadCfg();
+if (!cfg.activeId && cfg.devices.length) cfg.activeId = cfg.devices[0].id;
+
+let kwChart = null, kwhChart = null, lastRows = [];
+
+function activeDevice() {
+  return cfg.devices.find(d => d.id === cfg.activeId) || cfg.devices[0];
+}
+// Read per-device settings with sensible fallback. dev=undefined uses active.
+function devCfg(field, fallback, dev) {
+  const d = dev || activeDevice() || {};
+  return d[field] != null && d[field] !== '' ? d[field] : fallback;
+}
+function expandUrl(template, dev) {
+  return template.replace(/\{deviceId\}/g, encodeURIComponent(dev.deviceId));
+}
+
+/* =========================
+   Theme
+   ========================= */
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem(LS_THEME, t);
+  const icon = document.getElementById('themeIcon');
+  if (t === 'dark') {
+    icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+  } else {
+    icon.innerHTML = '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>';
+  }
+  if (lastRows.length) renderCharts(lastRows);
+}
+applyTheme(localStorage.getItem(LS_THEME) || 'light');
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+});
+
+/* =========================
+   Device selector
+   ========================= */
+function renderDeviceSelect() {
+  const sel = document.getElementById('deviceSelect');
+  sel.innerHTML = cfg.devices.map(d =>
+    `<option value="${d.id}" ${d.id === cfg.activeId ? 'selected' : ''}>${escapeHtml(d.name)}</option>`
+  ).join('');
+}
+document.getElementById('deviceSelect').addEventListener('change', (e) => {
+  cfg.activeId = e.target.value;
+  saveCfg(cfg);
+  syncFilterInputsFromCfg();
+  fetchData(); fetchStatus();
+});
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* =========================
+   Modal — devices CRUD
+   ========================= */
+const modalBg = document.getElementById('modalBg');
+let modalDevices = []; // working copy edited in modal
+
+function openModal() {
+  modalDevices = cfg.devices.map(d => ({ ...d }));
+  if (!modalDevices.length) modalDevices.push(makeDevice());
+  renderDeviceCards();
+  modalBg.classList.add('open');
+}
+function closeModal() { modalBg.classList.remove('open'); }
+
+function renderDeviceCards() {
+  const list = document.getElementById('deviceList');
+  list.innerHTML = '';
+  modalDevices.forEach((d, idx) => {
+    const card = document.createElement('div');
+    card.className = 'device-card' + (d.id === cfg.activeId ? ' active' : '') + ' expanded';
+    card.innerHTML = `
+      <div class="device-card-head">
+        <div class="device-card-name">
+          <input type="text" data-i="${idx}" data-f="name" value="${escapeHtml(d.name)}" placeholder="Friendly name" />
+          ${d.id === cfg.activeId ? '<span class="device-tag">active</span>' : ''}
+        </div>
+        <div class="device-card-actions">
+          ${d.id !== cfg.activeId ? `<button class="btn small" data-act="activate" data-i="${idx}">Set active</button>` : ''}
+          <button class="btn small danger" data-act="remove" data-i="${idx}" title="Remove device">✕</button>
+        </div>
+      </div>
+      <div class="device-card-body">
+        <div class="field">
+          <label>Device ID</label>
+          <input type="text" data-i="${idx}" data-f="deviceId" value="${escapeHtml(d.deviceId)}" placeholder="ee-..." />
+        </div>
+        <div class="field">
+          <label>API Key</label>
+          <input type="password" data-i="${idx}" data-f="key" value="${escapeHtml(d.key)}" placeholder="sk_live_..." />
+        </div>
+        <div class="field">
+          <label>Data Endpoint URL</label>
+          <input type="text" data-i="${idx}" data-f="dataUrl" value="${escapeHtml(d.dataUrl)}" placeholder="https://.../api/v1/devices/{deviceId}/data" />
+          <div class="hint">Use <code>{deviceId}</code> as a placeholder. Query params (from/to/resolution) are appended automatically.</div>
+        </div>
+        <div class="field">
+          <label>Status Endpoint URL</label>
+          <input type="text" data-i="${idx}" data-f="statusUrl" value="${escapeHtml(d.statusUrl)}" placeholder="https://.../api/v1/devices/{deviceId}/status" />
+          <div class="hint">Same host or a different one is fine. <code>{deviceId}</code> will be substituted.</div>
+        </div>
+
+        <!-- Device Defaults: timezone, resolution, default time window -->
+        <div class="device-tariff">
+          <div class="device-tariff-label">Device Defaults</div>
+          <div class="field-row">
+            <div class="field">
+              <label>UTC Offset</label>
+              <select data-i="${idx}" data-f="utcOffset">
+                ${['-12:00','-11:00','-10:00','-09:00','-08:00','-07:00','-06:00','-05:00','-04:00','-03:00','-02:00','-01:00','+00:00','+01:00','+02:00','+03:00','+04:00','+05:00','+05:30','+06:00','+07:00','+08:00','+09:00','+09:30','+10:00','+10:30','+11:00','+12:00','+13:00']
+                  .map(o => `<option value="${o}" ${o === (d.utcOffset || '+08:00') ? 'selected' : ''}>UTC${o}</option>`).join('')}
+              </select>
+              <div class="hint">Time zone for displaying this device's data.</div>
+            </div>
+            <div class="field">
+              <label>Default Resolution</label>
+              <select data-i="${idx}" data-f="resolution">
+                <option value="5min" ${d.resolution === '5min' ? 'selected' : ''}>5 min</option>
+                <option value="15min" ${d.resolution === '15min' ? 'selected' : ''}>15 min</option>
+                <option value="1hour" ${d.resolution === '1hour' ? 'selected' : ''}>1 hour</option>
+                <option value="1day" ${d.resolution === '1day' ? 'selected' : ''}>1 day</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Default FROM (ISO UTC)</label>
+              <input type="text" data-i="${idx}" data-f="from" value="${escapeHtml(d.from || '2026-01-01T16:00:00Z')}" placeholder="2026-01-01T16:00:00Z" />
+            </div>
+            <div class="field">
+              <label>Default TO (ISO UTC)</label>
+              <input type="text" data-i="${idx}" data-f="to" value="${escapeHtml(d.to || '2028-12-31T16:00:00Z')}" placeholder="2028-12-31T16:00:00Z" />
+            </div>
+          </div>
+        </div>
+
+        <div class="device-tariff">
+          <div class="device-tariff-label">Tariff Schedule (device local time)</div>
+          <div class="field-row">
+            <div class="field">
+              <label>Peak Start</label>
+              <input type="text" data-i="${idx}" data-f="peakStart" value="${escapeHtml(d.peakStart || '08:00')}" placeholder="08:00" maxlength="5" />
+            </div>
+            <div class="field">
+              <label>Peak End</label>
+              <input type="text" data-i="${idx}" data-f="peakEnd" value="${escapeHtml(d.peakEnd || '22:00')}" placeholder="22:00" maxlength="5" />
+            </div>
+          </div>
+          <div class="hint" style="margin-bottom:8px;">24-hour HH:MM · wraparound supported (e.g. 22:00–06:00)</div>
+          <label style="font-size:10px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:1px;">Peak Days</label>
+          <div class="day-picker" data-i="${idx}">
+            ${[
+              { v:1, l:'Mon' }, { v:2, l:'Tue' }, { v:3, l:'Wed' },
+              { v:4, l:'Thu' }, { v:5, l:'Fri' }, { v:6, l:'Sat' }, { v:7, l:'Sun' }
+            ].map(day => `
+              <button type="button" class="day-btn ${(d.peakDays || [1,2,3,4,5]).includes(day.v) ? 'active' : ''}" data-day="${day.v}">${day.l}</button>
+            `).join('')}
+            <span style="flex:1;"></span>
+            <button type="button" class="day-quick" data-quick="weekdays" title="Set peak to Mon–Fri">Weekdays</button>
+            <button type="button" class="day-quick" data-quick="all" title="Set peak every day">All days</button>
+          </div>
+          <div class="hint" style="margin-top:8px;">Tap a day to toggle. Selected days = peak (orange); others stay off-peak even within Peak hours.</div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+          <button class="btn small" data-act="testData" data-i="${idx}">Test /data</button>
+          <button class="btn small" data-act="testStatus" data-i="${idx}">Test /status</button>
+          <button class="btn small" data-act="probeRes" data-i="${idx}" title="Compare 5min vs 15min response structure">Probe resolutions</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+
+  // Wire input + select changes
+  list.querySelectorAll('input[data-i], select[data-i]').forEach(inp => {
+    inp.addEventListener('input', (e) => {
+      const i = +e.target.dataset.i;
+      const f = e.target.dataset.f;
+      modalDevices[i][f] = e.target.value;
+    });
+    inp.addEventListener('change', (e) => {
+      const i = +e.target.dataset.i;
+      const f = e.target.dataset.f;
+      modalDevices[i][f] = e.target.value;
+    });
+  });
+  // Wire day-picker clicks (peak days)
+  list.querySelectorAll('.day-picker').forEach(picker => {
+    const i = +picker.dataset.i;
+    picker.querySelectorAll('.day-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const day = +btn.dataset.day;
+        const list = modalDevices[i].peakDays || [];
+        const ix = list.indexOf(day);
+        if (ix >= 0) list.splice(ix, 1);
+        else list.push(day);
+        list.sort((a, b) => a - b);
+        modalDevices[i].peakDays = list;
+        btn.classList.toggle('active', list.includes(day));
+      });
+    });
+    picker.querySelectorAll('.day-quick').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const which = btn.dataset.quick;
+        if (which === 'weekdays') modalDevices[i].peakDays = [1, 2, 3, 4, 5];
+        else if (which === 'all') modalDevices[i].peakDays = [1, 2, 3, 4, 5, 6, 7];
+        // Refresh button states
+        picker.querySelectorAll('.day-btn').forEach(b => {
+          b.classList.toggle('active', modalDevices[i].peakDays.includes(+b.dataset.day));
+        });
+      });
+    });
+  });
+  // Wire button actions
+  list.querySelectorAll('button[data-act]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const i = +e.currentTarget.dataset.i;
+      const act = e.currentTarget.dataset.act;
+      if (act === 'remove') {
+        if (modalDevices.length === 1) { toast('Keep at least one device', 'error'); return; }
+        const removingActive = modalDevices[i].id === cfg.activeId;
+        modalDevices.splice(i, 1);
+        if (removingActive) cfg.activeId = modalDevices[0].id;
+        renderDeviceCards();
+      } else if (act === 'activate') {
+        cfg.activeId = modalDevices[i].id;
+        renderDeviceCards();
+      } else if (act === 'testData') {
+        testEndpoint(modalDevices[i], 'data');
+      } else if (act === 'testStatus') {
+        testEndpoint(modalDevices[i], 'status');
+      } else if (act === 'probeRes') {
+        probeResolutions(modalDevices[i]);
+      }
+    });
+  });
+}
+
+async function probeResolutions(d) {
+  // Use a narrow recent window so the response is small but covers multiple frames.
+  // Avoid the current hour (partial frame) by ending 1 hour ago.
+  const now = new Date();
+  const to = new Date(now.getTime() - 60 * 60 * 1000);
+  const from = new Date(to.getTime() - 6 * 60 * 60 * 1000);
+  const fromIso = from.toISOString().split('.')[0] + 'Z';
+  const toIso = to.toISOString().split('.')[0] + 'Z';
+
+  const resolutions = ['5min', '15min', '1hour'];
+  toast('Probing 3 resolutions…');
+
+  const report = ['=== RESOLUTION PROBE ===', 'Window: ' + fromIso + ' → ' + toIso, ''];
+
+  for (const res of resolutions) {
+    try {
+      const u = new URL(expandUrl(d.dataUrl, d));
+      u.searchParams.set('from', fromIso);
+      u.searchParams.set('to', toIso);
+      u.searchParams.set('resolution', res);
+      const r = await fetch(u.toString(), { headers: { ['X-API-Key']: d.key } });
+      if (!r.ok) { report.push(`[${res}] HTTP ${r.status}`); report.push(''); continue; }
+      const j = await r.json();
+      const frames = j.data || [];
+      report.push(`[${res}] frames returned: ${frames.length}`);
+      if (frames.length) {
+        const f = frames[0];
+        report.push(`  first frame timestamp: ${f.timestamp}`);
+        report.push(`  bucketCount field: ${f.bucketCount}`);
+        let nonZero = 0;
+        const kwhs = [];
+        for (let i = 1; i <= 12; i++) {
+          const v = f['intervalKwh' + i];
+          kwhs.push(v);
+          if (v && v > 0) nonZero++;
+        }
+        report.push(`  intervalKwh non-zero: ${nonZero}/12`);
+        report.push(`  intervalKwh values: [${kwhs.map(x => (x ?? 0).toFixed(3)).join(', ')}]`);
+        if (frames.length >= 2) {
+          const t1 = new Date(frames[0].timestamp);
+          const t2 = new Date(frames[1].timestamp);
+          const gapMin = (t2 - t1) / 60000;
+          report.push(`  gap frame[0]→frame[1]: ${gapMin} minutes`);
+        }
+      }
+      report.push('');
+    } catch (e) {
+      report.push(`[${res}] error: ${e.message}`);
+      report.push('');
+    }
+  }
+
+  const text = report.join('\n');
+  console.log(text);
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:500; display:flex; align-items:center; justify-content:center; padding:20px;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface); border:1px solid var(--line); padding:20px; max-width:720px; width:100%; max-height:80vh; overflow:auto; border-radius:4px;">
+      <h3 style="margin:0 0 10px;">Resolution Probe</h3>
+      <pre style="font-family:'JetBrains Mono',monospace; font-size:11px; background:var(--bg); padding:12px; border:1px solid var(--line); overflow:auto; white-space:pre-wrap; word-break:break-all; color:var(--ink);">${escapeHtml(text)}</pre>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+        <button class="btn" id="copyProbe">Copy</button>
+        <button class="btn primary" id="closeProbe">Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#closeProbe').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('#copyProbe').addEventListener('click', () => {
+    navigator.clipboard.writeText(text).then(() => toast('Copied', 'success'));
+  });
+}
+
+async function testEndpoint(d, which) {
+  const tplKey = which === 'data' ? 'dataUrl' : 'statusUrl';
+  let url = expandUrl(d[tplKey], d);
+  if (which === 'data') {
+    const u = new URL(url);
+    u.searchParams.set('from', d.from || '2026-01-01T16:00:00Z');
+    u.searchParams.set('to', d.to || '2028-12-31T16:00:00Z');
+    u.searchParams.set('resolution', d.resolution || '5min');
+    url = u.toString();
+  }
+  toast('Testing ' + which + '…');
+  try {
+    const r = await fetch(url, { headers: { ['X-API-Key']: d.key } });
+    const txt = await r.text();
+    if (r.ok) {
+      toast('OK ' + r.status + ' · ' + txt.slice(0, 80), 'success');
+      console.log('[test ' + which + ']', txt.slice(0, 500));
+    } else {
+      toast('HTTP ' + r.status + ' · ' + txt.slice(0, 80), 'error');
+    }
+  } catch (e) {
+    toast('Network error: ' + e.message + ' (likely CORS)', 'error');
+  }
+}
+
+document.getElementById('settingsFab').addEventListener('click', openModal);
+
+// Hash router — switch between Live / Engineer / Analyst pages
+(function () {
+  const VALID = ['live', 'engineer', 'analyst'];
+  function currentPage() {
+    const h = (window.location.hash || '').replace(/^#/, '').toLowerCase();
+    return VALID.includes(h) ? h : 'live';
+  }
+  function applyRoute() {
+    const page = currentPage();
+    document.querySelectorAll('.page-section').forEach(sec => {
+      sec.classList.toggle('active', sec.id === 'page-' + page);
+    });
+    document.querySelectorAll('.page-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.page === page);
+    });
+    // Swap visible export-menu group to match the active page
+    applyExportGroup(page);
+    // Reset scroll when changing page so each starts at the top
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    // Re-render Engineer / Analyst from cached data so charts size correctly
+    if (page === 'engineer' && window._rawRows) {
+      try { renderEngineer(window._rawRows, lastRows, window._latestFrames); } catch {}
+    }
+    if (page === 'analyst' && window._rawRows) {
+      try { renderAnalyst(window._rawRows); } catch {}
+    }
+  }
+  function applyExportGroup(page) {
+    document.querySelectorAll('.export-group').forEach(g => {
+      g.hidden = g.dataset.page !== page;
+    });
+  }
+  window.addEventListener('hashchange', applyRoute);
+  applyRoute();
+})();
+
+// Redraw the heatmap peak overlay if the window resizes (column widths change)
+(function () {
+  let t = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      const onAnalyst = document.getElementById('page-analyst') &&
+                        document.getElementById('page-analyst').classList.contains('active');
+      if (onAnalyst && window._rawRows) {
+        try { renderHeatmap(window._rawRows); } catch {}
+      }
+    }, 120);
+  }, { passive: true });
+})();
+
+// Back-to-top FAB: show after scrolling past ~300px, smooth-scroll to top on click
+(function () {
+  const btn = document.getElementById('backToTop');
+  if (!btn) return;
+  // Remove the initial `hidden` attribute now that JS is wired up
+  btn.removeAttribute('hidden');
+  let ticking = false;
+  function update() {
+    const show = window.scrollY > 300;
+    btn.classList.toggle('visible', show);
+    ticking = false;
+  }
+  window.addEventListener('scroll', () => {
+    if (!ticking) { requestAnimationFrame(update); ticking = true; }
+  }, { passive: true });
+  btn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  update();
+})();
+document.getElementById('closeModal').addEventListener('click', closeModal);
+modalBg.addEventListener('click', (e) => { if (e.target === modalBg) closeModal(); });
+
+document.getElementById('addDeviceBtn').addEventListener('click', () => {
+  const d = makeDevice({ name: 'New device', deviceId: '', key: '' });
+  modalDevices.push(d);
+  if (!cfg.activeId) cfg.activeId = d.id;
+  renderDeviceCards();
+});
+
+document.getElementById('resetModal').addEventListener('click', () => {
+  if (!confirm('Remove all saved devices and reset to defaults?')) return;
+  localStorage.removeItem(LS_KEY);
+  cfg = loadCfg();
+  openModal();
+  toast('Reset to defaults', 'success');
+});
+
+document.getElementById('saveModal').addEventListener('click', () => {
+  // Validate per-device tariff & ensure defaults
+  const peakRe = /^([01]\d|2[0-3]):[0-5]\d$/;
+  modalDevices.forEach(d => {
+    const ps = (d.peakStart || '').trim();
+    const pe = (d.peakEnd || '').trim();
+    d.peakStart = peakRe.test(ps) ? ps : '08:00';
+    d.peakEnd = peakRe.test(pe) ? pe : '22:00';
+    if (!Array.isArray(d.peakDays)) d.peakDays = [1, 2, 3, 4, 5];
+    if (!d.utcOffset) d.utcOffset = '+08:00';
+    if (!d.resolution) d.resolution = '5min';
+    if (!d.from) d.from = '2026-01-01T16:00:00Z';
+    if (!d.to)   d.to   = '2028-12-31T16:00:00Z';
+  });
+  cfg.devices = modalDevices;
+  if (!cfg.devices.find(d => d.id === cfg.activeId) && cfg.devices.length) {
+    cfg.activeId = cfg.devices[0].id;
+  }
+  saveCfg(cfg);
+  renderDeviceSelect();
+  syncFilterInputsFromCfg();
+  closeModal();
+  // Hide welcome banner once user has saved a configured device
+  const savedDev = activeDevice();
+  if (savedDev && savedDev.key && savedDev.dataUrl && savedDev.deviceId) {
+    document.getElementById('welcomeBanner').hidden = true;
+  }
+  toast('Settings saved · fetching…', 'success');
+  fetchData(); fetchStatus(); startStatusPolling();
+});
+
+/* =========================
+   Toasts
+   ========================= */
+function toast(msg, kind) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind ? ' ' + kind : '');
+  el.textContent = msg;
+  el.title = 'Click to dismiss';
+  el.addEventListener('click', () => el.remove());
+  document.body.appendChild(el);
+  const dur = kind === 'error' ? 9000 : 3500;
+  setTimeout(() => el.style.opacity = '0', dur);
+  setTimeout(() => el.remove(), dur + 400);
+}
+
+/* =========================
+   Data fetch
+   ========================= */
+async function fetchData() {
+  const dev = activeDevice();
+  if (!dev || !dev.key || !dev.dataUrl || !dev.deviceId) {
+    toast('Configure active device first', 'error');
+    openModal(); return;
+  }
+  applyTimezoneLabels();   // refresh "(MYT)" → device-offset everywhere
+  setLoading(true);
+  setConn('warn', 'Fetching…');
+  try {
+    // User's requested window (UTC ISO)
+    const userFrom = dev.from || '2026-01-01T16:00:00Z';
+    const userTo   = dev.to   || '2028-12-31T16:00:00Z';
+    // Pad ±1 hour to capture frames that straddle the day boundary at each end.
+    // (A frame's 12 buckets span 1 hour, so a frame starting up to 1 hour before
+    // userFrom can still have buckets that belong inside userFrom.)
+    const padMs = 60 * 60 * 1000;
+    const paddedFrom = new Date(new Date(userFrom).getTime() - padMs).toISOString();
+    const paddedTo   = new Date(new Date(userTo).getTime()   + padMs).toISOString();
+
+    const u = new URL(expandUrl(dev.dataUrl, dev));
+    u.searchParams.set('from', paddedFrom);
+    u.searchParams.set('to',   paddedTo);
+    u.searchParams.set('resolution', dev.resolution || '5min');
+
+    const resp = await fetch(u.toString(), { headers: { ['X-API-Key']: dev.key } });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status + ' ' + resp.statusText);
+    const json = await resp.json();
+    const frames = json.data || [];
+    // explodeFrames computes each bucket's true dt — now filter to the USER's
+    // window so boundary buckets are assigned to their actual calendar day.
+    const allRows = explodeFrames(frames);
+    const fromMs = new Date(userFrom).getTime();
+    const toMs   = new Date(userTo).getTime();
+    const rawRows = allRows.filter(r => {
+      const t = r.dt.getTime();
+      // Bucket belongs to the window if its START is in [from, to).
+      // (End-of-window is exclusive so the last bucket of a day doesn't
+      // double-count into the next day.)
+      return t >= fromMs && t < toMs;
+    });
+    const rows = aggregateRows(rawRows, resolutionMinutes(dev.resolution || '5min'));
+    lastRows = rows;
+    window._rawRows = rawRows;        // 5-min source rows for Engineer / Analyst pages
+    window._latestFrames = frames;    // raw API frames for diagnostics
+    updateStatus(frames, rows, dev);
+    renderKpis(rows);
+    renderCharts(rows);
+    renderTable(rows);
+    renderEngineer(rawRows, rows, frames);
+    renderAnalyst(rawRows);
+    setConn('good', 'Connected · ' + rows.length + ' points');
+    toast('Loaded ' + rows.length + ' intervals', 'success');
+  } catch (err) {
+    console.error(err);
+    setConn('bad', 'Error: ' + err.message);
+    toast('Data fetch failed: ' + err.message, 'error');
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function fetchStatus() {
+  const dev = activeDevice();
+  if (!dev || !dev.key || !dev.statusUrl) return;
+  const url = expandUrl(dev.statusUrl, dev);
+  try {
+    const resp = await fetch(url, { headers: { ['X-API-Key']: dev.key } });
+    if (!resp.ok) {
+      const body = await resp.text().catch(() => '');
+      throw new Error('HTTP ' + resp.status + ' ' + resp.statusText + (body ? ' · ' + body.slice(0,120) : ''));
+    }
+    const s = await resp.json();
+    console.log('[status] payload:', s);
+    renderStatus(s);
+  } catch (err) {
+    console.warn('Status fetch failed:', url, err);
+    document.getElementById('statusMeta').textContent =
+      err.message === 'Failed to fetch'
+        ? 'CORS/network blocked (DevTools → Network → /status)'
+        : 'status error: ' + err.message;
+  }
+}
+
+function renderStatus(s) {
+  // Stash for exports
+  window._latestStatus = s;
+
+  // Surface location to the dedicated KPI card
+  const locEl = document.getElementById('kpiLocation');
+  if (locEl) {
+    locEl.textContent = (s && s.location) ? s.location : '—';
+  }
+
+  // Surface battery to the Battery KPI card (whichever source is freshest wins)
+  if (s && s.batteryMillivolts != null) {
+    setBatteryKpi(s.batteryMillivolts, s.lastSeen || s.lastHelloAt);
+  }
+
+  // Surface health state to the Health KPI card
+  setHealthKpi(s && s.healthState);
+
+  // Friendly labels and formatters for known fields.
+  // Unknown fields fall through with the raw key name and stringified value,
+  // so nothing the API returns is hidden.
+  const knownOrder = [
+    'deviceId', 'isCommissioned', 'location', 'pulseRate',
+    'lastSeen', 'lastHelloAt',
+    'batteryLevel', 'batteryMillivolts',
+    'hasData', 'online', 'firmwareVersion', 'version',
+    'rssi', 'signalStrength', 'ipAddress',
+    'resetReason', 'correlationId'
+  ];
+
+  const labels = {
+    deviceId: 'Device ID',
+    isCommissioned: 'Commissioned',
+    location: 'Location',
+    pulseRate: 'Pulse Rate',
+    lastSeen: 'Last Seen',
+    lastHelloAt: 'Last Hello',
+    batteryLevel: 'Battery Level',
+    batteryMillivolts: 'Battery (mV)',
+    hasData: 'Has Telemetry',
+    online: 'Online',
+    firmwareVersion: 'Firmware',
+    version: 'Version',
+    rssi: 'Signal (RSSI)',
+    signalStrength: 'Signal Strength',
+    ipAddress: 'IP Address',
+    resetReason: 'Reset Reason',
+    correlationId: 'Correlation ID'
+  };
+
+  // Per-field formatter returns HTML for the value cell.
+  const fmt = {
+    isCommissioned: (v) => boolPill(v, 'commissioned', 'not commissioned'),
+    hasData: (v) => boolPill(v, 'yes', 'no'),
+    online: (v) => boolPill(v, 'online', 'offline'),
+    pulseRate: (v) => escapeHtml(String(v)) + ' <span class="sub">pulses / kWh</span>',
+    batteryLevel: (v) => escapeHtml(String(v)),
+    batteryMillivolts: (v) => escapeHtml(String(v)) + ' <span class="sub">mV (' + (Number(v)/1000).toFixed(2) + ' V)</span>',
+    lastSeen: (v) => fmtTimeWithAgo(v),
+    lastHelloAt: (v) => fmtTimeWithAgo(v),
+    rssi: (v) => {
+      const n = Number(v);
+      const cls = n > -70 ? 'good' : n > -90 ? 'warn' : 'bad';
+      return `<span class="pill ${cls}">${escapeHtml(String(v))} dBm</span>`;
+    },
+    signalStrength: (v) => escapeHtml(String(v)) + ' <span class="sub">dBm</span>'
+  };
+
+  // Build ordered list: known fields first (in known order, if present), then anything else
+  const present = Object.keys(s || {});
+  const ordered = [];
+  const seen = new Set();
+  for (const k of knownOrder) {
+    if (k in (s || {})) { ordered.push(k); seen.add(k); }
+  }
+  for (const k of present) {
+    if (!seen.has(k)) ordered.push(k);
+  }
+
+  const rows = ordered.map(k => {
+    const v = s[k];
+    const label = labels[k] || k;
+    let valueHtml;
+    if (v === null || v === undefined || v === '') {
+      valueHtml = '<span style="color: var(--ink-soft);">—</span>';
+    } else if (fmt[k]) {
+      valueHtml = fmt[k](v);
+    } else if (typeof v === 'boolean') {
+      valueHtml = boolPill(v, 'true', 'false');
+    } else if (typeof v === 'object') {
+      valueHtml = '<code style="font-size:11px;">' + escapeHtml(JSON.stringify(v)) + '</code>';
+    } else {
+      valueHtml = escapeHtml(String(v));
+    }
+    return `<tr><td class="st-field">${escapeHtml(label)}</td><td class="st-value">${valueHtml}</td></tr>`;
+  }).join('');
+
+  const tbody = document.querySelector('#statusTable tbody');
+  tbody.innerHTML = rows || '<tr><td colspan="2" style="text-align:center; padding:30px; color: var(--ink-soft);">No status fields returned</td></tr>';
+
+  document.getElementById('statusMeta').textContent = 'updated ' + fmtMYTTime(new Date());
+}
+
+function boolPill(v, trueLabel, falseLabel) {
+  const t = v === true || v === 'true' || v === 1;
+  return `<span class="pill ${t ? 'good' : 'bad'}">${t ? trueLabel : falseLabel}</span>`;
+}
+
+function fmtTimeWithAgo(v) {
+  const dt = new Date(v);
+  if (isNaN(dt)) return escapeHtml(String(v));
+  const ageMin = (Date.now() - dt.getTime()) / 60000;
+  const cls = ageMin < 10 ? 'good' : ageMin < 60 ? 'warn' : 'bad';
+  return `${fmtMYT(dt)} <span class="pill ${cls}" style="margin-left:8px;">${humanAgo(ageMin)} ago</span>`;
+}
+
+function humanAgo(min) {
+  if (min < 1) return Math.round(min*60) + 's';
+  if (min < 60) return Math.round(min) + ' min';
+  if (min < 1440) return (min/60).toFixed(1) + ' hr';
+  return (min/1440).toFixed(1) + ' d';
+}
+
+function explodeFrames(frames) {
+  // Each frame spans exactly 1 hour, split into `bucketCount` equal buckets.
+  // Don't trust cfg.resolution — derive bucket width from the frame itself.
+  // (e.g. 5min => bucketCount 12 => 5 min/bucket;
+  //       15min => bucketCount 4 => 15 min/bucket;
+  //       1hour => server still returns bucketCount 4 in practice — handled the same way.)
+  const out = [];
+  for (const f of frames) {
+    const frameTs = new Date(f.timestamp);
+    if (isNaN(frameTs)) continue;
+    const buckets = f.bucketCount || 12;
+    const bucketMinutes = 60 / buckets;
+    for (let i = 1; i <= 12; i++) {
+      const kwh = Number(f['intervalKwh' + i] ?? 0);
+      const pulse = Number(f['pulseCount' + i] ?? 0);
+      const dt = new Date(frameTs.getTime() + (i - 1) * bucketMinutes * 60 * 1000);
+      const endDt = new Date(dt.getTime() + bucketMinutes * 60 * 1000);
+      out.push({
+        dt, kwh,
+        kw: kwh * (60 / bucketMinutes),
+        pulse, bucket: i,
+        valid: i <= buckets,
+        bucketMinutes,
+        battery: f.batteryLevel,
+        battMv: f.batteryMillivolts,
+        endDt
+      });
+    }
+  }
+  out.sort((a, b) => a.dt - b.dt);
+  return out;
+}
+function resolutionMinutes(res) {
+  if (res === '5min') return 5;
+  if (res === '15min') return 15;
+  if (res === '1hour') return 60;
+  if (res === '1day') return 1440;
+  return 5;
+}
+
+// Re-bucket 5-min rows into the target resolution. Sums kWh and pulses,
+// recomputes kW from the new bucket width. Returns rows in chronological order.
+// Bucket boundaries are aligned to MYT (UTC+8) so daily/hourly bars start at MYT midnight.
+// (was: const MYT_OFFSET_MS = 8 * 3600 * 1000)
+// Now device-aware via tz.offsetMs()
+function aggregateRows(rows, targetMinutes) {
+  // No aggregation needed if already at or below target granularity
+  if (!rows.length) return [];
+  const srcMinutes = rows[0].bucketMinutes || 5;
+  if (targetMinutes <= srcMinutes) return rows;
+
+  const factor = Math.round(targetMinutes / srcMinutes);
+  if (factor <= 1) return rows;
+
+  // Floor each row's timestamp to the target-minute boundary IN the device's
+  // local timezone, then convert back to UTC. This aligns days/weeks to the
+  // device's local midnight.
+  const offsetMs = tz.offsetMs();
+  const groups = new Map();
+  for (const r of rows) {
+    if (!r.valid) continue;
+    const tsUtc = r.dt.getTime();
+    const bucketMs = targetMinutes * 60 * 1000;
+    const tsLocal = tsUtc + offsetMs;
+    const floorLocal = Math.floor(tsLocal / bucketMs) * bucketMs;
+    const floorUtc = floorLocal - offsetMs;
+    if (!groups.has(floorUtc)) groups.set(floorUtc, []);
+    groups.get(floorUtc).push(r);
+  }
+
+  const out = [];
+  const sortedKeys = [...groups.keys()].sort((a, b) => a - b);
+  const expectedSubBuckets = Math.round(targetMinutes / srcMinutes);
+  for (const key of sortedKeys) {
+    const grp = groups.get(key);
+    const kwh = grp.reduce((s, r) => s + (Number(r.kwh) || 0), 0);
+    const pulse = grp.reduce((s, r) => s + (Number(r.pulse) || 0), 0);
+    const last = grp[grp.length - 1];
+    // Actual first/last timestamps from the source rows in this bucket
+    const firstDt = grp.reduce((m, r) => r.dt < m ? r.dt : m, grp[0].dt);
+    const lastDt = grp.reduce((m, r) => r.dt > m ? r.dt : m, grp[0].dt);
+    // End-of-bucket time = bucket-start + bucket-width (one source-bucket past last)
+    const endDt = new Date(key + targetMinutes * 60 * 1000);
+    const isPartial = grp.length < expectedSubBuckets;
+    out.push({
+      dt: new Date(key),
+      kwh,
+      kw: kwh * (60 / targetMinutes),
+      pulse,
+      bucket: out.length + 1,
+      valid: true,
+      bucketMinutes: targetMinutes,
+      battery: last.battery,
+      battMv: last.battMv,
+      firstDt, lastDt, endDt, isPartial,
+      subCount: grp.length, expectedSubBuckets
+    });
+  }
+  return out;
+}
+
+/* =========================
+   UI updates
+   ========================= */
+function setConn(kind, text) {
+  document.getElementById('connDot').className = 'dot ' + kind;
+  document.getElementById('connText').textContent = text;
+}
+function setLoading(on) {
+  document.getElementById('refreshIcon').innerHTML = on ? '<span class="spinner"></span>' : '↻';
+}
+function updateStatus(frames, rows, dev) {
+  document.getElementById('deviceLabel').textContent = dev.deviceId + ' · ' + dev.name;
+  document.getElementById('pointCount').textContent = rows.length;
+  if (frames.length) {
+    const last = frames[frames.length - 1];
+    document.getElementById('lastFrame').textContent = fmtMYT(new Date(last.timestamp));
+    document.getElementById('battLabel').textContent =
+      (last.batteryLevel != null ? String(last.batteryLevel) : '—') +
+      (last.batteryMillivolts ? ' · ' + last.batteryMillivolts + 'mV' : '');
+    if (last.batteryMillivolts != null) {
+      setBatteryKpi(last.batteryMillivolts, last.timestamp);
+    }
+  }
+  if (rows.length) {
+    document.getElementById('rangeMeta').textContent =
+      fmtMYT(rows[0].dt) + '  →  ' + fmtMYT(rows[rows.length - 1].dt);
+  }
+}
+function renderKpis(rows) {
+  const valid = rows.filter(r => r.valid);
+  const totalKwh = valid.reduce((s, r) => s + r.kwh, 0);
+  const totalPulses = valid.reduce((s, r) => s + r.pulse, 0);
+  document.getElementById('kpiTotal').textContent = totalKwh.toFixed(2);
+  document.getElementById('kpiPulses').textContent = totalPulses.toLocaleString();
+
+  // For 1day resolution, show Avg kWh (per-bucket energy). Otherwise Avg kW (power).
+  const useKwh = ((activeDevice() && activeDevice().resolution) || '5min') === '1day';
+  const avgVal = valid.length
+    ? valid.reduce((s, r) => s + (useKwh ? r.kwh : r.kw), 0) / valid.length
+    : 0;
+  document.getElementById('kpiAvg').textContent = avgVal.toFixed(2);
+  // Swap label and unit text in the KPI card
+  const kpiAvgCard = document.getElementById('kpiAvg').closest('.kpi');
+  if (kpiAvgCard) {
+    const labelEl = kpiAvgCard.querySelector('.label');
+    const unitEl = kpiAvgCard.querySelector('.unit');
+    if (labelEl) labelEl.textContent = useKwh ? 'Avg kWh' : 'Avg kW';
+    if (unitEl) unitEl.textContent = useKwh ? 'kWh' : 'kW';
+  }
+}
+
+// Health pill driven from /status payload's healthState field
+function setHealthKpi(state) {
+  const el = document.getElementById('kpiHealth');
+  if (!el) return;
+  // Show the raw value from the API exactly as returned (e.g. "healthy", "degraded").
+  // Only the COLOR is inferred from the value family; the label text is unchanged.
+  const raw = state == null ? '' : String(state).trim();
+  const norm = raw.toLowerCase();
+  let cls = 'health-unknown';
+  if (norm === 'good' || norm === 'ok' || norm === 'healthy') cls = 'health-good';
+  else if (norm === 'warning' || norm === 'warn' || norm === 'degraded') cls = 'health-warning';
+  else if (norm === 'critical' || norm === 'error' || norm === 'fail' || norm === 'failed') cls = 'health-critical';
+  el.className = 'health-pill ' + cls;
+  el.textContent = raw || '—';
+}
+
+// Battery KPI keeps the most recent mV reading from either /data or /status,
+// whichever updates more recently. Source timestamp wins ties.
+let _lastBattTs = 0;
+function setBatteryKpi(mv, ts) {
+  const el = document.getElementById('kpiBattery');
+  if (!el) return;
+  const n = Number(mv);
+  if (!isFinite(n) || n <= 0) return;
+  const t = ts ? new Date(ts).getTime() : Date.now();
+  if (isNaN(t) || t < _lastBattTs) return;
+  _lastBattTs = t;
+  el.textContent = (n / 1000).toFixed(2);
+}
+// =========================================================================
+// Timezone helpers — all timestamp display goes through `tz` so swapping the
+// active device automatically updates labels, axes, exports, etc.
+// =========================================================================
+const tz = {
+  // ISO offset string for active device, e.g. "+08:00" or "+10:00"
+  offset() {
+    const dev = activeDevice() || {};
+    return (typeof dev.utcOffset === 'string' && /^[+-]\d{2}:\d{2}$/.test(dev.utcOffset))
+      ? dev.utcOffset : '+08:00';
+  },
+  // Short label, e.g. "UTC+8", "UTC+10:30"
+  label() {
+    const o = tz.offset();           // "+08:00", "-05:00", "+09:30"
+    const sign = o[0];
+    const h = parseInt(o.slice(1, 3), 10);
+    const m = parseInt(o.slice(4, 6), 10);
+    return m === 0 ? ('UTC' + sign + h) : ('UTC' + sign + h + ':' + String(m).padStart(2, '0'));
+  },
+  // Total offset in milliseconds (positive east of UTC)
+  offsetMs() {
+    const o = tz.offset();
+    const sign = o[0] === '-' ? -1 : 1;
+    const h = parseInt(o.slice(1, 3), 10);
+    const m = parseInt(o.slice(4, 6), 10);
+    return sign * (h * 3600 + m * 60) * 1000;
+  },
+  // Get the device-local wall-clock parts from a UTC Date object.
+  // Returns { y, mo, d, h, mi, s, dow (1=Mon..7=Sun) }
+  partsOf(date) {
+    const ms = date.getTime() + tz.offsetMs();
+    const u = new Date(ms);
+    // Use UTC getters to read the shifted "wall clock"
+    const y = u.getUTCFullYear();
+    const mo = u.getUTCMonth() + 1;
+    const d = u.getUTCDate();
+    const h = u.getUTCHours();
+    const mi = u.getUTCMinutes();
+    const s = u.getUTCSeconds();
+    // JS Sunday=0, Monday=1, ..., Saturday=6 → convert to ISO Mon=1..Sun=7
+    const jsDow = u.getUTCDay();
+    const dow = jsDow === 0 ? 7 : jsDow;
+    return { y, mo, d, h, mi, s, dow };
+  }
+};
+
+// Refresh all static UI labels that show timezone/offset (called on device switch)
+function applyTimezoneLabels() {
+  const off = tz.offset();
+  const lbl = tz.label();
+  const setText = (sel, text) => {
+    const el = typeof sel === 'string' ? document.querySelector(sel) : sel;
+    if (el) el.textContent = text;
+  };
+  setText('#cfTimestampFormat', 'YYYY-MM-DD HH:MM' + off);
+  setText('#cfTimezoneLabel', lbl);
+  // All other "MYT" labels are tagged with data-tz-label
+  document.querySelectorAll('[data-tz-label]').forEach(el => {
+    el.textContent = el.dataset.tzLabel.replace(/\{tz\}/g, lbl);
+  });
+}
+
+// All public formatters now route through tz. Names retained for compatibility.
+function fmtMYT(d) {
+  // ISO 8601 instant with explicit offset: "YYYY-MM-DD HH:MM±HH:MM"
+  const p = tz.partsOf(d);
+  return p.y + '-' + String(p.mo).padStart(2, '0') + '-' + String(p.d).padStart(2, '0') +
+    ' ' + String(p.h).padStart(2, '0') + ':' + String(p.mi).padStart(2, '0') + tz.offset();
+}
+function fmtMYTDate(d) {
+  // Locale-friendly date (DD/MM/YYYY) — used by older code; kept for compatibility
+  const p = tz.partsOf(d);
+  return String(p.d).padStart(2, '0') + '/' + String(p.mo).padStart(2, '0') + '/' + p.y;
+}
+function fmtMYTTime(d) {
+  const p = tz.partsOf(d);
+  return String(p.h).padStart(2, '0') + ':' + String(p.mi).padStart(2, '0');
+}
+
+// Tariff peak window check — true only if BOTH the day-of-week and time-of-day
+// fall within the active device's peak schedule. Handles wraparound (22:00–06:00).
+function isInPeakWindow(d) {
+  const dev = activeDevice() || {};
+  // peakDays is the source of truth. Empty array = user explicitly chose no peak days.
+  // Only fall back to Mon–Fri default if the field is missing or not an array.
+  const peakDays = Array.isArray(dev.peakDays) ? dev.peakDays : [1, 2, 3, 4, 5];
+  const p = tz.partsOf(d);
+  if (!peakDays.includes(p.dow)) return false;
+  const cur = p.h * 60 + p.mi;
+  const start = hhmmToMin(dev.peakStart || '08:00');
+  const end = hhmmToMin(dev.peakEnd || '22:00');
+  if (start === end) return false;
+  if (start < end) return cur >= start && cur < end;
+  return cur >= start || cur < end;     // wraparound
+}
+function hhmmToMin(s) {
+  const m = /^(\d{2}):(\d{2})$/.exec(s || '');
+  if (!m) return 0;
+  return (+m[1]) * 60 + (+m[2]);
+}
+
+// Pretty-print peak days as a short label for legends.
+// Examples: [1,2,3,4,5] → "Mon–Fri", [1,2,3,4,5,6,7] → "Every day",
+// [6,7] → "Sat–Sun", [1,3,5] → "Mon, Wed, Fri"
+function formatPeakDaysShort(dev) {
+  // Only fall back to Mon–Fri when the field is missing/invalid.
+  // An empty array means user explicitly chose "no peak days".
+  if (!dev || !Array.isArray(dev.peakDays)) {
+    return 'Mon–Fri';
+  }
+  if (dev.peakDays.length === 0) return 'No peak days';
+  const days = dev.peakDays.slice().sort((a, b) => a - b);
+  const labels = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  if (days.length === 7) return 'Every day';
+  if (days.length === 5 && days.join(',') === '1,2,3,4,5') return 'Mon–Fri';
+  if (days.length === 2 && days.join(',') === '6,7') return 'Sat–Sun';
+  // Contiguous runs collapse to range, otherwise comma list
+  const runs = [];
+  let s = days[0], p = days[0];
+  for (let i = 1; i < days.length; i++) {
+    if (days[i] === p + 1) { p = days[i]; }
+    else { runs.push([s, p]); s = p = days[i]; }
+  }
+  runs.push([s, p]);
+  return runs.map(([a, b]) => a === b ? labels[a] : labels[a] + '–' + labels[b]).join(', ');
+}
+// ISO date helpers — produce YYYY-MM-DD in MYT
+function isoMYTDate(d) {
+  const p = tz.partsOf(d);
+  return p.y + '-' + String(p.mo).padStart(2, '0') + '-' + String(p.d).padStart(2, '0');
+}
+function fmtMYTSpan(row) {
+  // ISO 8601 interval label with smart shortening + explicit offset.
+  //   - Same day & has time:     "2026-05-29 00:00/01:00+08:00"
+  //   - Crosses days & has time: "2026-05-29 23:00+08:00/2026-05-30 00:00+08:00"
+  //   - Daily resolution:        "2026-05-29/2026-05-30 (UTC+8)"
+  const start = row.dt;
+  const end = row.endDt || row.dt;
+  const sDate = isoMYTDate(start);
+  const eDate = isoMYTDate(end);
+  const sTime = fmtMYTTime(start);
+  const eTime = fmtMYTTime(end);
+  const isDailyBoundary = sTime === '00:00' && eTime === '00:00';
+  const off = tz.offset();
+  const lbl = tz.label();
+
+  if (isDailyBoundary) {
+    // Daily bucket: omit times, mark timezone explicitly
+    return sDate + '/' + eDate + ' (' + lbl + ')';
+  }
+  if (sDate === eDate) {
+    // Same day: show date once, two times, single offset at the end
+    return sDate + ' ' + sTime + '/' + eTime + off;
+  }
+  // Crosses midnight: full timestamps both sides, offset on each
+  return sDate + ' ' + sTime + off + '/' + eDate + ' ' + eTime + off;
+}
+function themeColors() {
+  const cs = getComputedStyle(document.documentElement);
+  return {
+    ink: cs.getPropertyValue('--ink').trim(),
+    inkSoft: cs.getPropertyValue('--ink-soft').trim(),
+    line: cs.getPropertyValue('--line').trim(),
+    accent: cs.getPropertyValue('--accent').trim(),
+    accent2: cs.getPropertyValue('--accent-2').trim()
+  };
+}
+function renderCharts(rows) {
+  const c = themeColors();
+  // Include partial buckets — today's data may be in-progress and that's still valid.
+  // Partial bars get a lighter/dashed style so it's clear they're incomplete.
+  const valid = rows.filter(r => r.valid);
+  // Span labels: "DD/MM/YYYY HH:MM - HH:MM"
+  const labels = valid.map(r => fmtMYTSpan(r));
+
+  // For 1day resolution, plot energy (kWh) instead of power (kW)
+  const useKwh = ((activeDevice() && activeDevice().resolution) || '5min') === '1day';
+  const seriesData = valid.map(r => useKwh ? r.kwh : r.kw);
+  const yAxisLabel = useKwh ? 'kWh' : 'kW';
+
+  const kwhCum = [];
+  let acc = 0;
+  for (const r of valid) { acc += r.kwh; kwhCum.push(acc); }
+
+  // Update chart title from current resolution setting
+  const titleEl = document.getElementById('kwChartTitle');
+  if (titleEl) {
+    const resLabels = {
+      '5min': '5-min intervals',
+      '15min': '15-min intervals',
+      '1hour': 'Hourly',
+      '1day': 'Daily'
+    };
+    const currentRes = (activeDevice() && activeDevice().resolution) || '5min';
+    const label = resLabels[currentRes] || currentRes || '';
+    titleEl.textContent = 'Power Demand' + (label ? ' · ' + label : '');
+  }
+
+  if (kwChart) kwChart.destroy();
+  if (kwhChart) kwhChart.destroy();
+
+  const commonOpts = (yLabel) => ({
+    responsive: true, maintainAspectRatio: false,
+    interaction: { intersect: false, mode: 'index' },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(20, 20, 20, 0.92)', titleColor: '#fff', bodyColor: '#fff',
+        borderColor: c.accent, borderWidth: 1
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: c.inkSoft, maxRotation: 0, autoSkipPadding: 24, font: { family: 'JetBrains Mono', size: 10 } },
+        grid: { color: c.line, drawBorder: false }
+      },
+      y: {
+        title: { display: true, text: yLabel, color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } },
+        ticks: { color: c.inkSoft, font: { family: 'JetBrains Mono', size: 10 } },
+        grid: { color: c.line, drawBorder: false }
+      }
+    }
+  });
+
+  // Update peak window legend text from current active device
+  const tlPeak = document.getElementById('tlPeakWindow');
+  const tlDays = document.getElementById('tlPeakDays');
+  if (tlPeak) {
+    const dev = activeDevice() || {};
+    tlPeak.textContent = (dev.peakStart || '08:00') + '–' + (dev.peakEnd || '22:00');
+  }
+  if (tlDays) {
+    tlDays.textContent = formatPeakDaysShort(activeDevice());
+  }
+
+  // Color by peak/off-peak window. Peak = accent (orange), off-peak = gray.
+  // Partial buckets get reduced opacity. Daily resolution = always peak color
+  // (a whole-day bar straddles both, so coloring is not meaningful).
+  const offPeakColor = c.inkSoft;
+  const barColors = valid.map(r => {
+    let base;
+    if (((activeDevice() && activeDevice().resolution) || '5min') === '1day') {
+      base = c.accent;
+    } else {
+      base = isInPeakWindow(r.dt) ? c.accent : offPeakColor;
+    }
+    return r.isPartial ? base + '88' : base;
+  });
+  kwChart = new Chart(document.getElementById('kwChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: seriesData,
+        backgroundColor: barColors,
+        borderRadius: 1, borderSkipped: false,
+        barPercentage: 1, categoryPercentage: 0.92
+      }]
+    },
+    options: commonOpts(yAxisLabel)
+  });
+
+  kwhChart = new Chart(document.getElementById('kwhChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: kwhCum,
+        borderColor: c.accent2,
+        backgroundColor: c.accent2 + '22',
+        fill: true, tension: 0.25,
+        pointRadius: 0, borderWidth: 2
+      }]
+    },
+    options: commonOpts('kWh (cumulative)')
+  });
+}
+function renderTable(rows) {
+  // Stash for exports
+  window._latestRows = rows;
+  const tbody = document.getElementById('dataTable');
+  const tableMeta = document.getElementById('tableMeta');
+
+  // Only show buckets that actually exist at this resolution
+  const valid = rows.filter(r => r.valid);
+  const widthSet = new Set(valid.map(r => r.bucketMinutes));
+  const widthStr = widthSet.size === 1
+    ? [...widthSet][0] + 'min buckets'
+    : 'mixed widths';
+
+  // Row-count mode: 'latest' (last 50) or 'all'. Persisted in localStorage.
+  const mode = window._tableMode || 'latest';
+  const showCount = mode === 'all' ? valid.length : Math.min(50, valid.length);
+  const shownLabel = mode === 'all' ? 'all ' + showCount : 'latest ' + showCount;
+  tableMeta.textContent = shownLabel + ' · ' + valid.length + ' total · ' + widthStr;
+
+  if (!valid.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px; color: var(--ink-soft);">No data</td></tr>';
+    return;
+  }
+
+  const subset = mode === 'all' ? valid.slice().reverse() : valid.slice(-50).reverse();
+  tbody.innerHTML = subset.map(row => `
+    <tr>
+      <td>${fmtMYTSpan(row)}</td>
+      <td>H${String(row.bucket).padStart(2,'0')}</td>
+      <td>${row.kwh.toFixed(4)}</td>
+      <td>${row.kw.toFixed(3)}</td>
+      <td>${row.pulse}</td>
+    </tr>`).join('');
+}
+
+/* =========================
+   Engineer page — computed metrics
+   Source: rawRows (5-min source rows) + frames (raw API)
+   ========================= */
+
+// Highest 30-min rolling average kW.
+// rawRows are 5-min intervals (kW = kWh × 12). 30 min = 6 buckets.
+// Returns { kw, t } where t is the END of the 30-min window (ISO 8601 instant).
+function computeMaximumDemand(rawRows) {
+  const valid = rawRows.filter(r => r && r.valid && r.bucketMinutes === 5);
+  const w = 6;  // 6 × 5min = 30 min
+  if (valid.length < w) return { kw: null, t: null };
+  let bestKw = -Infinity, bestEnd = null;
+  let runSum = 0;
+  for (let i = 0; i < w; i++) runSum += valid[i].kw;
+  if (runSum / w > bestKw) { bestKw = runSum / w; bestEnd = valid[w - 1].endDt || valid[w - 1].dt; }
+  for (let i = w; i < valid.length; i++) {
+    runSum += valid[i].kw - valid[i - w].kw;
+    const avg = runSum / w;
+    if (avg > bestKw) { bestKw = avg; bestEnd = valid[i].endDt || valid[i].dt; }
+  }
+  return { kw: bestKw, t: bestEnd };
+}
+
+// Percentile (0-100) of a numeric array. Linear interpolation between order stats.
+function percentile(arr, p) {
+  if (!arr.length) return null;
+  const sorted = arr.slice().sort((a, b) => a - b);
+  const idx = (p / 100) * (sorted.length - 1);
+  const lo = Math.floor(idx), hi = Math.ceil(idx);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+}
+
+// Calibration drift: average pulses-per-kWh vs configured pulseRate.
+// Returns { ratio: 0..1 (1.0 means perfectly on-spec), measured, configured } or null.
+function computeCalibrationDrift(rawRows, frames) {
+  // Configured pulseRate is on each frame. Use the most recent non-zero value.
+  let configured = null;
+  for (let i = (frames || []).length - 1; i >= 0; i--) {
+    const r = Number(frames[i].pulseRate);
+    if (r > 0) { configured = r; break; }
+  }
+  if (!configured) return null;
+  let pulses = 0, kwh = 0;
+  for (const r of rawRows) {
+    if (!r.valid) continue;
+    pulses += Number(r.pulse) || 0;
+    kwh += Number(r.kwh) || 0;
+  }
+  if (kwh <= 0 || pulses <= 0) return null;
+  const measured = pulses / kwh;
+  // Ratio expressed so 100% = perfectly matches configured rate
+  const ratio = measured / configured;
+  return { ratio, measured, configured };
+}
+
+// Group 5-min rows into MYT-aligned calendar days and return the per-day MD (30-min rolling avg).
+// Returns array of { date: 'YYYY-MM-DD', mdKw }
+function computeMdByDay(rawRows) {
+  const valid = rawRows.filter(r => r && r.valid && r.bucketMinutes === 5);
+  if (!valid.length) return [];
+  const byDay = new Map();
+  for (const r of valid) {
+    const day = isoMYTDate(r.dt);
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day).push(r);
+  }
+  const out = [];
+  for (const [day, rows] of [...byDay.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const md = computeMaximumDemand(rows);
+    out.push({ date: day, mdKw: md.kw });
+  }
+  return out;
+}
+
+// Detect outages: gaps in the 5-min row stream larger than expected.
+// Returns { events, totalMinutes, longestMinutes }
+function computeOutages(rawRows) {
+  const valid = rawRows.filter(r => r && r.bucketMinutes === 5).sort((a, b) => a.dt - b.dt);
+  if (valid.length < 2) return { events: 0, totalMinutes: 0, longestMinutes: 0 };
+  const expectedGapMs = 5 * 60 * 1000;
+  // Threshold: gap > 1.5× expected counts as an outage (covers clock jitter)
+  const thresholdMs = expectedGapMs * 1.5;
+  let events = 0, totalMs = 0, longestMs = 0;
+  for (let i = 1; i < valid.length; i++) {
+    const gap = valid[i].dt - valid[i - 1].dt;
+    if (gap > thresholdMs) {
+      // The "missing" duration is the gap minus one normal bucket
+      const missing = gap - expectedGapMs;
+      events++;
+      totalMs += missing;
+      if (missing > longestMs) longestMs = missing;
+    }
+  }
+  return {
+    events,
+    totalMinutes: Math.round(totalMs / 60000),
+    longestMinutes: Math.round(longestMs / 60000)
+  };
+}
+
+// Battery drift: battery (mV) at first vs last frame.
+// Returns { deltaMv, startMv, endMv } or null
+function computeBatteryDrift(rawRows) {
+  const withBatt = rawRows
+    .filter(r => r && r.battMv != null && Number(r.battMv) > 0)
+    .sort((a, b) => a.dt - b.dt);
+  if (withBatt.length < 2) return null;
+  const startMv = Number(withBatt[0].battMv);
+  const endMv = Number(withBatt[withBatt.length - 1].battMv);
+  return { deltaMv: endMv - startMv, startMv, endMv };
+}
+
+// Top N highest-kW intervals (descending). Returns [{ dt, endDt, kw, kwh }]
+function computeTopPeakIntervals(rawRows, n) {
+  const valid = rawRows.filter(r => r && r.valid && r.bucketMinutes === 5);
+  return valid
+    .slice()
+    .sort((a, b) => b.kw - a.kw)
+    .slice(0, n)
+    .map(r => ({ dt: r.dt, endDt: r.endDt, kw: r.kw, kwh: r.kwh }));
+}
+
+// Build a list of outage events with start time + duration + cause classification.
+// Returns array of { startDt, durationMin, cause }
+function computeOutageList(rawRows) {
+  const valid = rawRows.filter(r => r && r.bucketMinutes === 5).sort((a, b) => a.dt - b.dt);
+  if (valid.length < 2) return [];
+  const expectedGapMs = 5 * 60 * 1000;
+  const thresholdMs = expectedGapMs * 1.5;
+  const out = [];
+  for (let i = 1; i < valid.length; i++) {
+    const gap = valid[i].dt - valid[i - 1].dt;
+    if (gap > thresholdMs) {
+      const missingMs = gap - expectedGapMs;
+      const durationMin = Math.round(missingMs / 60000);
+      // Classification heuristic
+      let cause = 'GAP';
+      if (durationMin < 15) cause = 'PARTIAL';
+      else if (durationMin >= 60) cause = 'OUTAGE';
+      out.push({
+        startDt: valid[i - 1].endDt || new Date(valid[i - 1].dt.getTime() + expectedGapMs),
+        durationMin,
+        cause
+      });
+    }
+  }
+  // Newest first
+  return out.sort((a, b) => b.startDt - a.startDt);
+}
+
+// Chart instance kept module-level so we can destroy + redraw
+let mdByDayChart = null;
+
+function renderEngineer(rawRows, aggRows, frames) {
+  if (!rawRows || !rawRows.length) {
+    // Clear KPIs when there's no data
+    ['engKpiMd', 'engKpiBaseline', 'engKpiLoadFactor', 'engKpiCalDrift',
+     'engKpiOutages', 'engKpiBattDrift'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = '—';
+    });
+    ['engKpiMdTime', 'engKpiCalDriftSub', 'engKpiOutagesSub', 'engKpiBattDriftSub'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = '—';
+    });
+    ['engDiagConsec','engDiagRecal','engDiagZero','engDiagContrast'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = '—';
+    });
+    const pkBody = document.getElementById('engPeakIntervalsBody');
+    if (pkBody) pkBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color: var(--ink-soft);">No data</td></tr>';
+    const otBody = document.getElementById('engOutagesBody');
+    if (otBody) otBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color: var(--ink-soft);">No data</td></tr>';
+    if (mdByDayChart) { mdByDayChart.destroy(); mdByDayChart = null; }
+    return;
+  }
+
+  const valid5 = rawRows.filter(r => r && r.valid && r.bucketMinutes === 5);
+
+  // 1. Maximum Demand
+  const md = computeMaximumDemand(rawRows);
+  const elMd = document.getElementById('engKpiMd');
+  const elMdT = document.getElementById('engKpiMdTime');
+  if (md && md.kw != null && isFinite(md.kw)) {
+    elMd.textContent = md.kw.toFixed(1);
+    elMdT.textContent = '@ ' + fmtMYT(md.t);
+  } else {
+    elMd.textContent = '—'; elMdT.textContent = '—';
+  }
+
+  // 2. Baseline Load = p5 of 5-min kW
+  const kws = valid5.map(r => r.kw).filter(v => v != null && isFinite(v));
+  const baseline = percentile(kws, 5);
+  document.getElementById('engKpiBaseline').textContent =
+    baseline != null ? baseline.toFixed(1) : '—';
+
+  // 3. Load Factor = avg / peak (use real peak from kws)
+  const peakKw = kws.length ? Math.max(...kws) : null;
+  const avgKw = kws.length ? kws.reduce((s, v) => s + v, 0) / kws.length : null;
+  const lf = (peakKw && peakKw > 0 && avgKw != null) ? (avgKw / peakKw) * 100 : null;
+  document.getElementById('engKpiLoadFactor').textContent =
+    lf != null ? lf.toFixed(0) : '—';
+
+  // 4. Calibration Drift
+  const cal = computeCalibrationDrift(rawRows, frames);
+  const elCal = document.getElementById('engKpiCalDrift');
+  const elCalSub = document.getElementById('engKpiCalDriftSub');
+  if (cal) {
+    elCal.textContent = (cal.ratio * 100).toFixed(1);
+    elCalSub.textContent = 'vs ' + cal.configured.toFixed(0) + ' imp/kWh';
+  } else {
+    elCal.textContent = '—'; elCalSub.textContent = '—';
+  }
+
+  // 5. Total Outages
+  const out = computeOutages(rawRows);
+  const elOut = document.getElementById('engKpiOutages');
+  const elOutSub = document.getElementById('engKpiOutagesSub');
+  if (elOut && elOutSub) {
+    elOut.textContent = out.events;
+    if (out.events === 0) {
+      elOutSub.textContent = 'no gaps detected';
+    } else {
+      const h = Math.floor(out.totalMinutes / 60);
+      const m = out.totalMinutes % 60;
+      const totalStr = h > 0 ? (h + 'h ' + m + 'm') : (m + 'm');
+      elOutSub.textContent = totalStr + ' lost · longest ' +
+        (out.longestMinutes >= 60
+          ? Math.floor(out.longestMinutes/60) + 'h ' + (out.longestMinutes%60) + 'm'
+          : out.longestMinutes + 'm');
+    }
+  }
+
+  // 6. Battery Drift
+  const bat = computeBatteryDrift(rawRows);
+  const elBat = document.getElementById('engKpiBattDrift');
+  const elBatSub = document.getElementById('engKpiBattDriftSub');
+  if (elBat && elBatSub) {
+    if (bat) {
+      const sign = bat.deltaMv > 0 ? '+' : '';
+      elBat.textContent = sign + bat.deltaMv;
+      elBatSub.textContent = bat.startMv + ' → ' + bat.endMv + ' mV';
+    } else {
+      elBat.textContent = '—';
+      elBatSub.textContent = 'insufficient data';
+    }
+  }
+
+  // 7. MD-by-Day chart
+  renderMdByDay(rawRows);
+
+  // 8. Top 10 Peak Intervals
+  renderEngPeakIntervals(rawRows);
+
+  // 9. Outages / Gaps list
+  renderEngOutages(rawRows);
+
+  // 10. Device Diagnostics (from latest frame)
+  renderEngDiagnostics(frames);
+}
+
+function renderEngPeakIntervals(rawRows) {
+  const tbody = document.getElementById('engPeakIntervalsBody');
+  if (!tbody) return;
+  const top = computeTopPeakIntervals(rawRows, 10);
+  if (!top.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color: var(--ink-soft);">No data</td></tr>';
+    return;
+  }
+  tbody.innerHTML = top.map((r, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${fmtMYTSpan({ dt: r.dt, endDt: r.endDt })}</td>
+      <td>${(r.kw ?? 0).toFixed(1)}</td>
+      <td>${(r.kwh ?? 0).toFixed(4)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderEngOutages(rawRows) {
+  const tbody = document.getElementById('engOutagesBody');
+  if (!tbody) return;
+  const list = computeOutageList(rawRows);
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color: var(--good, #1D9E75);">No outages detected ✓</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.slice(0, 50).map(o => {
+    const cls = o.cause === 'OUTAGE' ? 'cause-gap'
+              : o.cause === 'PARTIAL' ? 'cause-partial'
+              : 'cause-other';
+    const h = Math.floor(o.durationMin / 60);
+    const m = o.durationMin % 60;
+    const durStr = h > 0 ? (h + 'h ' + m + 'm') : (m + 'm');
+    return `
+      <tr>
+        <td>${fmtMYT(o.startDt)}</td>
+        <td>${durStr}</td>
+        <td><span class="pill-cause ${cls}">${o.cause}</span></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderEngDiagnostics(frames) {
+  const latest = (frames && frames.length) ? frames[frames.length - 1] : null;
+  const set = (id, val, threshold) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (val == null || val === '') { el.textContent = '—'; return; }
+    el.textContent = val;
+    // Optional: color the parent's border if value exceeds a "concern" threshold
+    if (typeof threshold === 'number') {
+      const parent = el.closest('.diag-item');
+      if (parent) {
+        parent.classList.remove('diag-good', 'diag-warn', 'diag-bad', 'diag-info');
+        if (val === 0 || val < threshold * 0.5) parent.classList.add('diag-good');
+        else if (val < threshold) parent.classList.add('diag-warn');
+        else parent.classList.add('diag-bad');
+      }
+    }
+  };
+  if (!latest) {
+    ['engDiagConsec','engDiagRecal','engDiagZero','engDiagContrast'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = '—';
+    });
+    return;
+  }
+  set('engDiagConsec',  latest.consecutiveFailCount, 5);
+  // recalCount is info-only (cumulative), no threshold needed
+  const recalEl = document.getElementById('engDiagRecal');
+  if (recalEl) recalEl.textContent = latest.recalCount ?? '—';
+  set('engDiagZero',    latest.zeroBucketCount, 3);
+  // minContrast: lower is worse; warn if below 4, bad if below 2
+  const contrast = latest.minContrast;
+  const elC = document.getElementById('engDiagContrast');
+  if (elC) {
+    if (contrast == null) elC.textContent = '—';
+    else {
+      elC.textContent = contrast;
+      const parent = elC.closest('.diag-item');
+      if (parent) {
+        parent.classList.remove('diag-good', 'diag-warn', 'diag-bad', 'diag-info');
+        if (contrast >= 5) parent.classList.add('diag-good');
+        else if (contrast >= 3) parent.classList.add('diag-warn');
+        else parent.classList.add('diag-bad');
+      }
+    }
+  }
+}
+
+/* =========================
+   Analyst page — statistics, distribution, heatmap, comparisons
+   ========================= */
+
+// Statistical summary of an array of numbers
+function computeStats(arr) {
+  if (!arr || !arr.length) return null;
+  const sorted = arr.slice().sort((a, b) => a - b);
+  const n = sorted.length;
+  const sum = sorted.reduce((s, v) => s + v, 0);
+  const mean = sum / n;
+  const variance = sorted.reduce((s, v) => s + (v - mean) ** 2, 0) / n;
+  return {
+    n,
+    min: sorted[0],
+    max: sorted[n - 1],
+    mean,
+    median: percentile(sorted, 50),
+    p25: percentile(sorted, 25),
+    p75: percentile(sorted, 75),
+    p95: percentile(sorted, 95),
+    p99: percentile(sorted, 99),
+    stddev: Math.sqrt(variance)
+  };
+}
+
+// Build histogram bins from kW array. Returns { bins: [{label, count, lo, hi}], maxBin }
+function computeHistogram(arr, binCount) {
+  if (!arr || !arr.length) return { bins: [], maxCount: 0 };
+  const min = Math.min(...arr);
+  const max = Math.max(...arr);
+  if (max === min) {
+    return { bins: [{ label: min.toFixed(1), count: arr.length, lo: min, hi: max }], maxCount: arr.length };
+  }
+  const nBins = binCount || 16;
+  const step = (max - min) / nBins;
+  const bins = [];
+  for (let i = 0; i < nBins; i++) {
+    const lo = min + i * step;
+    const hi = lo + step;
+    bins.push({ label: lo.toFixed(0), count: 0, lo, hi });
+  }
+  for (const v of arr) {
+    let idx = Math.floor((v - min) / step);
+    if (idx >= nBins) idx = nBins - 1;
+    if (idx < 0) idx = 0;
+    bins[idx].count++;
+  }
+  return { bins, maxCount: Math.max(...bins.map(b => b.count)) };
+}
+
+// Hour-of-day average profile (24 entries, hour 0..23 in MYT)
+function computeHourOfDay(rawRows) {
+  const buckets = Array.from({ length: 24 }, () => ({ sum: 0, n: 0 }));
+  for (const r of rawRows) {
+    if (!r.valid || r.bucketMinutes !== 5) continue;
+    const hour = parseInt(fmtMYTTime(r.dt).slice(0, 2), 10);
+    if (isNaN(hour)) continue;
+    buckets[hour].sum += r.kw;
+    buckets[hour].n++;
+  }
+  return buckets.map(b => b.n ? b.sum / b.n : null);
+}
+
+// 24x7 heatmap data: 7 rows (Mon..Sun MYT) × 24 cols (00..23)
+// Returns { grid: number[7][24], min, max }
+function computeHeatmap(rawRows) {
+  const grid = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => ({ sum: 0, n: 0 })));
+  for (const r of rawRows) {
+    if (!r.valid || r.bucketMinutes !== 5) continue;
+    // Get device-local day-of-week (Mon=0..Sun=6) and hour via tz helper
+    const p = tz.partsOf(r.dt);
+    const dow = p.dow - 1;   // tz.dow is 1=Mon..7=Sun → 0=Mon..6=Sun
+    const hour = p.h;
+    grid[dow][hour].sum += r.kw;
+    grid[dow][hour].n++;
+  }
+  const flat = [];
+  const out = grid.map(row => row.map(c => {
+    if (c.n === 0) return null;
+    const v = c.sum / c.n;
+    flat.push(v);
+    return v;
+  }));
+  const min = flat.length ? Math.min(...flat) : 0;
+  const max = flat.length ? Math.max(...flat) : 0;
+  return { grid: out, min, max };
+}
+
+// Split rows into today's MYT day and yesterday's MYT day
+function splitTodayYesterday(rawRows) {
+  const today = isoMYTDate(new Date());
+  const yesterday = isoMYTDate(new Date(Date.now() - 86400000));
+  const t = [], y = [];
+  for (const r of rawRows) {
+    if (!r.valid || r.bucketMinutes !== 5) continue;
+    const day = isoMYTDate(r.dt);
+    if (day === today) t.push(r);
+    else if (day === yesterday) y.push(r);
+  }
+  // Project to (hourFloat, kw) so we can overlay by time-of-day
+  const toProfile = (rows) => rows.map(r => {
+    const hm = fmtMYTTime(r.dt);
+    const h = parseInt(hm.slice(0, 2), 10);
+    const m = parseInt(hm.slice(3, 5), 10);
+    return { hour: h + m / 60, kw: r.kw };
+  }).sort((a, b) => a.hour - b.hour);
+  return { today: toProfile(t), yesterday: toProfile(y) };
+}
+
+// Load duration curve = kW sorted descending, x = percentage of time (0..100)
+function computeLdc(rawRows) {
+  const kws = rawRows
+    .filter(r => r && r.valid && r.bucketMinutes === 5)
+    .map(r => r.kw)
+    .filter(v => v != null && isFinite(v));
+  if (!kws.length) return { x: [], y: [] };
+  kws.sort((a, b) => b - a);
+  const n = kws.length;
+  const x = kws.map((_, i) => ((i / (n - 1 || 1)) * 100));
+  return { x, y: kws };
+}
+
+// Chart instances for analyst page
+let anHistChart = null, anHodChart = null, anTvYChart = null, anLdcChart = null;
+
+function renderAnalyst(rawRows) {
+  const valid5 = (rawRows || []).filter(r => r && r.valid && r.bucketMinutes === 5);
+
+  // Clear all if empty
+  if (!valid5.length) {
+    ['anStatMin','anStatMax','anStatMean','anStatMedian','anStatP25','anStatP75','anStatP95','anStatP99','anStatStddev']
+      .forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
+    [anHistChart, anHodChart, anTvYChart, anLdcChart].forEach(c => { if (c) c.destroy(); });
+    anHistChart = anHodChart = anTvYChart = anLdcChart = null;
+    const hm = document.getElementById('anHeatmap'); if (hm) hm.innerHTML = '';
+    const hmr = document.getElementById('anHeatmapRange'); if (hmr) hmr.textContent = '—';
+    const hmn = document.getElementById('anHeatmapNote'); if (hmn) hmn.textContent = '—';
+    return;
+  }
+
+  const kws = valid5.map(r => r.kw).filter(v => v != null && isFinite(v));
+
+  // 1. Stats
+  const s = computeStats(kws);
+  if (s) {
+    const fmt = v => v == null ? '—' : v.toFixed(1);
+    document.getElementById('anStatMin').textContent    = fmt(s.min);
+    document.getElementById('anStatMax').textContent    = fmt(s.max);
+    document.getElementById('anStatMean').textContent   = fmt(s.mean);
+    document.getElementById('anStatMedian').textContent = fmt(s.median);
+    document.getElementById('anStatP25').textContent    = fmt(s.p25);
+    document.getElementById('anStatP75').textContent    = fmt(s.p75);
+    document.getElementById('anStatP95').textContent    = fmt(s.p95);
+    document.getElementById('anStatP99').textContent    = fmt(s.p99);
+    document.getElementById('anStatStddev').textContent = fmt(s.stddev);
+  }
+
+  const c = themeColors();
+  const baseOpts = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(20,20,20,0.92)', titleColor: '#fff', bodyColor: '#fff',
+        borderColor: c.line, borderWidth: 1,
+        titleFont: { family: 'Space Grotesk', size: 11 },
+        bodyFont: { family: 'JetBrains Mono', size: 11 }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: c.inkSoft, font: { family: 'JetBrains Mono', size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 },
+        grid: { color: c.line, drawBorder: false }
+      },
+      y: {
+        ticks: { color: c.inkSoft, font: { family: 'JetBrains Mono', size: 10 } },
+        grid: { color: c.line, drawBorder: false }
+      }
+    }
+  };
+
+  // 2. Histogram
+  const hist = computeHistogram(kws, 16);
+  if (anHistChart) { anHistChart.destroy(); anHistChart = null; }
+  anHistChart = new Chart(document.getElementById('anHistChart'), {
+    type: 'bar',
+    data: {
+      labels: hist.bins.map(b => b.label),
+      datasets: [{
+        data: hist.bins.map(b => b.count),
+        backgroundColor: c.accent,
+        borderRadius: 1, borderSkipped: false,
+        barPercentage: 1, categoryPercentage: 0.96
+      }]
+    },
+    options: Object.assign({}, baseOpts, {
+      plugins: Object.assign({}, baseOpts.plugins, {
+        tooltip: Object.assign({}, baseOpts.plugins.tooltip, {
+          callbacks: {
+            title: items => {
+              const i = items[0].dataIndex;
+              const b = hist.bins[i];
+              return b.lo.toFixed(1) + ' – ' + b.hi.toFixed(1) + ' kW';
+            },
+            label: ctx => ctx.parsed.y + ' intervals'
+          }
+        })
+      }),
+      scales: {
+        x: Object.assign({}, baseOpts.scales.x, {
+          title: { display: true, text: 'kW', color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } }
+        }),
+        y: Object.assign({}, baseOpts.scales.y, {
+          title: { display: true, text: 'count', color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } }
+        })
+      }
+    })
+  });
+
+  // 3. Hour-of-Day Profile
+  const hod = computeHourOfDay(rawRows);
+  if (anHodChart) { anHodChart.destroy(); anHodChart = null; }
+  anHodChart = new Chart(document.getElementById('anHodChart'), {
+    type: 'line',
+    data: {
+      labels: Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')),
+      datasets: [{
+        data: hod,
+        borderColor: c.accent,
+        backgroundColor: c.accent + '22',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.35,
+        pointRadius: 0,
+        spanGaps: true
+      }]
+    },
+    options: Object.assign({}, baseOpts, {
+      plugins: Object.assign({}, baseOpts.plugins, {
+        tooltip: Object.assign({}, baseOpts.plugins.tooltip, {
+          callbacks: {
+            title: items => items[0].label + ':00 MYT',
+            label: ctx => ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) + ' kW avg' : 'no data'
+          }
+        })
+      }),
+      scales: {
+        x: Object.assign({}, baseOpts.scales.x, {
+          title: { display: true, text: 'hour (' + tz.label() + ')', color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } }
+        }),
+        y: Object.assign({}, baseOpts.scales.y, {
+          title: { display: true, text: 'kW', color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } }
+        })
+      }
+    })
+  });
+
+  // 4. Heatmap (24×7)
+  renderHeatmap(rawRows);
+
+  // 5. Today vs Yesterday overlay
+  const ty = splitTodayYesterday(rawRows);
+  if (anTvYChart) { anTvYChart.destroy(); anTvYChart = null; }
+  const tvYCanvas = document.getElementById('anTvYChart');
+  anTvYChart = new Chart(tvYCanvas, {
+    type: 'line',
+    data: {
+      datasets: [
+        {
+          label: 'Today',
+          data: ty.today.map(p => ({ x: p.hour, y: p.kw })),
+          borderColor: c.accent,
+          backgroundColor: c.accent + '22',
+          borderWidth: 2, fill: false, tension: 0.25, pointRadius: 0
+        },
+        {
+          label: 'Yesterday',
+          data: ty.yesterday.map(p => ({ x: p.hour, y: p.kw })),
+          borderColor: c.inkSoft,
+          borderWidth: 1.5,
+          fill: false, tension: 0.25, pointRadius: 0,
+          borderDash: [4, 4]
+        }
+      ]
+    },
+    options: Object.assign({}, baseOpts, {
+      plugins: Object.assign({}, baseOpts.plugins, {
+        tooltip: Object.assign({}, baseOpts.plugins.tooltip, {
+          callbacks: {
+            title: items => {
+              const h = items[0].parsed.x;
+              const hh = String(Math.floor(h)).padStart(2, '0');
+              const mm = String(Math.round((h % 1) * 60)).padStart(2, '0');
+              return hh + ':' + mm + ' MYT';
+            },
+            label: ctx => ctx.dataset.label + ': ' + (ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) : '—') + ' kW'
+          }
+        })
+      }),
+      scales: {
+        x: {
+          type: 'linear', min: 0, max: 24,
+          ticks: {
+            color: c.inkSoft, font: { family: 'JetBrains Mono', size: 10 },
+            stepSize: 3,
+            callback: (v) => String(v).padStart(2, '0') + ':00'
+          },
+          grid: { color: c.line, drawBorder: false },
+          title: { display: true, text: 'hour-of-day (' + tz.label() + ')', color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } }
+        },
+        y: Object.assign({}, baseOpts.scales.y, {
+          title: { display: true, text: 'kW', color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } }
+        })
+      }
+    })
+  });
+
+  // 6. Load Duration Curve
+  const ldc = computeLdc(rawRows);
+  if (anLdcChart) { anLdcChart.destroy(); anLdcChart = null; }
+  anLdcChart = new Chart(document.getElementById('anLdcChart'), {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: 'kW',
+        data: ldc.x.map((x, i) => ({ x, y: ldc.y[i] })),
+        borderColor: c.accent,
+        backgroundColor: c.accent + '22',
+        borderWidth: 2, fill: true, tension: 0, pointRadius: 0
+      }]
+    },
+    options: Object.assign({}, baseOpts, {
+      plugins: Object.assign({}, baseOpts.plugins, {
+        tooltip: Object.assign({}, baseOpts.plugins.tooltip, {
+          callbacks: {
+            title: items => items[0].parsed.x.toFixed(1) + '% of time',
+            label: ctx => 'kW ≥ ' + ctx.parsed.y.toFixed(1)
+          }
+        })
+      }),
+      scales: {
+        x: {
+          type: 'linear', min: 0, max: 100,
+          ticks: { color: c.inkSoft, font: { family: 'JetBrains Mono', size: 10 }, callback: v => v + '%' },
+          grid: { color: c.line, drawBorder: false },
+          title: { display: true, text: '% of time', color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } }
+        },
+        y: Object.assign({}, baseOpts.scales.y, {
+          title: { display: true, text: 'kW', color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } }
+        })
+      }
+    })
+  });
+}
+
+// Render the 24×7 heatmap as a grid of divs
+function renderHeatmap(rawRows) {
+  const host = document.getElementById('anHeatmap');
+  const rangeEl = document.getElementById('anHeatmapRange');
+  const peakEl = document.getElementById('anHeatmapPeak');
+  const noteEl = document.getElementById('anHeatmapNote');
+  if (!host) return;
+  host.innerHTML = '';
+  const { grid, min, max } = computeHeatmap(rawRows);
+  if (rangeEl) rangeEl.textContent = (min || max) ? (min.toFixed(0) + ' – ' + max.toFixed(0) + ' kW') : '—';
+
+  // Update the explainer banner with the actual date range + per-weekday counts
+  if (noteEl) {
+    const valid5 = (rawRows || []).filter(r => r && r.valid && r.bucketMinutes === 5);
+    if (valid5.length) {
+      // Unique MYT dates in range
+      const dates = [...new Set(valid5.map(r => isoMYTDate(r.dt)))].sort();
+      const firstDate = dates[0];
+      const lastDate = dates[dates.length - 1];
+      // Count of each weekday represented in the data
+      const dowCount = [0, 0, 0, 0, 0, 0, 0]; // Mon..Sun
+      const dayMap = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
+      for (const d of dates) {
+        // Parse YYYY-MM-DD with the active device's offset for unambiguous parsing
+        const dt = new Date(d + 'T00:00:00' + tz.offset());
+        const dow = tz.partsOf(dt).dow - 1;       // 1..7 → 0..6
+        if (dow >= 0 && dow < 7) dowCount[dow]++;
+      }
+      const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const parts = dayLabels.map((d, i) => d + ' ×' + dowCount[i]).join(' · ');
+      noteEl.textContent = 'Range: ' + firstDate + ' / ' + lastDate + ' (' + tz.label() + ') · ' + parts;
+    } else {
+      noteEl.textContent = '—';
+    }
+  }
+
+  if (max === 0 && min === 0) return;
+
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  // Header row: corner + 24 hour labels
+  const corner = document.createElement('div'); corner.className = 'hm-corner'; host.appendChild(corner);
+  for (let h = 0; h < 24; h++) {
+    const lbl = document.createElement('div');
+    lbl.className = 'hm-col-label';
+    lbl.textContent = (h % 3 === 0) ? String(h).padStart(2, '0') : '';
+    host.appendChild(lbl);
+  }
+  // Data rows: day label + 24 cells
+  for (let d = 0; d < 7; d++) {
+    const dl = document.createElement('div');
+    dl.className = 'hm-row-label';
+    dl.textContent = days[d];
+    host.appendChild(dl);
+    for (let h = 0; h < 24; h++) {
+      const v = grid[d][h];
+      const cell = document.createElement('div');
+      cell.className = 'hm-cell';
+      if (v == null) {
+        cell.style.background = 'transparent';
+        cell.title = days[d] + ' ' + String(h).padStart(2, '0') + ':00 — no data';
+      } else {
+        // Map v in [min..max] to opacity 0.10..1.00 over accent
+        const range = max - min || 1;
+        const norm = (v - min) / range;
+        const opacity = 0.10 + norm * 0.90;
+        cell.style.background = 'var(--accent)';
+        cell.style.opacity = opacity.toFixed(2);
+        cell.title = days[d] + ' ' + String(h).padStart(2, '0') + ':00 MYT — ' + v.toFixed(1) + ' kW avg';
+      }
+      host.appendChild(cell);
+    }
+  }
+
+  // Draw peak-window overlay box(es) on top of the data rows.
+  // Defer one frame so the grid layout is fully painted before reading rects.
+  requestAnimationFrame(() => drawHeatmapPeakBox(host, peakEl));
+}
+
+// Draw the peak window outline. Reads the active device's peakStart/peakEnd
+// and overlays one (or two for wraparound) orange-bordered boxes on the heatmap.
+function drawHeatmapPeakBox(host, peakLabelEl) {
+  const dev = activeDevice() || {};
+  const ps = dev.peakStart || '08:00';
+  const pe = dev.peakEnd || '22:00';
+  // Empty array = user explicitly chose no peak days → no overlay
+  const peakDays = Array.isArray(dev.peakDays) ? dev.peakDays : [1, 2, 3, 4, 5];
+  if (peakLabelEl) {
+    peakLabelEl.textContent = formatPeakDaysShort(dev) + ' · ' + ps + ' – ' + pe + ' (' + tz.label() + ')';
+  }
+
+  // Convert HH:MM to a fractional hour in [0..24)
+  const hhmmToHour = (s) => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(s || '');
+    if (!m) return null;
+    return (+m[1]) + (+m[2]) / 60;
+  };
+  const startHr = hhmmToHour(ps);
+  const endHr = hhmmToHour(pe);
+  if (startHr == null || endHr == null || startHr === endHr) return;
+  if (!peakDays.length) return;
+
+  // Identify the header row cells and the data-row cells to compute box geometry
+  // Layout: 1 corner + 24 col-labels (row 1), then 7 × (1 row-label + 24 data cells)
+  const headerCells = host.querySelectorAll('.hm-col-label');
+  if (headerCells.length < 24) return;
+  const firstHourCell = headerCells[0];               // hour 00 label
+  const lastHourCell = headerCells[23];               // hour 23 label
+  const rowLabels = host.querySelectorAll('.hm-row-label');
+  if (rowLabels.length < 7) return;
+
+  const hostRect = host.getBoundingClientRect();
+  const firstHourRect = firstHourCell.getBoundingClientRect();
+  const lastHourRect = lastHourCell.getBoundingClientRect();
+
+  const gridLeft = firstHourRect.left - hostRect.left;
+  const gridRight = lastHourRect.right - hostRect.left;
+  const gridWidth = gridRight - gridLeft;
+  const colWidth = gridWidth / 24;
+
+  // Draw a peak-box on a single day-row
+  const drawBoxOnRow = (rowIdx, fromHr, toHr) => {
+    if (toHr <= fromHr) return;
+    const rowRect = rowLabels[rowIdx].getBoundingClientRect();
+    const top = rowRect.top - hostRect.top;
+    const height = rowRect.height;
+    const left = gridLeft + fromHr * colWidth;
+    const width = (toHr - fromHr) * colWidth;
+    const box = document.createElement('div');
+    box.className = 'hm-peak-box';
+    box.style.left = left + 'px';
+    box.style.top = top + 'px';
+    box.style.width = width + 'px';
+    box.style.height = height + 'px';
+    box.title = 'Peak ' + ps + ' – ' + pe + ' (' + tz.label() + ')';
+    host.appendChild(box);
+  };
+
+  // For each peak day, draw the time-window box on its row
+  // peakDays uses ISO 1=Mon..7=Sun; heatmap row 0=Mon..6=Sun
+  peakDays.forEach(dow => {
+    const rowIdx = dow - 1;
+    if (rowIdx < 0 || rowIdx > 6) return;
+    if (startHr < endHr) {
+      drawBoxOnRow(rowIdx, startHr, endHr);
+    } else {
+      // Wraparound (e.g. 22:00–06:00): draw two boxes on this row
+      drawBoxOnRow(rowIdx, startHr, 24);
+      drawBoxOnRow(rowIdx, 0, endHr);
+    }
+  });
+}
+
+function renderMdByDay(rawRows) {
+  const data = computeMdByDay(rawRows);
+  const canvas = document.getElementById('mdByDayChart');
+  if (!canvas) return;
+  if (mdByDayChart) { mdByDayChart.destroy(); mdByDayChart = null; }
+  if (!data.length) return;
+
+  const labels = data.map(d => d.date);
+  const values = data.map(d => d.mdKw);
+  const c = themeColors();
+  // Star-highlight the latest day (last bar) with a slightly stronger border
+  const lastIdx = labels.length - 1;
+  const barBg = values.map((_, i) => i === lastIdx ? c.accent : c.accent);
+  const borderColor = values.map((_, i) => i === lastIdx ? c.ink : 'transparent');
+  const borderWidth = values.map((_, i) => i === lastIdx ? 2 : 0);
+
+  mdByDayChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: barBg,
+        borderColor,
+        borderWidth,
+        borderRadius: 1, borderSkipped: false,
+        barPercentage: 0.85, categoryPercentage: 0.85
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(20,20,20,0.92)', titleColor: '#fff', bodyColor: '#fff',
+          borderColor: c.line, borderWidth: 1,
+          titleFont: { family: 'Space Grotesk', size: 11 },
+          bodyFont: { family: 'JetBrains Mono', size: 11 },
+          callbacks: {
+            label: (ctx) => 'MD: ' + (ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) : '—') + ' kW'
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: c.inkSoft, font: { family: 'JetBrains Mono', size: 10 } },
+          grid: { color: c.line, drawBorder: false }
+        },
+        y: {
+          title: { display: true, text: 'kW', color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } },
+          ticks: { color: c.inkSoft, font: { family: 'JetBrains Mono', size: 10 } },
+          grid: { color: c.line, drawBorder: false }
+        }
+      }
+    }
+  });
+}
+
+/* =========================
+   Buttons + polling
+   ========================= */
+document.getElementById('refreshBtn').addEventListener('click', () => { fetchData(); fetchStatus(); });
+
+/* Recent Intervals row-count toggle (Latest 50 / Show all) — persisted */
+const LS_TABLE_MODE = 'ee_table_mode';
+window._tableMode = localStorage.getItem(LS_TABLE_MODE) || 'latest';
+function applyTableMode() {
+  document.getElementById('modeLatest').classList.toggle('active', window._tableMode === 'latest');
+  document.getElementById('modeAll').classList.toggle('active', window._tableMode === 'all');
+}
+applyTableMode();
+document.querySelectorAll('.table-mode .mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    window._tableMode = btn.dataset.mode;
+    localStorage.setItem(LS_TABLE_MODE, window._tableMode);
+    applyTableMode();
+    if (window._latestRows) renderTable(window._latestRows);
+  });
+});
+
+/* Status table hide/show — persisted */
+const LS_STATUS_HIDDEN = 'ee_status_hidden';
+function applyStatusVisibility() {
+  const hidden = localStorage.getItem(LS_STATUS_HIDDEN) === '1';
+  document.getElementById('statusTableWrap').style.display = hidden ? 'none' : '';
+  document.getElementById('toggleStatusBtn').textContent = hidden ? 'Show' : 'Hide';
+}
+document.getElementById('toggleStatusBtn').addEventListener('click', () => {
+  const hidden = localStorage.getItem(LS_STATUS_HIDDEN) === '1';
+  localStorage.setItem(LS_STATUS_HIDDEN, hidden ? '0' : '1');
+  applyStatusVisibility();
+});
+applyStatusVisibility();
+
+let statusTimer = null;
+function startStatusPolling() {
+  if (statusTimer) clearInterval(statusTimer);
+  statusTimer = setInterval(fetchStatus, 60000);
+}
+
+/* =========================
+   Date filter bar
+   ========================= */
+// Convert a date string in the active device's local timezone to UTC ISO.
+// e.g. "2026-05-29" + UTC+10 → "2026-05-28T14:00:00Z" (start of day)
+function mytDateToUtcIso(yyyy_mm_dd, endOfDay = false) {
+  if (!yyyy_mm_dd) return null;
+  const [y, m, d] = yyyy_mm_dd.split('-').map(Number);
+  const utcMs = Date.UTC(y, m - 1, d, endOfDay ? 24 : 0, 0, 0) - tz.offsetMs();
+  return new Date(utcMs).toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+function mytTodayString() {
+  // "Today" in the active device's local timezone as YYYY-MM-DD
+  return isoMYTDate(new Date());
+}
+
+function mytDateOffset(days) {
+  // YYYY-MM-DD that is `days` away from device-local today (negative = past)
+  const t = mytTodayString().split('-').map(Number);
+  const ms = Date.UTC(t[0], t[1] - 1, t[2]) + days * 86400 * 1000;
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+function setFilterInputs(fromDate, toDate) {
+  document.getElementById('filterFrom').value = fromDate;
+  document.getElementById('filterTo').value = toDate;
+}
+
+function highlightPreset(name) {
+  document.querySelectorAll('.filter-presets .btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.preset === name);
+  });
+}
+
+function applyPreset(name) {
+  const today = mytTodayString();
+  let from, to;
+  switch (name) {
+    case 'today':       from = today; to = today; break;
+    case 'yesterday':   from = mytDateOffset(-1); to = mytDateOffset(-1); break;
+    case '7d':          from = mytDateOffset(-6); to = today; break;
+    case '30d':         from = mytDateOffset(-29); to = today; break;
+    case 'thisMonth': {
+      const [y, m] = today.split('-');
+      from = `${y}-${m}-01`; to = today; break;
+    }
+    case 'all': {
+      // Fall back to the active device's saved default range
+      const dev = activeDevice();
+      if (!dev) return;
+      dev.from = dev.from || '2026-01-01T16:00:00Z';
+      dev.to   = dev.to   || '2028-12-31T16:00:00Z';
+      saveCfg(cfg);
+      setFilterInputs(dev.from.slice(0, 10), dev.to.slice(0, 10));
+      highlightPreset('all');
+      fetchData();
+      return;
+    }
+  }
+  setFilterInputs(from, to);
+  const dev = activeDevice();
+  if (dev) {
+    dev.from = mytDateToUtcIso(from, false);
+    dev.to = mytDateToUtcIso(to, true);
+    saveCfg(cfg);
+  }
+  highlightPreset(name);
+  fetchData();
+}
+
+document.querySelectorAll('.filter-presets .btn').forEach(b => {
+  b.addEventListener('click', () => applyPreset(b.dataset.preset));
+});
+document.getElementById('applyFilter').addEventListener('click', () => {
+  const fromInput = document.getElementById('filterFrom').value;
+  const toInput = document.getElementById('filterTo').value;
+  if (!fromInput || !toInput) { toast('Pick both From and To', 'error'); return; }
+  if (fromInput > toInput) { toast('From must be on or before To', 'error'); return; }
+  const dev = activeDevice();
+  if (dev) {
+    dev.from = mytDateToUtcIso(fromInput, false);
+    dev.to = mytDateToUtcIso(toInput, true);
+    saveCfg(cfg);
+  }
+  highlightPreset(null);
+  fetchData();
+});
+
+// Initialize inputs to reflect the active device's from / to
+function syncFilterInputsFromCfg() {
+  const dev = activeDevice();
+  if (!dev) return;
+  try {
+    // Convert the stored UTC ISO instants to device-local YYYY-MM-DD
+    const fLocal = isoMYTDate(new Date(dev.from));
+    const tLocal = isoMYTDate(new Date(dev.to));
+    setFilterInputs(fLocal, tLocal);
+  } catch {}
+}
+syncFilterInputsFromCfg();
+applyTimezoneLabels();
+
+/* =========================
+   Export (CSV / PDF / Print A4)
+   ========================= */
+function tsStamp() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate())
+    + '_' + pad(d.getHours()) + pad(d.getMinutes());
+}
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+}
+function csvEscape(v) {
+  if (v == null) return '';
+  const s = String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function buildCsv(headers, rows) {
+  const lines = [headers.map(csvEscape).join(',')];
+  for (const r of rows) lines.push(r.map(csvEscape).join(','));
+  return lines.join('\r\n');
+}
+
+// Shared metadata block prepended to every export
+function exportMetadata() {
+  const dev = activeDevice() || {};
+  const s = window._latestStatus || {};
+  const deviceId = s.deviceId || dev.deviceId || '—';
+  const name = dev.name || '';
+  const location = s.location || '—';
+  // Use ISO 8601 for the generated timestamp too
+  const generated = fmtMYT(new Date());
+  return [
+    ['Device ID', deviceId],
+    ['Device Name', name],
+    ['Location', location],
+    ['Generated', generated],
+    ['Timestamp Format', 'ISO 8601 (YYYY-MM-DD HH:MM' + tz.offset() + ')'],
+    ['Timezone', tz.label()],
+    ['Units', 'SI: kW, kWh, V (per IEC 80000)']
+  ];
+}
+// Inject metadata as comment-style header rows into a CSV string
+function csvWithMetadata(headers, rows) {
+  const meta = exportMetadata();
+  const lines = [];
+  for (const [k, v] of meta) lines.push(csvEscape('# ' + k) + ',' + csvEscape(v));
+  lines.push(''); // blank separator row
+  lines.push(headers.map(csvEscape).join(','));
+  for (const r of rows) lines.push(r.map(csvEscape).join(','));
+  return lines.join('\r\n');
+}
+// Draw metadata block into a jsPDF doc, returns the Y to start the table below
+function pdfMetadataBlock(doc, title, extraLine) {
+  const meta = exportMetadata();
+  doc.setFontSize(14); doc.setTextColor(0);
+  doc.text(title, 40, 50);
+  doc.setFontSize(9); doc.setTextColor(80);
+  let y = 70;
+  for (const [k, v] of meta) {
+    doc.setFont(undefined, 'bold');
+    doc.text(k + ':', 40, y);
+    doc.setFont(undefined, 'normal');
+    doc.text(String(v), 130, y);
+    y += 13;
+  }
+  if (extraLine) {
+    doc.setFont(undefined, 'bold');
+    doc.text(extraLine[0] + ':', 40, y);
+    doc.setFont(undefined, 'normal');
+    doc.text(String(extraLine[1]), 130, y);
+    y += 13;
+  }
+  return y + 8; // small gap before table
+}
+
+// --- Status export -------------------------------------------------
+function statusRows() {
+  const s = window._latestStatus || {};
+  const out = [];
+  for (const k of Object.keys(s)) {
+    let v = s[k];
+    if (v && typeof v === 'object') v = JSON.stringify(v);
+    out.push([k, v == null ? '' : String(v)]);
+  }
+  return out;
+}
+function exportStatusCsv() {
+  const rows = statusRows();
+  if (!rows.length) { toast('No status data to export', 'error'); return; }
+  const csv = csvWithMetadata(['Field', 'Value'], rows);
+  downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+    'device_status_' + tsStamp() + '.csv');
+  toast('Status CSV downloaded', 'success');
+}
+function exportStatusPdf() {
+  const rows = statusRows();
+  if (!rows.length) { toast('No status data to export', 'error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const startY = pdfMetadataBlock(doc, 'Device Status Report');
+  doc.autoTable({
+    head: [['Field', 'Value']],
+    body: rows,
+    startY: startY,
+    styles: { fontSize: 9, cellPadding: 5 },
+    headStyles: { fillColor: [255, 107, 53] },
+    columnStyles: { 0: { cellWidth: 150, fontStyle: 'bold' } }
+  });
+  doc.save('device_status_' + tsStamp() + '.pdf');
+  toast('Status PDF downloaded', 'success');
+}
+
+// --- Intervals export ---------------------------------------------
+function intervalsData(scope) {
+  const rows = (window._latestRows || []).filter(r => r.valid);
+  const set = scope === 'visible' ? rows.slice(-50).reverse() : rows.slice().reverse();
+  return set.map(r => [
+    fmtMYT(r.dt),
+    'H' + String(r.bucket).padStart(2, '0'),
+    r.kwh.toFixed(4),
+    r.kw.toFixed(3),
+    r.pulse
+  ]);
+}
+function exportIntervalsCsv(scope) {
+  const data = intervalsData(scope);
+  if (!data.length) { toast('No intervals to export', 'error'); return; }
+  // Extend metadata with scope info via a custom builder
+  const meta = exportMetadata();
+  meta.push(['Scope', (scope === 'visible' ? 'visible rows' : 'all rows') + ' (' + data.length + ' rows)']);
+  const lines = [];
+  for (const [k, v] of meta) lines.push(csvEscape('# ' + k) + ',' + csvEscape(v));
+  lines.push('');
+  lines.push(['Timestamp (MYT)', 'Bucket', 'kWh', 'kW', 'Pulses'].map(csvEscape).join(','));
+  for (const r of data) lines.push(r.map(csvEscape).join(','));
+  downloadBlob(new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }),
+    'intervals_' + scope + '_' + tsStamp() + '.csv');
+  toast('Intervals CSV downloaded (' + data.length + ' rows)', 'success');
+}
+function exportIntervalsPdf(scope) {
+  const data = intervalsData(scope);
+  if (!data.length) { toast('No intervals to export', 'error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const scopeLine = ['Scope', (scope === 'visible' ? 'visible rows' : 'all rows') + ' (' + data.length + ' rows)'];
+  const startY = pdfMetadataBlock(doc, 'Recent Intervals', scopeLine);
+  doc.autoTable({
+    head: [['Timestamp (MYT)', 'Bucket', 'kWh', 'kW', 'Pulses']],
+    body: data,
+    startY: startY,
+    styles: { fontSize: 8, cellPadding: 4 },
+    headStyles: { fillColor: [255, 107, 53] },
+    columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' } }
+  });
+  doc.save('intervals_' + scope + '_' + tsStamp() + '.pdf');
+  toast('Intervals PDF downloaded (' + data.length + ' rows)', 'success');
+}
+
+// --- Scope picker --------------------------------------------------
+let _pendingIntervalsExport = null;
+function openScopePicker(fmt) {
+  const rows = (window._latestRows || []).filter(r => r.valid);
+  if (!rows.length) { toast('No intervals to export', 'error'); return; }
+  const visN = Math.min(50, rows.length);
+  document.getElementById('scopeVisibleCount').textContent = '(' + visN + ')';
+  document.getElementById('scopeAllCount').textContent = '(' + rows.length + ')';
+  _pendingIntervalsExport = fmt;
+  document.getElementById('scopeBg').classList.add('open');
+}
+function closeScopePicker() {
+  document.getElementById('scopeBg').classList.remove('open');
+  _pendingIntervalsExport = null;
+}
+document.getElementById('scopeCancel').addEventListener('click', closeScopePicker);
+document.getElementById('scopeConfirm').addEventListener('click', () => {
+  const choice = document.querySelector('input[name="scopeChoice"]:checked').value;
+  const fmt = _pendingIntervalsExport;
+  closeScopePicker();
+  if (fmt === 'csv') exportIntervalsCsv(choice);
+  else if (fmt === 'pdf') exportIntervalsPdf(choice);
+});
+document.getElementById('scopeBg').addEventListener('click', (e) => {
+  if (e.target.id === 'scopeBg') closeScopePicker();
+});
+
+// --- Print A4 ------------------------------------------------------
+function printA4() {
+  document.body.classList.add('printing-a4');
+  // Allow paint then print
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => document.body.classList.remove('printing-a4'), 500);
+  }, 100);
+}
+
+/* =========================
+   Engineer page exports
+   ========================= */
+
+// Filename helper: page_kind_YYYY-MM-DD.csv
+function exportFilename(page, kind, ext) {
+  return page + '_' + kind + '_' + isoMYTDate(new Date()).replace(/-/g, '') + '.' + ext;
+}
+
+// Trigger a CSV file download with the given content
+function downloadFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 200);
+}
+
+// Engineer KPIs as CSV
+function exportEngineerKpisCsv() {
+  const raw = window._rawRows || [];
+  const frames = window._latestFrames || [];
+  if (!raw.length) { toast('No data to export', 'error'); return; }
+  const md = computeMaximumDemand(raw);
+  const valid5 = raw.filter(r => r && r.valid && r.bucketMinutes === 5);
+  const kws = valid5.map(r => r.kw).filter(v => v != null && isFinite(v));
+  const baseline = percentile(kws, 5);
+  const peakKw = kws.length ? Math.max(...kws) : null;
+  const avgKw = kws.length ? kws.reduce((s, v) => s + v, 0) / kws.length : null;
+  const lf = (peakKw && peakKw > 0 && avgKw != null) ? (avgKw / peakKw) * 100 : null;
+  const cal = computeCalibrationDrift(raw, frames);
+  const out = computeOutages(raw);
+  const bat = computeBatteryDrift(raw);
+  const rows = [
+    ['Metric', 'Value', 'Unit', 'Notes'],
+    ['Maximum Demand', md.kw != null ? md.kw.toFixed(2) : '—', 'kW', md.t ? 'at ' + fmtMYT(md.t) : ''],
+    ['Baseline Load (p5)', baseline != null ? baseline.toFixed(2) : '—', 'kW', '5th percentile of 5-min kW'],
+    ['Load Factor', lf != null ? lf.toFixed(1) : '—', '%', 'Avg / Peak kW'],
+    ['Calibration Drift', cal ? (cal.ratio * 100).toFixed(2) : '—', '%', cal ? 'vs ' + cal.configured + ' imp/kWh' : ''],
+    ['Total Outages', out.events, 'events', out.totalMinutes + ' min total'],
+    ['Longest Outage', out.longestMinutes, 'min', ''],
+    ['Battery Drift', bat ? bat.deltaMv : '—', 'mV', bat ? bat.startMv + '→' + bat.endMv + ' mV' : '']
+  ];
+  const csv = csvWithMetadata([], rows);
+  downloadFile(exportFilename('engineer', 'kpis', 'csv'), csv, 'text/csv');
+  toast('Engineer KPIs exported', 'success');
+}
+
+// Top peak intervals as CSV
+function exportEngineerPeaksCsv() {
+  const raw = window._rawRows || [];
+  if (!raw.length) { toast('No data to export', 'error'); return; }
+  const top = computeTopPeakIntervals(raw, 50);
+  const rows = [
+    ['Rank', 'Timestamp (ISO 8601 MYT)', 'Interval End (ISO 8601 MYT)', 'kW', 'kWh']
+  ];
+  top.forEach((r, i) => rows.push([
+    i + 1,
+    fmtMYT(r.dt),
+    fmtMYT(r.endDt || r.dt),
+    (r.kw ?? 0).toFixed(3),
+    (r.kwh ?? 0).toFixed(4)
+  ]));
+  const csv = csvWithMetadata([], rows);
+  downloadFile(exportFilename('engineer', 'peaks', 'csv'), csv, 'text/csv');
+  toast('Top peaks exported', 'success');
+}
+
+// Outage list as CSV
+function exportEngineerOutagesCsv() {
+  const raw = window._rawRows || [];
+  if (!raw.length) { toast('No data to export', 'error'); return; }
+  const list = computeOutageList(raw);
+  const rows = [
+    ['Started (ISO 8601 MYT)', 'Duration (min)', 'Cause']
+  ];
+  if (list.length === 0) {
+    rows.push(['—', '—', 'No outages detected']);
+  } else {
+    list.forEach(o => rows.push([fmtMYT(o.startDt), o.durationMin, o.cause]));
+  }
+  const csv = csvWithMetadata([], rows);
+  downloadFile(exportFilename('engineer', 'outages', 'csv'), csv, 'text/csv');
+  toast('Outages exported', 'success');
+}
+
+// Engineer report PDF — KPIs + tables + diagnostics
+function exportEngineerPdf() {
+  if (!window._rawRows || !window._rawRows.length) { toast('No data to export', 'error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const raw = window._rawRows;
+  const frames = window._latestFrames || [];
+
+  // Compute all metrics
+  const md = computeMaximumDemand(raw);
+  const valid5 = raw.filter(r => r && r.valid && r.bucketMinutes === 5);
+  const kws = valid5.map(r => r.kw).filter(v => v != null && isFinite(v));
+  const baseline = percentile(kws, 5);
+  const peakKw = kws.length ? Math.max(...kws) : null;
+  const avgKw = kws.length ? kws.reduce((s, v) => s + v, 0) / kws.length : null;
+  const lf = (peakKw && peakKw > 0 && avgKw != null) ? (avgKw / peakKw) * 100 : null;
+  const cal = computeCalibrationDrift(raw, frames);
+  const out = computeOutages(raw);
+  const bat = computeBatteryDrift(raw);
+  const top = computeTopPeakIntervals(raw, 10);
+  const outages = computeOutageList(raw);
+  const latest = frames.length ? frames[frames.length - 1] : {};
+
+  // Range string
+  const dates = [...new Set(valid5.map(r => isoMYTDate(r.dt)))].sort();
+  const rangeStr = dates.length
+    ? dates[0] + ' / ' + dates[dates.length - 1] + ' (MYT)'
+    : '—';
+
+  const startY = pdfMetadataBlock(doc, 'Engineer Report', ['Range', rangeStr]);
+
+  // KPIs table
+  doc.autoTable({
+    startY: startY + 6,
+    head: [['Engineer KPIs', 'Value', 'Notes']],
+    body: [
+      ['Maximum Demand', (md.kw != null ? md.kw.toFixed(1) + ' kW' : '—'), md.t ? 'at ' + fmtMYT(md.t) : ''],
+      ['Baseline Load', (baseline != null ? baseline.toFixed(1) + ' kW' : '—'), 'p5 percentile · always-on'],
+      ['Load Factor', (lf != null ? lf.toFixed(0) + ' %' : '—'), 'Avg / Peak'],
+      ['Calibration Drift', (cal ? (cal.ratio * 100).toFixed(1) + ' %' : '—'), cal ? 'vs ' + cal.configured + ' imp/kWh' : ''],
+      ['Total Outages', String(out.events), out.totalMinutes ? out.totalMinutes + ' min total · longest ' + out.longestMinutes + ' min' : 'no gaps'],
+      ['Battery Drift', (bat ? (bat.deltaMv > 0 ? '+' : '') + bat.deltaMv + ' mV' : '—'), bat ? bat.startMv + '→' + bat.endMv + ' mV' : '']
+    ],
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: [26, 26, 26], textColor: 255, fontSize: 9 }
+  });
+
+  // Top 10 peaks
+  doc.autoTable({
+    startY: doc.lastAutoTable.finalY + 14,
+    head: [['#', 'Timestamp (MYT)', 'kW', 'kWh']],
+    body: top.length ? top.map((r, i) => [
+      i + 1, fmtMYT(r.dt), (r.kw ?? 0).toFixed(1), (r.kwh ?? 0).toFixed(4)
+    ]) : [['—', 'No data', '—', '—']],
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: [26, 26, 26], textColor: 255, fontSize: 9 },
+    didDrawPage: (data) => {
+      doc.setFontSize(11); doc.setTextColor(40);
+      doc.text('Top 10 Peak Intervals', 40, data.settings.startY - 6);
+    }
+  });
+
+  // Outages
+  doc.autoTable({
+    startY: doc.lastAutoTable.finalY + 14,
+    head: [['Started (MYT)', 'Duration (min)', 'Cause']],
+    body: outages.length
+      ? outages.map(o => [fmtMYT(o.startDt), o.durationMin, o.cause])
+      : [['—', '—', 'No outages detected']],
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: [26, 26, 26], textColor: 255, fontSize: 9 },
+    didDrawPage: (data) => {
+      doc.setFontSize(11); doc.setTextColor(40);
+      doc.text('Outages / Gaps', 40, data.settings.startY - 6);
+    }
+  });
+
+  // Device Diagnostics
+  doc.autoTable({
+    startY: doc.lastAutoTable.finalY + 14,
+    head: [['Field', 'Value']],
+    body: [
+      ['consecutiveFailCount', latest.consecutiveFailCount ?? '—'],
+      ['recalCount', latest.recalCount ?? '—'],
+      ['zeroBucketCount', latest.zeroBucketCount ?? '—'],
+      ['minContrast', latest.minContrast ?? '—']
+    ],
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: [26, 26, 26], textColor: 255, fontSize: 9 },
+    didDrawPage: (data) => {
+      doc.setFontSize(11); doc.setTextColor(40);
+      doc.text('Device Diagnostics (latest frame)', 40, data.settings.startY - 6);
+    }
+  });
+
+  doc.save(exportFilename('engineer', 'report', 'pdf'));
+  toast('Engineer PDF exported', 'success');
+}
+
+/* =========================
+   Analyst page exports
+   ========================= */
+
+function exportAnalystStatsCsv() {
+  const raw = window._rawRows || [];
+  if (!raw.length) { toast('No data to export', 'error'); return; }
+  const kws = raw.filter(r => r && r.valid && r.bucketMinutes === 5).map(r => r.kw);
+  const s = computeStats(kws);
+  if (!s) { toast('No data to export', 'error'); return; }
+  const rows = [
+    ['Statistic', 'Value (kW)'],
+    ['n', s.n],
+    ['min', s.min.toFixed(3)],
+    ['max', s.max.toFixed(3)],
+    ['mean', s.mean.toFixed(3)],
+    ['median', s.median.toFixed(3)],
+    ['p25', s.p25.toFixed(3)],
+    ['p75', s.p75.toFixed(3)],
+    ['p95', s.p95.toFixed(3)],
+    ['p99', s.p99.toFixed(3)],
+    ['stddev', s.stddev.toFixed(3)]
+  ];
+  const csv = csvWithMetadata([], rows);
+  downloadFile(exportFilename('analyst', 'stats', 'csv'), csv, 'text/csv');
+  toast('Statistics exported', 'success');
+}
+
+function exportAnalystHistCsv() {
+  const raw = window._rawRows || [];
+  if (!raw.length) { toast('No data to export', 'error'); return; }
+  const kws = raw.filter(r => r && r.valid && r.bucketMinutes === 5).map(r => r.kw);
+  const hist = computeHistogram(kws, 16);
+  if (!hist.bins.length) { toast('No data to export', 'error'); return; }
+  const rows = [
+    ['Bin', 'Low (kW)', 'High (kW)', 'Count']
+  ];
+  hist.bins.forEach((b, i) => rows.push([
+    i + 1, b.lo.toFixed(3), b.hi.toFixed(3), b.count
+  ]));
+  const csv = csvWithMetadata([], rows);
+  downloadFile(exportFilename('analyst', 'histogram', 'csv'), csv, 'text/csv');
+  toast('Distribution exported', 'success');
+}
+
+function exportAnalystHeatmapCsv() {
+  const raw = window._rawRows || [];
+  if (!raw.length) { toast('No data to export', 'error'); return; }
+  const { grid } = computeHeatmap(raw);
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  // First row: header with day + 24 hour columns
+  const header = ['Day'].concat(Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0') + ':00'));
+  const rows = [header];
+  for (let d = 0; d < 7; d++) {
+    const row = [days[d]];
+    for (let h = 0; h < 24; h++) {
+      const v = grid[d][h];
+      row.push(v == null ? '' : v.toFixed(3));
+    }
+    rows.push(row);
+  }
+  const csv = csvWithMetadata([], rows);
+  downloadFile(exportFilename('analyst', 'heatmap', 'csv'), csv, 'text/csv');
+  toast('Heatmap matrix exported', 'success');
+}
+
+function exportAnalystPdf() {
+  const raw = window._rawRows || [];
+  if (!raw.length) { toast('No data to export', 'error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+
+  const kws = raw.filter(r => r && r.valid && r.bucketMinutes === 5).map(r => r.kw);
+  const s = computeStats(kws);
+  const hist = computeHistogram(kws, 16);
+  const { grid } = computeHeatmap(raw);
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  // Range string
+  const valid5 = raw.filter(r => r && r.valid && r.bucketMinutes === 5);
+  const dates = [...new Set(valid5.map(r => isoMYTDate(r.dt)))].sort();
+  const rangeStr = dates.length
+    ? dates[0] + ' / ' + dates[dates.length - 1] + ' (MYT)'
+    : '—';
+
+  const startY = pdfMetadataBlock(doc, 'Analyst Report', ['Range', rangeStr]);
+
+  // Statistics table
+  doc.autoTable({
+    startY: startY + 6,
+    head: [['Statistic', 'Value (kW)']],
+    body: s ? [
+      ['n', String(s.n)],
+      ['min', s.min.toFixed(2)],
+      ['max', s.max.toFixed(2)],
+      ['mean', s.mean.toFixed(2)],
+      ['median', s.median.toFixed(2)],
+      ['p25', s.p25.toFixed(2)],
+      ['p75', s.p75.toFixed(2)],
+      ['p95', s.p95.toFixed(2)],
+      ['p99', s.p99.toFixed(2)],
+      ['stddev', s.stddev.toFixed(2)]
+    ] : [['—', '—']],
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: [26, 26, 26], textColor: 255, fontSize: 9 }
+  });
+
+  // Histogram table
+  doc.autoTable({
+    startY: doc.lastAutoTable.finalY + 14,
+    head: [['Bin', 'Low (kW)', 'High (kW)', 'Count']],
+    body: hist.bins.length
+      ? hist.bins.map((b, i) => [i + 1, b.lo.toFixed(2), b.hi.toFixed(2), b.count])
+      : [['—', '—', '—', '—']],
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: [26, 26, 26], textColor: 255, fontSize: 9 },
+    didDrawPage: (data) => {
+      doc.setFontSize(11); doc.setTextColor(40);
+      doc.text('Distribution (16 bins)', 40, data.settings.startY - 6);
+    }
+  });
+
+  // Heatmap matrix
+  const heatHead = ['Day'].concat(Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0')));
+  const heatBody = [];
+  for (let d = 0; d < 7; d++) {
+    const row = [days[d]];
+    for (let h = 0; h < 24; h++) {
+      const v = grid[d][h];
+      row.push(v == null ? '—' : v.toFixed(1));
+    }
+    heatBody.push(row);
+  }
+  doc.autoTable({
+    startY: doc.lastAutoTable.finalY + 14,
+    head: [heatHead],
+    body: heatBody,
+    theme: 'grid',
+    styles: { fontSize: 6, cellPadding: 2, halign: 'center' },
+    headStyles: { fillColor: [26, 26, 26], textColor: 255, fontSize: 6 },
+    columnStyles: { 0: { fillColor: [240, 240, 240], textColor: 0, fontStyle: 'bold' } },
+    didDrawPage: (data) => {
+      doc.setFontSize(11); doc.setTextColor(40);
+      doc.text('24 × 7 Heatmap (avg kW)', 40, data.settings.startY - 6);
+    }
+  });
+
+  doc.save(exportFilename('analyst', 'report', 'pdf'));
+  toast('Analyst PDF exported', 'success');
+}
+
+// --- Dropdown menu wiring -----------------------------------------
+const exportBtn = document.getElementById('exportBtn');
+const exportMenu = document.getElementById('exportMenu');
+function closeExportMenu() {
+  exportMenu.hidden = true;
+  exportBtn.setAttribute('aria-expanded', 'false');
+}
+exportBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const willOpen = exportMenu.hidden;
+  exportMenu.hidden = !willOpen;
+  exportBtn.setAttribute('aria-expanded', String(willOpen));
+});
+document.addEventListener('click', (e) => {
+  if (!exportMenu.hidden && !exportMenu.contains(e.target) && e.target !== exportBtn) {
+    closeExportMenu();
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (!exportMenu.hidden) closeExportMenu();
+    if (document.getElementById('scopeBg').classList.contains('open')) closeScopePicker();
+  }
+});
+exportMenu.addEventListener('click', (e) => {
+  const item = e.target.closest('.export-item');
+  if (!item) return;
+  const action = item.dataset.export;
+  closeExportMenu();
+  // Live exports
+  if (action === 'status-csv') exportStatusCsv();
+  else if (action === 'status-pdf') exportStatusPdf();
+  else if (action === 'intervals-csv') openScopePicker('csv');
+  else if (action === 'intervals-pdf') openScopePicker('pdf');
+  else if (action === 'print-a4') printA4();
+  // Engineer exports
+  else if (action === 'engineer-pdf') exportEngineerPdf();
+  else if (action === 'engineer-kpis-csv') exportEngineerKpisCsv();
+  else if (action === 'engineer-peaks-csv') exportEngineerPeaksCsv();
+  else if (action === 'engineer-outages-csv') exportEngineerOutagesCsv();
+  // Analyst exports
+  else if (action === 'analyst-pdf') exportAnalystPdf();
+  else if (action === 'analyst-stats-csv') exportAnalystStatsCsv();
+  else if (action === 'analyst-hist-csv') exportAnalystHistCsv();
+  else if (action === 'analyst-heatmap-csv') exportAnalystHeatmapCsv();
+});
+
+/* =========================
+   Bootstrap
+   ========================= */
+renderDeviceSelect();
+
+// Wire up welcome banner setup button
+document.getElementById('welcomeSetupBtn').addEventListener('click', openModal);
+
+const dev = activeDevice();
+const isConfigured = dev && dev.key && dev.dataUrl && dev.deviceId;
+if (isConfigured) {
+  fetchData();
+  fetchStatus();
+  startStatusPolling();
+} else {
+  setConn('warn', 'Not configured');
+  document.getElementById('welcomeBanner').hidden = false;
+}
+</script>
+</body>
+</html>
