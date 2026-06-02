@@ -557,8 +557,9 @@
   .kpi.kpi-battery.warn::before { background: var(--warn); }
   .kpi.kpi-battery.crit::before { background: var(--bad); }
   .kpi-batt-top {
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; align-items: center; gap: 8px;
     margin-bottom: 6px;
+    padding-right: 22px; /* leave room for the absolute info-btn */
   }
   .kpi-batt-top .label { margin-bottom: 0; }
   .kpi-batt-top .pct {
@@ -661,20 +662,22 @@
 
   /* ── Info icon + floating tooltip ── */
   .info-btn {
+    position: absolute; top: 8px; right: 8px;
     display: inline-flex; align-items: center; justify-content: center;
     width: 14px; height: 14px; border-radius: 50%;
     background: transparent; border: 1px solid var(--ink-soft);
     color: var(--ink-soft);
     font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600;
-    cursor: pointer; padding: 0; margin-left: 5px;
-    vertical-align: middle; line-height: 1;
+    cursor: pointer; padding: 0;
+    line-height: 1; z-index: 2;
     transition: border-color 0.15s, color 0.15s, transform 0.1s;
     -webkit-tap-highlight-color: transparent;
-    flex-shrink: 0;
   }
   .info-btn:hover { border-color: var(--accent); color: var(--accent); }
   .info-btn:active { transform: scale(0.92); }
   .info-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  /* Ensure cards that host info buttons establish a positioning context */
+  .kpi, .diag-item, .stat-item { position: relative; }
   .info-tip {
     position: fixed; z-index: 9999;
     background: var(--surface);
@@ -704,6 +707,69 @@
   }
   .info-tip-close:hover { color: var(--bad); }
 
+  /* ── Period Comparison controls (Analyst page) ── */
+  .tvy-controls {
+    display: flex; flex-wrap: wrap; gap: 8px 12px;
+    align-items: center; padding: 10px 14px;
+    background: var(--surface-2);
+    border-radius: 2px;
+    margin-bottom: 12px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--ink-soft); letter-spacing: 0.3px;
+  }
+  .tvy-controls label {
+    display: inline-flex; align-items: center; gap: 8px;
+    letter-spacing: 1px; text-transform: uppercase;
+    font-size: 10px; font-weight: 600; color: var(--ink-soft);
+  }
+  .tvy-controls select,
+  .tvy-controls input[type="date"],
+  .tvy-controls input[type="month"] {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    padding: 5px 8px;
+    letter-spacing: 0.3px;
+    text-transform: none;
+    color-scheme: dark;
+  }
+  body[data-theme="light"] .tvy-controls select,
+  body[data-theme="light"] .tvy-controls input[type="date"],
+  body[data-theme="light"] .tvy-controls input[type="month"] {
+    color-scheme: light;
+  }
+  .tvy-controls select:focus,
+  .tvy-controls input:focus { outline: none; border-color: var(--accent); }
+  .tvy-controls .btn { font-size: 10px; padding: 5px 12px; }
+  .tvy-inputs { display: inline-flex; align-items: center; gap: 8px; }
+  .tvy-vs {
+    color: var(--accent); font-weight: 700;
+    font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase;
+  }
+  .tvy-status {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--ink-soft); letter-spacing: 0.5px;
+    margin-left: auto;
+  }
+  .tvy-status.loading { color: var(--info); }
+  .tvy-status.error { color: var(--bad); }
+  .tvy-status.ok { color: var(--good); }
+
+  /* ── "Needs 5-min resolution" warning chip ── */
+  .res-warn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 7px; border-radius: 2px;
+    background: color-mix(in srgb, var(--warn) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent);
+    color: var(--warn);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 0.8px;
+    text-transform: uppercase; font-weight: 600;
+    white-space: nowrap;
+  }
+  .res-warn::before { content: "⚠"; font-size: 10px; line-height: 1; }
 
   .health-pill {
     display: inline-block; padding: 3px 10px; border-radius: 2px;
@@ -1399,6 +1465,7 @@
         <div class="label" data-info="Highest 30-minute rolling average kW in the selected range. This is the figure utilities use for demand-charge tariffs. Brief spikes shorter than 30 min are smoothed out.">Maximum Demand</div>
         <div class="value"><span id="engKpiMd">—</span> <span class="unit">kW</span></div>
         <div class="sub" id="engKpiMdTime">—</div>
+        <div class="sub" id="engKpiMdResWarn" style="display:none; margin-top:4px"><span class="res-warn">Needs 5-min</span></div>
       </div>
       <div class="kpi kpi-data" title="Lowest sustained kW (5th percentile) — your always-on draw">
         <div class="label" data-info="Your always-on / baseline load. Computed as the 5th percentile of all 5-min kW readings, which captures sustained low-power draw while ignoring brief zero-readings from comms gaps.">Baseline Load</div>
@@ -1431,7 +1498,10 @@
     <div class="panel">
       <div class="panel-head">
         <h2>Maximum Demand by Day</h2>
-        <div class="meta" data-tz-label="Highest 30-min rolling avg per {tz} day">Highest 30-min rolling avg per UTC+8 day</div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span id="mdByDayResWarn" class="res-warn" style="display:none">Needs 5-min</span>
+          <div class="meta" data-tz-label="Highest 30-min rolling avg per {tz} day">Highest 30-min rolling avg per UTC+8 day</div>
+        </div>
       </div>
       <div class="chart-wrap"><canvas id="mdByDayChart"></canvas></div>
     </div>
@@ -1476,7 +1546,10 @@
       <div class="panel">
         <div class="panel-head">
           <h2>Top 10 Peak Intervals</h2>
-          <div class="meta">highest kW in range</div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <span id="topPeaksResWarn" class="res-warn" style="display:none">Needs 5-min</span>
+            <div class="meta">highest kW in range</div>
+          </div>
         </div>
         <div class="table-wrap">
           <table class="data-table">
@@ -1589,15 +1662,37 @@
       </div>
     </div>
 
-    <!-- Today vs Yesterday + Load Duration Curve (2-col) -->
+    <!-- Period Comparison + Load Duration Curve (2-col) -->
     <div class="grid-2">
       <div class="panel">
         <div class="panel-head">
-          <h2>Today vs Yesterday</h2>
+          <h2>Period Comparison</h2>
           <div class="meta">
-            <span style="color: var(--accent);">●</span> Today
-            <span style="margin-left: 10px; color: var(--ink-soft);">●</span> Yesterday
+            <span id="tvyResWarn" class="res-warn" style="display:none; margin-right:8px">Needs 5-min</span>
+            <span style="color: var(--accent);">●</span> <span id="tvyLabelA">Today</span>
+            <span style="margin-left: 10px; color: var(--ink-soft);">●</span> <span id="tvyLabelB">Yesterday</span>
           </div>
+        </div>
+        <div class="tvy-controls">
+          <label>Compare
+            <select id="tvyMode">
+              <option value="td-yd">Today vs Yesterday</option>
+              <option value="days">Custom days</option>
+              <option value="months">Custom months</option>
+            </select>
+          </label>
+          <span class="tvy-inputs" id="tvyDayInputs" style="display:none">
+            <input type="date" id="tvyDayA">
+            <span class="tvy-vs">vs</span>
+            <input type="date" id="tvyDayB">
+          </span>
+          <span class="tvy-inputs" id="tvyMonthInputs" style="display:none">
+            <input type="month" id="tvyMonthA">
+            <span class="tvy-vs">vs</span>
+            <input type="month" id="tvyMonthB">
+          </span>
+          <button class="btn small" id="tvyApply">Apply</button>
+          <span class="tvy-status" id="tvyStatus"></span>
         </div>
         <div class="chart-wrap"><canvas id="anTvYChart"></canvas></div>
       </div>
@@ -1806,6 +1901,7 @@ document.getElementById('deviceSelect').addEventListener('change', (e) => {
   saveCfg(cfg);
   syncFilterInputsFromCfg();
   applyPreset('all'); fetchStatus();
+  tvyDeviceSwitch();
 });
 
 function escapeHtml(s) {
@@ -2312,6 +2408,7 @@ async function fetchData() {
     renderTable(rows);
     renderEngineer(rawRows, rows, frames);
     renderAnalyst(rawRows);
+    applyResolutionGuards();
     setConn('good', 'Connected · ' + rows.length + ' points');
     toast('Loaded ' + rows.length + ' intervals', 'success');
   } catch (err) {
@@ -2982,6 +3079,17 @@ function renderBatteryChart(pts, events, drift) {
 // Timezone helpers — all timestamp display goes through `tz` so swapping the
 // active device automatically updates labels, axes, exports, etc.
 // =========================================================================
+// Show/hide "Needs 5-min" warnings on the panels that genuinely require 5-min data.
+function applyResolutionGuards() {
+  const dev = activeDevice();
+  const res = (dev && dev.resolution) || '5min';
+  const show = res !== '5min';
+  ['engKpiMdResWarn', 'mdByDayResWarn', 'topPeaksResWarn', 'tvyResWarn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? '' : 'none';
+  });
+}
+
 const tz = {
   // ISO offset string for active device, e.g. "+08:00" or "+10:00"
   offset() {
@@ -3364,9 +3472,11 @@ function computeMdByDay(rawRows) {
 // Detect outages: gaps in the 5-min row stream larger than expected.
 // Returns { events, totalMinutes, longestMinutes }
 function computeOutages(rawRows) {
-  const valid = rawRows.filter(r => r && r.bucketMinutes === 5).sort((a, b) => a.dt - b.dt);
+  const valid = rawRows.filter(r => r && r.valid).sort((a, b) => a.dt - b.dt);
   if (valid.length < 2) return { events: 0, totalMinutes: 0, longestMinutes: 0 };
-  const expectedGapMs = 5 * 60 * 1000;
+  // Derive expected gap from the actual bucket size (works at 5min/15min/1hour/1day)
+  const bucketMins = (valid[0] && valid[0].bucketMinutes) || 5;
+  const expectedGapMs = bucketMins * 60 * 1000;
   // Threshold: gap > 1.5× expected counts as an outage (covers clock jitter)
   const thresholdMs = expectedGapMs * 1.5;
   let events = 0, totalMs = 0, longestMs = 0;
@@ -3412,9 +3522,10 @@ function computeTopPeakIntervals(rawRows, n) {
 // Build a list of outage events with start time + duration + cause classification.
 // Returns array of { startDt, durationMin, cause }
 function computeOutageList(rawRows) {
-  const valid = rawRows.filter(r => r && r.bucketMinutes === 5).sort((a, b) => a.dt - b.dt);
+  const valid = rawRows.filter(r => r && r.valid).sort((a, b) => a.dt - b.dt);
   if (valid.length < 2) return [];
-  const expectedGapMs = 5 * 60 * 1000;
+  const bucketMins = (valid[0] && valid[0].bucketMinutes) || 5;
+  const expectedGapMs = bucketMins * 60 * 1000;
   const thresholdMs = expectedGapMs * 1.5;
   const out = [];
   for (let i = 1; i < valid.length; i++) {
@@ -3461,7 +3572,7 @@ function renderEngineer(rawRows, aggRows, frames) {
     return;
   }
 
-  const valid5 = rawRows.filter(r => r && r.valid && r.bucketMinutes === 5);
+  const valid5 = rawRows.filter(r => r && r.valid);
 
   // 1. Maximum Demand
   const md = computeMaximumDemand(rawRows);
@@ -3690,7 +3801,7 @@ function computeHistogram(arr, binCount) {
 function computeHourOfDay(rawRows) {
   const buckets = Array.from({ length: 24 }, () => ({ sum: 0, n: 0 }));
   for (const r of rawRows) {
-    if (!r.valid || r.bucketMinutes !== 5) continue;
+    if (!r.valid) continue;
     const hour = parseInt(fmtMYTTime(r.dt).slice(0, 2), 10);
     if (isNaN(hour)) continue;
     buckets[hour].sum += r.kw;
@@ -3704,7 +3815,7 @@ function computeHourOfDay(rawRows) {
 function computeHeatmap(rawRows) {
   const grid = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => ({ sum: 0, n: 0 })));
   for (const r of rawRows) {
-    if (!r.valid || r.bucketMinutes !== 5) continue;
+    if (!r.valid) continue;
     // Get device-local day-of-week (Mon=0..Sun=6) and hour via tz helper
     const p = tz.partsOf(r.dt);
     const dow = p.dow - 1;   // tz.dow is 1=Mon..7=Sun → 0=Mon..6=Sun
@@ -3725,30 +3836,10 @@ function computeHeatmap(rawRows) {
 }
 
 // Split rows into today's MYT day and yesterday's MYT day
-function splitTodayYesterday(rawRows) {
-  const today = isoMYTDate(new Date());
-  const yesterday = isoMYTDate(new Date(Date.now() - 86400000));
-  const t = [], y = [];
-  for (const r of rawRows) {
-    if (!r.valid || r.bucketMinutes !== 5) continue;
-    const day = isoMYTDate(r.dt);
-    if (day === today) t.push(r);
-    else if (day === yesterday) y.push(r);
-  }
-  // Project to (hourFloat, kw) so we can overlay by time-of-day
-  const toProfile = (rows) => rows.map(r => {
-    const hm = fmtMYTTime(r.dt);
-    const h = parseInt(hm.slice(0, 2), 10);
-    const m = parseInt(hm.slice(3, 5), 10);
-    return { hour: h + m / 60, kw: r.kw };
-  }).sort((a, b) => a.hour - b.hour);
-  return { today: toProfile(t), yesterday: toProfile(y) };
-}
-
 // Load duration curve = kW sorted descending, x = percentage of time (0..100)
 function computeLdc(rawRows) {
   const kws = rawRows
-    .filter(r => r && r.valid && r.bucketMinutes === 5)
+    .filter(r => r && r.valid)
     .map(r => r.kw)
     .filter(v => v != null && isFinite(v));
   if (!kws.length) return { x: [], y: [] };
@@ -3762,14 +3853,14 @@ function computeLdc(rawRows) {
 let anHistChart = null, anHodChart = null, anTvYChart = null, anLdcChart = null;
 
 function renderAnalyst(rawRows) {
-  const valid5 = (rawRows || []).filter(r => r && r.valid && r.bucketMinutes === 5);
+  const valid5 = (rawRows || []).filter(r => r && r.valid);
 
   // Clear all if empty
   if (!valid5.length) {
     ['anStatMin','anStatMax','anStatMean','anStatMedian','anStatP25','anStatP75','anStatP95','anStatP99','anStatStddev']
       .forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
-    [anHistChart, anHodChart, anTvYChart, anLdcChart].forEach(c => { if (c) c.destroy(); });
-    anHistChart = anHodChart = anTvYChart = anLdcChart = null;
+    [anHistChart, anHodChart, anLdcChart].forEach(c => { if (c) c.destroy(); });
+    anHistChart = anHodChart = anLdcChart = null;
     const hm = document.getElementById('anHeatmap'); if (hm) hm.innerHTML = '';
     const hmr = document.getElementById('anHeatmapRange'); if (hmr) hmr.textContent = '—';
     const hmn = document.getElementById('anHeatmapNote'); if (hmn) hmn.textContent = '—';
@@ -3896,62 +3987,8 @@ function renderAnalyst(rawRows) {
   // 4. Heatmap (24×7)
   renderHeatmap(rawRows);
 
-  // 5. Today vs Yesterday overlay
-  const ty = splitTodayYesterday(rawRows);
-  if (anTvYChart) { anTvYChart.destroy(); anTvYChart = null; }
-  const tvYCanvas = document.getElementById('anTvYChart');
-  anTvYChart = new Chart(tvYCanvas, {
-    type: 'line',
-    data: {
-      datasets: [
-        {
-          label: 'Today',
-          data: ty.today.map(p => ({ x: p.hour, y: p.kw })),
-          borderColor: c.accent,
-          backgroundColor: c.accent + '22',
-          borderWidth: 2, fill: false, tension: 0.25, pointRadius: 0
-        },
-        {
-          label: 'Yesterday',
-          data: ty.yesterday.map(p => ({ x: p.hour, y: p.kw })),
-          borderColor: c.inkSoft,
-          borderWidth: 1.5,
-          fill: false, tension: 0.25, pointRadius: 0,
-          borderDash: [4, 4]
-        }
-      ]
-    },
-    options: Object.assign({}, baseOpts, {
-      plugins: Object.assign({}, baseOpts.plugins, {
-        tooltip: Object.assign({}, baseOpts.plugins.tooltip, {
-          callbacks: {
-            title: items => {
-              const h = items[0].parsed.x;
-              const hh = String(Math.floor(h)).padStart(2, '0');
-              const mm = String(Math.round((h % 1) * 60)).padStart(2, '0');
-              return hh + ':' + mm + ' MYT';
-            },
-            label: ctx => ctx.dataset.label + ': ' + (ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) : '—') + ' kW'
-          }
-        })
-      }),
-      scales: {
-        x: {
-          type: 'linear', min: 0, max: 24,
-          ticks: {
-            color: c.inkSoft, font: { family: 'JetBrains Mono', size: 10 },
-            stepSize: 3,
-            callback: (v) => String(v).padStart(2, '0') + ':00'
-          },
-          grid: { color: c.line, drawBorder: false },
-          title: { display: true, text: 'hour-of-day (' + tz.label() + ')', color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } }
-        },
-        y: Object.assign({}, baseOpts.scales.y, {
-          title: { display: true, text: 'kW', color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } }
-        })
-      }
-    })
-  });
+  // 5. Period Comparison chart — independent of main range. Managed by tvyRender().
+  // (No-op here; tvyInit() boots it on first device-ready and tvyRender() handles refreshes.)
 
   // 6. Load Duration Curve
   const ldc = computeLdc(rawRows);
@@ -4004,7 +4041,7 @@ function renderHeatmap(rawRows) {
 
   // Update the explainer banner with the actual date range + per-weekday counts
   if (noteEl) {
-    const valid5 = (rawRows || []).filter(r => r && r.valid && r.bucketMinutes === 5);
+    const valid5 = (rawRows || []).filter(r => r && r.valid);
     if (valid5.length) {
       // Unique MYT dates in range
       const dates = [...new Set(valid5.map(r => isoMYTDate(r.dt)))].sort();
@@ -4572,7 +4609,7 @@ function exportEngineerKpisCsv() {
   const frames = window._latestFrames || [];
   if (!raw.length) { toast('No data to export', 'error'); return; }
   const md = computeMaximumDemand(raw);
-  const valid5 = raw.filter(r => r && r.valid && r.bucketMinutes === 5);
+  const valid5 = raw.filter(r => r && r.valid);
   const kws = valid5.map(r => r.kw).filter(v => v != null && isFinite(v));
   const baseline = percentile(kws, 5);
   const peakKw = kws.length ? Math.max(...kws) : null;
@@ -4644,7 +4681,7 @@ function exportEngineerPdf() {
 
   // Compute all metrics
   const md = computeMaximumDemand(raw);
-  const valid5 = raw.filter(r => r && r.valid && r.bucketMinutes === 5);
+  const valid5 = raw.filter(r => r && r.valid);
   const kws = valid5.map(r => r.kw).filter(v => v != null && isFinite(v));
   const baseline = percentile(kws, 5);
   const peakKw = kws.length ? Math.max(...kws) : null;
@@ -4747,7 +4784,7 @@ function exportEngineerPdf() {
 function exportAnalystStatsCsv() {
   const raw = window._rawRows || [];
   if (!raw.length) { toast('No data to export', 'error'); return; }
-  const kws = raw.filter(r => r && r.valid && r.bucketMinutes === 5).map(r => r.kw);
+  const kws = raw.filter(r => r && r.valid).map(r => r.kw);
   const s = computeStats(kws);
   if (!s) { toast('No data to export', 'error'); return; }
   const rows = [
@@ -4771,7 +4808,7 @@ function exportAnalystStatsCsv() {
 function exportAnalystHistCsv() {
   const raw = window._rawRows || [];
   if (!raw.length) { toast('No data to export', 'error'); return; }
-  const kws = raw.filter(r => r && r.valid && r.bucketMinutes === 5).map(r => r.kw);
+  const kws = raw.filter(r => r && r.valid).map(r => r.kw);
   const hist = computeHistogram(kws, 16);
   if (!hist.bins.length) { toast('No data to export', 'error'); return; }
   const rows = [
@@ -4812,14 +4849,14 @@ function exportAnalystPdf() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
 
-  const kws = raw.filter(r => r && r.valid && r.bucketMinutes === 5).map(r => r.kw);
+  const kws = raw.filter(r => r && r.valid).map(r => r.kw);
   const s = computeStats(kws);
   const hist = computeHistogram(kws, 16);
   const { grid } = computeHeatmap(raw);
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   // Range string
-  const valid5 = raw.filter(r => r && r.valid && r.bucketMinutes === 5);
+  const valid5 = raw.filter(r => r && r.valid);
   const dates = [...new Set(valid5.map(r => isoMYTDate(r.dt)))].sort();
   const rangeStr = dates.length
     ? dates[0] + ' / ' + dates[dates.length - 1] + ' (MYT)'
@@ -4941,6 +4978,315 @@ exportMenu.addEventListener('click', (e) => {
   else if (action === 'analyst-hist-csv') exportAnalystHistCsv();
   else if (action === 'analyst-heatmap-csv') exportAnalystHeatmapCsv();
 });
+
+/* =========================
+   Period Comparison chart — fetches its own data independent of the main range.
+   Modes: today-vs-yesterday (default), custom days, custom months.
+   Multi-day periods render as a typical-day curve (avg kW per 5-min slot of the day).
+   ========================= */
+let _tvyState = {
+  mode: 'td-yd',
+  periodA: null,     // { from, to, label }
+  periodB: null,     // { from, to, label }
+  cachedKey: null,   // dev.id|A.from|A.to|B.from|B.to
+  cachedRowsA: null,
+  cachedRowsB: null,
+  inited: false
+};
+
+// Compose UTC ms from device-local Y/M/D/h/m using current tz offset
+function tvyComposeUtcMs(y, mo, d, h, mi) {
+  return Date.UTC(y, mo - 1, d, h, mi) - tz.offsetMs();
+}
+// Build a day range (00:00 local → next 00:00 local - 1 ms) for an ISO date "YYYY-MM-DD"
+function tvyDayRangeIso(iso) {
+  const [y, mo, d] = iso.split('-').map(Number);
+  const from = tvyComposeUtcMs(y, mo, d, 0, 0);
+  const to   = tvyComposeUtcMs(y, mo, d + 1, 0, 0) - 1;
+  return { from, to };
+}
+// Build a month range from "YYYY-MM"
+function tvyMonthRangeIso(ym) {
+  const [y, mo] = ym.split('-').map(Number);
+  const from = tvyComposeUtcMs(y, mo, 1, 0, 0);
+  const ny = mo === 12 ? y + 1 : y;
+  const nmo = mo === 12 ? 1 : mo + 1;
+  const to = tvyComposeUtcMs(ny, nmo, 1, 0, 0) - 1;
+  return { from, to };
+}
+// Format "YYYY-MM-DD" for an MYT-local Date
+function tvyIsoDay(date) {
+  const p = tz.partsOf(date);
+  return p.y + '-' + String(p.mo).padStart(2, '0') + '-' + String(p.d).padStart(2, '0');
+}
+// Format "YYYY-MM" for an MYT-local Date
+function tvyIsoMonth(date) {
+  const p = tz.partsOf(date);
+  return p.y + '-' + String(p.mo).padStart(2, '0');
+}
+// Pretty label for a single day (e.g., "2026-06-02")
+function tvyFmtDay(iso) { return iso; }
+// Pretty label for a month (e.g., "Jun 2026")
+function tvyFmtMonth(ym) {
+  const [y, mo] = ym.split('-').map(Number);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[mo - 1] + ' ' + y;
+}
+
+// Set the current mode, show/hide inputs, populate defaults.
+function tvySetMode(mode) {
+  _tvyState.mode = mode;
+  document.getElementById('tvyMode').value = mode;
+  const dayInputs = document.getElementById('tvyDayInputs');
+  const monthInputs = document.getElementById('tvyMonthInputs');
+  if (dayInputs) dayInputs.style.display = mode === 'days' ? 'inline-flex' : 'none';
+  if (monthInputs) monthInputs.style.display = mode === 'months' ? 'inline-flex' : 'none';
+
+  if (mode === 'days') {
+    const todayIso = tvyIsoDay(new Date());
+    const yesterdayIso = tvyIsoDay(new Date(Date.now() - 86400000));
+    const a = document.getElementById('tvyDayA');
+    const b = document.getElementById('tvyDayB');
+    if (a && !a.value) a.value = todayIso;
+    if (b && !b.value) b.value = yesterdayIso;
+  } else if (mode === 'months') {
+    const now = new Date();
+    const lastMonth = new Date(now); lastMonth.setMonth(lastMonth.getMonth() - 1);
+    const a = document.getElementById('tvyMonthA');
+    const b = document.getElementById('tvyMonthB');
+    if (a && !a.value) a.value = tvyIsoMonth(now);
+    if (b && !b.value) b.value = tvyIsoMonth(lastMonth);
+  }
+}
+
+// Resolve current mode + inputs to two concrete periods. Returns true on success.
+function tvyResolvePeriods() {
+  const mode = _tvyState.mode;
+  if (mode === 'td-yd') {
+    const todayIso = tvyIsoDay(new Date());
+    const yesterdayIso = tvyIsoDay(new Date(Date.now() - 86400000));
+    _tvyState.periodA = Object.assign(tvyDayRangeIso(todayIso),     { label: 'Today · ' + todayIso });
+    _tvyState.periodB = Object.assign(tvyDayRangeIso(yesterdayIso), { label: 'Yesterday · ' + yesterdayIso });
+    return true;
+  }
+  if (mode === 'days') {
+    const aIso = document.getElementById('tvyDayA').value;
+    const bIso = document.getElementById('tvyDayB').value;
+    if (!aIso || !bIso) { tvyStatus('Pick both dates', 'error'); return false; }
+    _tvyState.periodA = Object.assign(tvyDayRangeIso(aIso), { label: tvyFmtDay(aIso) });
+    _tvyState.periodB = Object.assign(tvyDayRangeIso(bIso), { label: tvyFmtDay(bIso) });
+    return true;
+  }
+  if (mode === 'months') {
+    const aYm = document.getElementById('tvyMonthA').value;
+    const bYm = document.getElementById('tvyMonthB').value;
+    if (!aYm || !bYm) { tvyStatus('Pick both months', 'error'); return false; }
+    _tvyState.periodA = Object.assign(tvyMonthRangeIso(aYm), { label: tvyFmtMonth(aYm) });
+    _tvyState.periodB = Object.assign(tvyMonthRangeIso(bYm), { label: tvyFmtMonth(bYm) });
+    return true;
+  }
+  return false;
+}
+
+// Set the inline status text (loading / error / ok / empty)
+function tvyStatus(text, cls) {
+  const el = document.getElementById('tvyStatus');
+  if (!el) return;
+  el.textContent = text || '';
+  el.className = 'tvy-status' + (cls ? ' ' + cls : '');
+}
+
+// Fetch 5-min data for a single time range. Independent of main fetchData.
+async function tvyFetchRange(fromMs, toMs) {
+  const dev = activeDevice();
+  if (!dev || !dev.dataUrl || !dev.key) return [];
+  const u = new URL(expandUrl(dev.dataUrl, dev));
+  u.searchParams.set('from', new Date(fromMs).toISOString());
+  u.searchParams.set('to',   new Date(toMs).toISOString());
+  u.searchParams.set('resolution', '5min');
+  const resp = await fetch(u.toString(), { headers: { ['X-API-Key']: dev.key } });
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  const json = await resp.json();
+  return explodeFrames(json.data || []);
+}
+
+// Bucket rows by 5-min slot of the day (0..287). Average kW across all days in period.
+function tvyHourProfile(rows, period) {
+  const sums = new Array(288).fill(0);
+  const counts = new Array(288).fill(0);
+  for (const r of rows) {
+    if (!r || !r.valid || r.bucketMinutes !== 5) continue;
+    const t = r.dt.getTime();
+    if (t < period.from || t > period.to) continue;
+    const p = tz.partsOf(r.dt);
+    const slot = p.h * 12 + Math.floor(p.mi / 5);
+    if (slot >= 0 && slot < 288) {
+      sums[slot] += r.kw;
+      counts[slot]++;
+    }
+  }
+  const out = [];
+  for (let s = 0; s < 288; s++) {
+    if (counts[s] === 0) continue;
+    out.push({ hour: s / 12, kw: sums[s] / counts[s] });
+  }
+  return out;
+}
+
+// Build a chart-friendly cache key
+function tvyCacheKey(dev, A, B) {
+  return [dev && dev.id, A.from, A.to, B.from, B.to].join('|');
+}
+
+// Main render — resolves periods, fetches if needed, draws chart.
+async function tvyRender() {
+  if (!tvyResolvePeriods()) return;
+  const dev = activeDevice();
+  if (!dev || !dev.dataUrl || !dev.key) {
+    tvyStatus('Configure a device first', 'error');
+    return;
+  }
+  const A = _tvyState.periodA, B = _tvyState.periodB;
+  const key = tvyCacheKey(dev, A, B);
+
+  // Update legend labels immediately
+  const labA = document.getElementById('tvyLabelA');
+  const labB = document.getElementById('tvyLabelB');
+  if (labA) labA.textContent = A.label;
+  if (labB) labB.textContent = B.label;
+
+  let rowsA = null, rowsB = null;
+  if (_tvyState.cachedKey === key && _tvyState.cachedRowsA && _tvyState.cachedRowsB) {
+    rowsA = _tvyState.cachedRowsA;
+    rowsB = _tvyState.cachedRowsB;
+  } else {
+    tvyStatus('Loading…', 'loading');
+    try {
+      [rowsA, rowsB] = await Promise.all([
+        tvyFetchRange(A.from, A.to),
+        tvyFetchRange(B.from, B.to)
+      ]);
+      _tvyState.cachedKey = key;
+      _tvyState.cachedRowsA = rowsA;
+      _tvyState.cachedRowsB = rowsB;
+    } catch (e) {
+      tvyStatus('Fetch failed: ' + e.message, 'error');
+      return;
+    }
+  }
+
+  const profA = tvyHourProfile(rowsA, A);
+  const profB = tvyHourProfile(rowsB, B);
+  const totalPts = profA.length + profB.length;
+  if (totalPts === 0) {
+    tvyStatus('No data in either period', 'error');
+  } else {
+    tvyStatus(profA.length + ' + ' + profB.length + ' points · 5-min avg', 'ok');
+  }
+
+  // Build/update Chart
+  const c = themeColors();
+  const baseOpts = analystBaseOpts();
+  if (anTvYChart) { anTvYChart.destroy(); anTvYChart = null; }
+  const canvas = document.getElementById('anTvYChart');
+  if (!canvas) return;
+  anTvYChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      datasets: [
+        {
+          label: A.label,
+          data: profA.map(p => ({ x: p.hour, y: p.kw })),
+          borderColor: c.accent,
+          backgroundColor: c.accent + '22',
+          borderWidth: 2, fill: false, tension: 0.25, pointRadius: 0
+        },
+        {
+          label: B.label,
+          data: profB.map(p => ({ x: p.hour, y: p.kw })),
+          borderColor: c.inkSoft,
+          borderWidth: 1.5, fill: false, tension: 0.25, pointRadius: 0,
+          borderDash: [4, 4]
+        }
+      ]
+    },
+    options: Object.assign({}, baseOpts, {
+      plugins: Object.assign({}, baseOpts.plugins, {
+        tooltip: Object.assign({}, baseOpts.plugins.tooltip, {
+          callbacks: {
+            title: items => {
+              const h = items[0].parsed.x;
+              const hh = String(Math.floor(h)).padStart(2, '0');
+              const mm = String(Math.round((h % 1) * 60)).padStart(2, '0');
+              return hh + ':' + mm + ' ' + tz.label();
+            },
+            label: ctx => ctx.dataset.label + ': ' + (ctx.parsed.y != null ? ctx.parsed.y.toFixed(2) : '—') + ' kW'
+          }
+        })
+      }),
+      scales: {
+        x: {
+          type: 'linear', min: 0, max: 24,
+          ticks: {
+            color: c.inkSoft, font: { family: 'JetBrains Mono', size: 10 },
+            stepSize: 3,
+            callback: (v) => String(v).padStart(2, '0') + ':00'
+          },
+          grid: { color: c.line, drawBorder: false },
+          title: { display: true, text: 'hour-of-day (' + tz.label() + ')', color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } }
+        },
+        y: Object.assign({}, baseOpts.scales.y, {
+          title: { display: true, text: 'kW', color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } }
+        })
+      }
+    })
+  });
+}
+
+// Pull the analyst chart's base options from a helper. themeColors() already
+// exists earlier in the script — we reuse it here instead of redefining.
+function analystBaseOpts() {
+  const c = themeColors();
+  return {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'nearest', axis: 'x', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(20,22,28,0.95)', borderColor: c.line, borderWidth: 1,
+        titleColor: c.ink, bodyColor: c.ink, padding: 10
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { color: c.inkSoft, font: { family: 'JetBrains Mono', size: 10 } },
+        grid: { color: c.line, drawBorder: false }
+      }
+    }
+  };
+}
+
+// One-time setup of event handlers + first render.
+function tvyInit() {
+  if (_tvyState.inited) { tvyRender(); applyResolutionGuards(); return; }
+  _tvyState.inited = true;
+  tvySetMode('td-yd');
+  const modeEl = document.getElementById('tvyMode');
+  if (modeEl) modeEl.addEventListener('change', (e) => { tvySetMode(e.target.value); });
+  const applyEl = document.getElementById('tvyApply');
+  if (applyEl) applyEl.addEventListener('click', () => tvyRender());
+  applyResolutionGuards();
+  tvyRender();
+}
+
+// Reset cache on device switch and re-render with new device's data.
+function tvyDeviceSwitch() {
+  _tvyState.cachedKey = null;
+  _tvyState.cachedRowsA = null;
+  _tvyState.cachedRowsB = null;
+  if (_tvyState.inited) tvyRender();
+}
 
 /* =========================
    Info tooltips — auto-inject ⓘ button next to every [data-info] label.
@@ -5073,6 +5419,9 @@ if (isConfigured) {
   applyPreset('all');
   fetchStatus();
   startStatusPolling();
+  // Kick off the independent Period Comparison chart (Analyst page).
+  // Defer slightly so the main fetch fires first and isn't competing for sockets.
+  setTimeout(tvyInit, 400);
 } else {
   setConn('warn', 'Not configured');
   document.getElementById('welcomeBanner').hidden = false;
