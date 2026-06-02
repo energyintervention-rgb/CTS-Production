@@ -419,7 +419,7 @@
   /* Engineer page — Device Diagnostics grid */
   .diag-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 14px;
   }
   .diag-item {
@@ -441,6 +441,9 @@
   .diag-key {
     font-size: 9px; color: var(--ink-soft);
     font-family: 'JetBrains Mono', monospace; margin-top: 2px;
+  }
+  @media (max-width: 980px) {
+    .diag-grid { grid-template-columns: repeat(3, 1fr); }
   }
   @media (max-width: 720px) {
     .diag-grid { grid-template-columns: repeat(2, 1fr); }
@@ -757,6 +760,61 @@
   .tvy-status.error { color: var(--bad); }
   .tvy-status.ok { color: var(--good); }
 
+  /* ── Period Comparison stats + summary ── */
+  .tvy-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 8px; margin-bottom: 12px;
+  }
+  .tvy-stat {
+    position: relative;
+    padding: 10px 12px;
+    background: var(--surface-2);
+    border-radius: 2px;
+    border-left: 3px solid var(--accent);
+  }
+  .tvy-stat .k {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    color: var(--ink-soft); letter-spacing: 1.4px; text-transform: uppercase;
+    font-weight: 600; margin-bottom: 6px; padding-right: 18px;
+  }
+  .tvy-stat .rows { display: flex; flex-direction: column; gap: 3px; }
+  .tvy-stat .row {
+    display: flex; align-items: baseline; gap: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  }
+  .tvy-stat .row .lbl {
+    font-size: 9px; letter-spacing: 1px;
+    min-width: 10px;
+    font-weight: 700;
+  }
+  .tvy-stat .row.a .lbl { color: var(--accent); }
+  .tvy-stat .row.b .lbl { color: var(--ink-soft); }
+  .tvy-stat .row .val { color: var(--ink); font-weight: 600; }
+  .tvy-stat .delta {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--line);
+    display: flex; gap: 6px; align-items: baseline;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--ink); letter-spacing: 0.3px;
+  }
+  .tvy-stat .delta .lbl {
+    font-size: 9px; color: var(--ink-soft); letter-spacing: 0.8px;
+    text-transform: uppercase; font-weight: 600;
+  }
+  .tvy-summary {
+    padding: 10px 14px;
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+    border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--ink-soft);
+    letter-spacing: 0.3px; line-height: 1.5;
+  }
+  @media (max-width: 720px) {
+    .tvy-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+
   /* ── "Needs 5-min resolution" warning chip ── */
   .res-warn {
     display: inline-flex; align-items: center; gap: 4px;
@@ -770,6 +828,53 @@
     white-space: nowrap;
   }
   .res-warn::before { content: "⚠"; font-size: 10px; line-height: 1; }
+
+  /* ── Load Duration Curve — custom SVG chart, stats grid, summary ── */
+  .ldc-chart-wrap {
+    position: relative; flex: 1 1 auto;
+    min-height: 280px; margin-bottom: 12px;
+  }
+  .ldc-chart-wrap svg { width: 100%; height: 100%; display: block; }
+  .ldc-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 8px; margin-bottom: 12px;
+  }
+  .ldc-stat {
+    position: relative;
+    padding: 10px 12px;
+    background: var(--surface-2);
+    border-radius: 2px;
+    border-left: 3px solid var(--ink-soft);
+  }
+  .ldc-stat.ldc-zone-peak     { border-left-color: var(--bad); }
+  .ldc-stat.ldc-zone-active   { border-left-color: var(--warn); }
+  .ldc-stat.ldc-zone-idle     { border-left-color: var(--info); }
+  .ldc-stat.ldc-zone-baseline { border-left-color: var(--good); }
+  .ldc-stat .k {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    color: var(--ink-soft); letter-spacing: 1.4px; text-transform: uppercase;
+    font-weight: 600; margin-bottom: 4px; padding-right: 18px;
+  }
+  .ldc-stat .v {
+    font-family: 'JetBrains Mono', monospace; font-size: 16px;
+    color: var(--ink); font-weight: 600;
+  }
+  .ldc-stat .d {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    color: var(--ink-soft); letter-spacing: 0.4px; margin-top: 3px;
+  }
+  .ldc-summary {
+    padding: 10px 14px;
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+    border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--ink-soft);
+    letter-spacing: 0.3px; line-height: 1.5;
+  }
+  @media (max-width: 720px) {
+    .ldc-stats { grid-template-columns: repeat(2, 1fr); }
+  }
 
   .health-pill {
     display: inline-block; padding: 3px 10px; border-radius: 2px;
@@ -1456,6 +1561,11 @@
           <div class="diag-value" id="engDiagContrast">—</div>
           <div class="diag-key">minContrast</div>
         </div>
+        <div class="diag-item diag-info">
+          <div class="diag-label" data-info="Time since the device last booted, computed as (lastSeen − lastHelloAt) from /status. Longer values mean the device has been running continuously without reset.">Uptime</div>
+          <div class="diag-value" id="engDiagUptime">—</div>
+          <div class="diag-key" id="engDiagUptimeKey">since last hello</div>
+        </div>
       </div>
     </div>
 
@@ -1664,7 +1774,7 @@
 
     <!-- Period Comparison + Load Duration Curve (2-col) -->
     <div class="grid-2">
-      <div class="panel">
+      <div class="panel panel-fill">
         <div class="panel-head">
           <h2>Period Comparison</h2>
           <div class="meta">
@@ -1694,14 +1804,72 @@
           <button class="btn small" id="tvyApply">Apply</button>
           <span class="tvy-status" id="tvyStatus"></span>
         </div>
-        <div class="chart-wrap"><canvas id="anTvYChart"></canvas></div>
+        <div class="chart-wrap chart-wrap-fill"><canvas id="anTvYChart"></canvas></div>
+        <div class="tvy-stats">
+          <div class="tvy-stat">
+            <div class="k" data-info="Total energy consumed across the period. Multi-day periods are summed across all days.">Total kWh</div>
+            <div class="rows">
+              <div class="row a"><span class="lbl">A</span><span class="val" id="tvyKwhA">—</span></div>
+              <div class="row b"><span class="lbl">B</span><span class="val" id="tvyKwhB">—</span></div>
+            </div>
+            <div class="delta"><span class="lbl">Δ</span><span id="tvyKwhDelta">—</span></div>
+          </div>
+          <div class="tvy-stat">
+            <div class="k" data-info="Highest single 5-min kW reading observed in the period.">Peak kW</div>
+            <div class="rows">
+              <div class="row a"><span class="lbl">A</span><span class="val" id="tvyPeakA">—</span></div>
+              <div class="row b"><span class="lbl">B</span><span class="val" id="tvyPeakB">—</span></div>
+            </div>
+            <div class="delta"><span class="lbl">Δ</span><span id="tvyPeakDelta">—</span></div>
+          </div>
+          <div class="tvy-stat">
+            <div class="k" data-info="Average kW across all 5-min intervals in the period.">Average kW</div>
+            <div class="rows">
+              <div class="row a"><span class="lbl">A</span><span class="val" id="tvyAvgA">—</span></div>
+              <div class="row b"><span class="lbl">B</span><span class="val" id="tvyAvgB">—</span></div>
+            </div>
+            <div class="delta"><span class="lbl">Δ</span><span id="tvyAvgDelta">—</span></div>
+          </div>
+          <div class="tvy-stat">
+            <div class="k" data-info="When the peak occurred. For multi-day periods includes the date.">Peak Time</div>
+            <div class="rows">
+              <div class="row a"><span class="lbl">A</span><span class="val" id="tvyPkTimeA">—</span></div>
+              <div class="row b"><span class="lbl">B</span><span class="val" id="tvyPkTimeB">—</span></div>
+            </div>
+            <div class="delta"><span class="lbl">device-local</span></div>
+          </div>
+        </div>
+        <div class="tvy-summary" id="tvySummary">—</div>
       </div>
-      <div class="panel">
+      <div class="panel panel-fill">
         <div class="panel-head">
           <h2>Load Duration Curve</h2>
-          <div class="meta">kW sorted descending</div>
+          <div class="meta" id="ldcShape">— · kW sorted descending</div>
         </div>
-        <div class="chart-wrap"><canvas id="anLdcChart"></canvas></div>
+        <div class="ldc-chart-wrap chart-wrap-fill"><svg id="ldcChart" viewBox="0 0 1100 280" preserveAspectRatio="none"></svg></div>
+        <div class="ldc-stats">
+          <div class="ldc-stat ldc-zone-peak">
+            <div class="k" data-info="Single highest 5-min interval. Brief, may include inrush.">Peak</div>
+            <div class="v" id="ldcPeakVal">—</div>
+            <div class="d">briefest spikes</div>
+          </div>
+          <div class="ldc-stat ldc-zone-active">
+            <div class="k" data-info="95th percentile. The load you exceed only 5% of the time — your 'sustained peak'.">Sustained Peak</div>
+            <div class="v" id="ldcP95Val">—</div>
+            <div class="d">top 5% of time</div>
+          </div>
+          <div class="ldc-stat ldc-zone-idle">
+            <div class="k" data-info="Median. The load you exceed half the time. Less sensitive to spikes than mean.">Median</div>
+            <div class="v" id="ldcMedVal">—</div>
+            <div class="d">50% of time</div>
+          </div>
+          <div class="ldc-stat ldc-zone-baseline">
+            <div class="k" data-info="95th percentile from the bottom. Your always-on draw — what's running 24/7.">Baseline</div>
+            <div class="v" id="ldcBaseVal">—</div>
+            <div class="d">always-on draw</div>
+          </div>
+        </div>
+        <div class="ldc-summary" id="ldcSummary">—</div>
       </div>
     </div>
 
@@ -2441,6 +2609,50 @@ async function fetchStatus() {
   }
 }
 
+// Format a duration in milliseconds as a compact human string.
+// Examples: 92500 → "1m", 5400000 → "1h 30m", 86400000 → "1d", 1080000000 → "12d 12h"
+function fmtUptime(ms) {
+  if (!isFinite(ms) || ms < 0) return '—';
+  const sec = Math.floor(ms / 1000);
+  const days = Math.floor(sec / 86400);
+  const hours = Math.floor((sec % 86400) / 3600);
+  const mins  = Math.floor((sec % 3600) / 60);
+  if (days >= 1) {
+    return hours > 0 ? days + 'd ' + hours + 'h' : days + 'd';
+  }
+  if (hours >= 1) {
+    return mins > 0 ? hours + 'h ' + mins + 'm' : hours + 'h';
+  }
+  if (mins >= 1) return mins + 'm';
+  return '<1m';
+}
+
+// Update the Engineer-page Uptime tile from a /status payload.
+// Uptime is approximated as lastSeen − lastHelloAt (last comms - last boot).
+function updateUptimeTile(s) {
+  const valEl = document.getElementById('engDiagUptime');
+  const keyEl = document.getElementById('engDiagUptimeKey');
+  if (!valEl) return;
+  if (!s || !s.lastHelloAt || !s.lastSeen) {
+    valEl.textContent = '—';
+    if (keyEl) keyEl.textContent = 'since last hello';
+    return;
+  }
+  const helloMs = new Date(s.lastHelloAt).getTime();
+  const seenMs  = new Date(s.lastSeen).getTime();
+  if (isNaN(helloMs) || isNaN(seenMs)) {
+    valEl.textContent = '—';
+    return;
+  }
+  const upMs = seenMs - helloMs;
+  valEl.textContent = fmtUptime(upMs);
+  if (keyEl) {
+    // Show the boot reason inline so we know WHY the device rebooted last
+    const rr = s.lastHelloResetReason != null ? s.lastHelloResetReason : (s.resetReason != null ? s.resetReason : null);
+    keyEl.textContent = rr != null ? 'since reset code ' + rr : 'since last hello';
+  }
+}
+
 function renderStatus(s) {
   // Stash for exports
   window._latestStatus = s;
@@ -2458,6 +2670,9 @@ function renderStatus(s) {
 
   // Surface health state to the Health KPI card
   setHealthKpi(s && s.healthState);
+
+  // Compute device uptime from /status: lastSeen − lastHelloAt
+  updateUptimeTile(s);
 
   // Friendly labels and formatters for known fields.
   // Unknown fields fall through with the raw key name and stringified value,
@@ -3849,8 +4064,165 @@ function computeLdc(rawRows) {
   return { x, y: kws };
 }
 
+// Render the Load Duration Curve as a custom SVG with:
+//   • 4 colored zones (PEAK 0-5% · ACTIVE 5-50% · IDLE 50-95% · BASELINE 95-100%)
+//   • Dashed reference lines at Peak / P95 / Median / Baseline kW values
+//   • Filled area + crisp curve line
+//   • Stats grid + plain-English interpretation below the chart
+function renderLdc(rawRows) {
+  const ldc = computeLdc(rawRows);
+  const svg = document.getElementById('ldcChart');
+  const peakEl = document.getElementById('ldcPeakVal');
+  const p95El  = document.getElementById('ldcP95Val');
+  const medEl  = document.getElementById('ldcMedVal');
+  const baseEl = document.getElementById('ldcBaseVal');
+  const summaryEl = document.getElementById('ldcSummary');
+  const shapeEl   = document.getElementById('ldcShape');
+  if (!svg) return;
+
+  if (!ldc.y.length) {
+    svg.innerHTML = '<text x="550" y="140" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#9aa0aa" letter-spacing="1">NO DATA IN RANGE</text>';
+    [peakEl, p95El, medEl, baseEl].forEach(el => { if (el) el.textContent = '—'; });
+    if (summaryEl) summaryEl.textContent = 'No data available';
+    if (shapeEl) shapeEl.textContent = '—';
+    return;
+  }
+
+  // Stats from sorted (descending) array
+  const ys = ldc.y;
+  const n = ys.length;
+  const peak     = ys[0];
+  const p95      = ys[Math.round(0.05 * (n - 1))] ?? peak;
+  const median   = ys[Math.round(0.50 * (n - 1))] ?? peak;
+  const baseline = ys[Math.round(0.95 * (n - 1))] ?? 0;
+
+  // SVG geometry
+  const vbW = 1100, vbH = 280;
+  const padL = 60, padR = 30, padT = 28, padB = 38;
+  const innerW = vbW - padL - padR;
+  const innerH = vbH - padT - padB;
+  const yMax = peak > 0 ? peak * 1.05 : 1;
+  const xc = pct => padL + (pct / 100) * innerW;
+  const yc = kw  => padT + (1 - kw / yMax) * innerH;
+
+  // Background zone bands (vertical strips behind the curve)
+  const zones = [
+    { from: 0,  to: 5,   col: '#ff6b5a', label: 'PEAK' },
+    { from: 5,  to: 50,  col: '#f0c75e', label: 'ACTIVE' },
+    { from: 50, to: 95,  col: '#6fb5ff', label: 'IDLE' },
+    { from: 95, to: 100, col: '#5ce0a0', label: 'BASE' }
+  ];
+  let zoneSvg = '';
+  for (const z of zones) {
+    const zx1 = xc(z.from), zx2 = xc(z.to);
+    zoneSvg += `<rect x="${zx1}" y="${padT}" width="${(zx2 - zx1).toFixed(1)}" height="${innerH}" fill="${z.col}" opacity="0.05"/>`;
+    const mid = (zx1 + zx2) / 2;
+    zoneSvg += `<text x="${mid}" y="${padT - 8}" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="${z.col}" letter-spacing="1.2" opacity="0.75">${z.label}</text>`;
+  }
+
+  // Y grid + labels
+  const yStops = 5;
+  let gridSvg = '<g stroke="#2a2f3c" stroke-width="0.5">';
+  for (let i = 0; i <= yStops; i++) {
+    const yp = padT + (innerH * i / yStops);
+    gridSvg += `<line x1="${padL}" y1="${yp}" x2="${vbW - padR}" y2="${yp}"/>`;
+  }
+  gridSvg += '</g><g font-family="JetBrains Mono" font-size="10" fill="#9aa0aa">';
+  for (let i = 0; i <= yStops; i++) {
+    const v = yMax * (1 - i / yStops);
+    const yp = padT + (innerH * i / yStops);
+    gridSvg += `<text x="${padL - 10}" y="${yp + 4}" text-anchor="end">${v.toFixed(1)}</text>`;
+  }
+  gridSvg += `<text x="${padL - 45}" y="${padT + innerH / 2}" text-anchor="middle" transform="rotate(-90 ${padL - 45} ${padT + innerH / 2})" font-size="9" letter-spacing="1">kW</text></g>`;
+
+  // X axis labels
+  let xLabelsSvg = '<g font-family="JetBrains Mono" font-size="10" fill="#9aa0aa">';
+  for (const pct of [0, 10, 25, 50, 75, 90, 100]) {
+    xLabelsSvg += `<text x="${xc(pct)}" y="${vbH - 18}" text-anchor="middle">${pct}%</text>`;
+  }
+  xLabelsSvg += `<text x="${padL + innerW / 2}" y="${vbH - 4}" text-anchor="middle" font-size="9" letter-spacing="0.8">% of time at or above this kW</text></g>`;
+
+  // Sample the curve at most 600 points for SVG performance
+  const SAMPLE = Math.min(n, 600);
+  const pts = [];
+  for (let i = 0; i < SAMPLE; i++) {
+    const idx = Math.round((i / (SAMPLE - 1 || 1)) * (n - 1));
+    const pct = (idx / (n - 1 || 1)) * 100;
+    pts.push(`${xc(pct).toFixed(1)},${yc(ys[idx]).toFixed(1)}`);
+  }
+  const polyPath = pts.join(' ');
+  const filledPath = `M${pts[0]} L${pts.slice(1).join(' L')} L${(padL + innerW).toFixed(1)},${(padT + innerH).toFixed(1)} L${padL.toFixed(1)},${(padT + innerH).toFixed(1)} Z`;
+
+  const curveDefs = `
+    <defs>
+      <linearGradient id="ldcGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ff7a4d" stop-opacity="0.4"/>
+        <stop offset="100%" stop-color="#ff7a4d" stop-opacity="0"/>
+      </linearGradient>
+    </defs>`;
+  const curveSvg = `${curveDefs}
+    <path d="${filledPath}" fill="url(#ldcGrad)"/>
+    <polyline points="${polyPath}" fill="none" stroke="#ff7a4d" stroke-width="2"/>`;
+
+  // Reference lines + labels for the 4 key levels
+  let refSvg = '<g font-family="JetBrains Mono" font-size="9" letter-spacing="0.5">';
+  const refs = [
+    { kw: peak,     col: '#ff6b5a', label: 'PEAK',     pct: 0 },
+    { kw: p95,      col: '#f0c75e', label: 'P95',      pct: 5 },
+    { kw: median,   col: '#6fb5ff', label: 'MED',      pct: 50 },
+    { kw: baseline, col: '#5ce0a0', label: 'BASELINE', pct: 95 }
+  ];
+  for (const r of refs) {
+    if (r.kw == null) continue;
+    const yp = yc(r.kw);
+    refSvg += `<line x1="${padL}" y1="${yp}" x2="${vbW - padR}" y2="${yp}" stroke="${r.col}" stroke-width="1" stroke-dasharray="3 4" opacity="0.55"/>`;
+    refSvg += `<text x="${vbW - padR - 4}" y="${yp - 4}" text-anchor="end" fill="${r.col}">${r.label} · ${r.kw.toFixed(2)} kW</text>`;
+    // Dot where the ref line meets the curve at the corresponding percentile
+    refSvg += `<circle cx="${xc(r.pct)}" cy="${yp}" r="3" fill="${r.col}"/>`;
+  }
+  refSvg += '</g>';
+
+  svg.innerHTML = zoneSvg + gridSvg + xLabelsSvg + refSvg + curveSvg;
+
+  // Stat tiles
+  if (peakEl) peakEl.textContent = peak.toFixed(2)     + ' kW';
+  if (p95El)  p95El.textContent  = p95.toFixed(2)      + ' kW';
+  if (medEl)  medEl.textContent  = median.toFixed(2)   + ' kW';
+  if (baseEl) baseEl.textContent = baseline.toFixed(2) + ' kW';
+
+  // Plain-English shape classification
+  const peakOverP95   = peak / Math.max(p95, 0.01);
+  const peakOverMed   = peak / Math.max(median, 0.01);
+  let shape;
+  if (peakOverP95 >= 2)       shape = 'Spiky load · brief sharp peaks';
+  else if (peakOverMed >= 3)  shape = 'Variable load · clear active/idle cycles';
+  else if (peakOverMed <= 1.5)shape = 'Steady load · low variability';
+  else                        shape = 'Mixed load · moderate variability';
+  if (shapeEl) shapeEl.textContent = shape;
+
+  // Summary line
+  const alwaysOnKwh = baseline * 24 * 30;
+  const shaveKw = peak - p95;
+  let summary;
+  if (shaveKw > 1) {
+    summary =
+      'Peak shaving: clipping at ' + p95.toFixed(1) + ' kW would cut ' +
+      shaveKw.toFixed(1) + ' kW (' + ((shaveKw / peak) * 100).toFixed(0) +
+      '% of peak demand). · Always-on: ~' + alwaysOnKwh.toFixed(0) +
+      ' kWh/month at ' + baseline.toFixed(2) + ' kW.';
+  } else {
+    summary =
+      'Steady profile · Always-on: ~' + alwaysOnKwh.toFixed(0) +
+      ' kWh/month at ' + baseline.toFixed(2) + ' kW.';
+  }
+  if (summaryEl) summaryEl.textContent = summary;
+
+  // Refresh info-tooltip buttons for the new [data-info] labels in the stat tiles
+  if (typeof window._refreshInfoButtons === 'function') window._refreshInfoButtons();
+}
+
 // Chart instances for analyst page
-let anHistChart = null, anHodChart = null, anTvYChart = null, anLdcChart = null;
+let anHistChart = null, anHodChart = null, anTvYChart = null;
 
 function renderAnalyst(rawRows) {
   const valid5 = (rawRows || []).filter(r => r && r.valid);
@@ -3859,8 +4231,13 @@ function renderAnalyst(rawRows) {
   if (!valid5.length) {
     ['anStatMin','anStatMax','anStatMean','anStatMedian','anStatP25','anStatP75','anStatP95','anStatP99','anStatStddev']
       .forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
-    [anHistChart, anHodChart, anLdcChart].forEach(c => { if (c) c.destroy(); });
-    anHistChart = anHodChart = anLdcChart = null;
+    [anHistChart, anHodChart].forEach(c => { if (c) c.destroy(); });
+    anHistChart = anHodChart = null;
+    // Clear LDC SVG and stats
+    const ldcSvg = document.getElementById('ldcChart'); if (ldcSvg) ldcSvg.innerHTML = '';
+    ['ldcPeakVal','ldcP95Val','ldcMedVal','ldcBaseVal'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
+    const ldcSum = document.getElementById('ldcSummary'); if (ldcSum) ldcSum.textContent = '—';
+    const ldcShape = document.getElementById('ldcShape'); if (ldcShape) ldcShape.textContent = '—';
     const hm = document.getElementById('anHeatmap'); if (hm) hm.innerHTML = '';
     const hmr = document.getElementById('anHeatmapRange'); if (hmr) hmr.textContent = '—';
     const hmn = document.getElementById('anHeatmapNote'); if (hmn) hmn.textContent = '—';
@@ -3990,42 +4367,8 @@ function renderAnalyst(rawRows) {
   // 5. Period Comparison chart — independent of main range. Managed by tvyRender().
   // (No-op here; tvyInit() boots it on first device-ready and tvyRender() handles refreshes.)
 
-  // 6. Load Duration Curve
-  const ldc = computeLdc(rawRows);
-  if (anLdcChart) { anLdcChart.destroy(); anLdcChart = null; }
-  anLdcChart = new Chart(document.getElementById('anLdcChart'), {
-    type: 'line',
-    data: {
-      datasets: [{
-        label: 'kW',
-        data: ldc.x.map((x, i) => ({ x, y: ldc.y[i] })),
-        borderColor: c.accent,
-        backgroundColor: c.accent + '22',
-        borderWidth: 2, fill: true, tension: 0, pointRadius: 0
-      }]
-    },
-    options: Object.assign({}, baseOpts, {
-      plugins: Object.assign({}, baseOpts.plugins, {
-        tooltip: Object.assign({}, baseOpts.plugins.tooltip, {
-          callbacks: {
-            title: items => items[0].parsed.x.toFixed(1) + '% of time',
-            label: ctx => 'kW ≥ ' + ctx.parsed.y.toFixed(1)
-          }
-        })
-      }),
-      scales: {
-        x: {
-          type: 'linear', min: 0, max: 100,
-          ticks: { color: c.inkSoft, font: { family: 'JetBrains Mono', size: 10 }, callback: v => v + '%' },
-          grid: { color: c.line, drawBorder: false },
-          title: { display: true, text: '% of time', color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } }
-        },
-        y: Object.assign({}, baseOpts.scales.y, {
-          title: { display: true, text: 'kW', color: c.inkSoft, font: { size: 10, family: 'Space Grotesk' } }
-        })
-      }
-    })
-  });
+  // 6. Load Duration Curve — custom SVG with color zones, ref lines, stats
+  renderLdc(rawRows);
 }
 
 // Render the 24×7 heatmap as a grid of divs
@@ -5133,6 +5476,110 @@ function tvyHourProfile(rows, period) {
   return out;
 }
 
+// Compute summary statistics for a period: total kWh, peak kW + when, avg kW
+function tvyComputeStats(rows, period) {
+  const valid = rows.filter(r => r && r.valid && r.bucketMinutes === 5
+    && r.dt.getTime() >= period.from && r.dt.getTime() <= period.to);
+  if (!valid.length) return null;
+  let kwh = 0;
+  let peakKw = -Infinity, peakRow = null;
+  let sumKw = 0, n = 0;
+  for (const r of valid) {
+    const k = Number(r.kw);
+    const e = Number(r.kwh);
+    if (isFinite(e)) kwh += e;
+    if (isFinite(k)) {
+      if (k > peakKw) { peakKw = k; peakRow = r; }
+      sumKw += k; n++;
+    }
+  }
+  return {
+    kwh,
+    peakKw: n ? peakKw : null,
+    peakRow,
+    avgKw: n ? sumKw / n : null,
+    n,
+    isMultiDay: (period.to - period.from) > 86400000 * 1.5
+  };
+}
+
+// Format the "peak time" cell. Single-day periods show HH:MM, multi-day include date.
+function tvyFmtPeakTime(stats) {
+  if (!stats || !stats.peakRow) return '—';
+  const dt = stats.peakRow.dt;
+  const hm = fmtMYTTime(dt);
+  if (!stats.isMultiDay) return hm;
+  const p = tz.partsOf(dt);
+  return String(p.mo).padStart(2,'0') + '-' + String(p.d).padStart(2,'0') + ' ' + hm;
+}
+
+// Render the percent-delta string (e.g., "+14.8%"). Returns "—" if either is null/0.
+function tvyFmtDelta(a, b) {
+  if (a == null || b == null || !isFinite(a) || !isFinite(b) || b === 0) return '—';
+  const d = ((a - b) / b) * 100;
+  return (d > 0 ? '+' : '') + d.toFixed(1) + '%';
+}
+
+// Update the 4 stat tiles + summary line. Pass null for a period that has no data.
+function tvyUpdateStats(statsA, statsB, periodA, periodB) {
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+  // Period A column
+  if (statsA) {
+    set('tvyKwhA',    statsA.kwh.toFixed(2) + ' kWh');
+    set('tvyPeakA',   statsA.peakKw != null ? statsA.peakKw.toFixed(2) + ' kW' : '—');
+    set('tvyAvgA',    statsA.avgKw  != null ? statsA.avgKw.toFixed(2)  + ' kW' : '—');
+    set('tvyPkTimeA', tvyFmtPeakTime(statsA));
+  } else {
+    ['tvyKwhA','tvyPeakA','tvyAvgA','tvyPkTimeA'].forEach(id => set(id, 'no data'));
+  }
+
+  // Period B column
+  if (statsB) {
+    set('tvyKwhB',    statsB.kwh.toFixed(2) + ' kWh');
+    set('tvyPeakB',   statsB.peakKw != null ? statsB.peakKw.toFixed(2) + ' kW' : '—');
+    set('tvyAvgB',    statsB.avgKw  != null ? statsB.avgKw.toFixed(2)  + ' kW' : '—');
+    set('tvyPkTimeB', tvyFmtPeakTime(statsB));
+  } else {
+    ['tvyKwhB','tvyPeakB','tvyAvgB','tvyPkTimeB'].forEach(id => set(id, 'no data'));
+  }
+
+  // Deltas (A vs B)
+  if (statsA && statsB) {
+    set('tvyKwhDelta',  tvyFmtDelta(statsA.kwh,    statsB.kwh));
+    set('tvyPeakDelta', tvyFmtDelta(statsA.peakKw, statsB.peakKw));
+    set('tvyAvgDelta',  tvyFmtDelta(statsA.avgKw,  statsB.avgKw));
+  } else {
+    ['tvyKwhDelta','tvyPeakDelta','tvyAvgDelta'].forEach(id => set(id, '—'));
+  }
+
+  // Summary banner — narrate the comparison or explain missing data
+  const summaryEl = document.getElementById('tvySummary');
+  if (!summaryEl) return;
+  if (!statsA && !statsB) {
+    summaryEl.textContent = 'No data available for either period.';
+  } else if (statsA && !statsB) {
+    const isFuture = periodB && periodB.from > Date.now();
+    summaryEl.textContent = isFuture
+      ? 'Period B (' + (periodB.label || '') + ') is in the future — no data yet. Pick a past date for comparison.'
+      : 'Period B (' + (periodB.label || '') + ') has no data in range. Try a different date.';
+  } else if (!statsA && statsB) {
+    const isFuture = periodA && periodA.from > Date.now();
+    summaryEl.textContent = isFuture
+      ? 'Period A (' + (periodA.label || '') + ') is in the future — no data yet. Pick a past date for comparison.'
+      : 'Period A (' + (periodA.label || '') + ') has no data in range. Try a different date.';
+  } else {
+    const kwhPct = ((statsA.kwh - statsB.kwh) / Math.max(statsB.kwh, 0.0001)) * 100;
+    const kwhWord = statsA.kwh > statsB.kwh ? 'more' : statsA.kwh < statsB.kwh ? 'less' : 'the same';
+    const peakWord = statsA.peakKw > statsB.peakKw ? 'higher peak' : 'lower peak';
+    const peakDiff = Math.abs(statsA.peakKw - statsB.peakKw);
+    summaryEl.textContent =
+      'Period A used ' + Math.abs(kwhPct).toFixed(1) + '% ' + kwhWord + ' energy than B · ' +
+      peakWord + ' by ' + peakDiff.toFixed(2) + ' kW (A ' + statsA.peakKw.toFixed(2) +
+      ' vs B ' + statsB.peakKw.toFixed(2) + ').';
+  }
+}
+
 // Build a chart-friendly cache key
 function tvyCacheKey(dev, A, B) {
   return [dev && dev.id, A.from, A.to, B.from, B.to].join('|');
@@ -5183,6 +5630,12 @@ async function tvyRender() {
   } else {
     tvyStatus(profA.length + ' + ' + profB.length + ' points · 5-min avg', 'ok');
   }
+
+  // Compute per-period summary stats and update tiles + summary banner
+  const statsA = tvyComputeStats(rowsA, A);
+  const statsB = tvyComputeStats(rowsB, B);
+  tvyUpdateStats(statsA, statsB, A, B);
+  if (typeof window._refreshInfoButtons === 'function') window._refreshInfoButtons();
 
   // Build/update Chart
   const c = themeColors();
