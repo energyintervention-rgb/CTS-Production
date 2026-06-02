@@ -552,7 +552,159 @@
     letter-spacing: 0 !important; word-break: break-word;
   }
 
-  /* Health pill */
+  /* ── Battery KPI variant (Live page) ── */
+  .kpi.kpi-battery::before { background: var(--good); }
+  .kpi.kpi-battery.warn::before { background: var(--warn); }
+  .kpi.kpi-battery.crit::before { background: var(--bad); }
+  .kpi-batt-top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 6px;
+  }
+  .kpi-batt-top .label { margin-bottom: 0; }
+  .kpi-batt-top .pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+    color: var(--good);
+  }
+  .kpi-battery.warn .kpi-batt-top .pct { color: var(--warn); }
+  .kpi-battery.crit .kpi-batt-top .pct { color: var(--bad); }
+  .kpi-batt-row {
+    display: flex; align-items: baseline; gap: 10px;
+    margin-bottom: 8px;
+  }
+  .kpi-batt-volt {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px; font-weight: 700; color: var(--ink); letter-spacing: -0.3px;
+  }
+  .kpi-batt-volt .u { font-size: 11px; color: var(--ink-soft); font-weight: 400; margin-left: 3px; }
+  .kpi-batt-mv {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--ink-soft); letter-spacing: 0.4px;
+  }
+  .kpi-batt-bar { display: flex; gap: 2px; height: 10px; margin-bottom: 8px; }
+  .kpi-batt-seg { flex: 1; background: var(--surface-2); border-radius: 1px; }
+  .kpi-batt-seg.f-good { background: var(--good); }
+  .kpi-batt-seg.f-warn { background: var(--warn); }
+  .kpi-batt-seg.f-crit { background: var(--bad); }
+  .kpi-batt-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; color: var(--ink-soft); letter-spacing: 0.3px;
+    display: flex; justify-content: space-between; gap: 6px;
+    margin-top: auto;
+  }
+  .kpi-batt-meta .down { color: var(--info); }
+  .kpi-batt-meta .crit-txt { color: var(--bad); }
+
+  /* ── Battery voltage chart panel (Engineer page) ── */
+  .batt-health-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 1.2px; text-transform: uppercase; font-weight: 600;
+    background: color-mix(in srgb, var(--good) 12%, transparent);
+    color: var(--good);
+    border: 1px solid color-mix(in srgb, var(--good) 35%, transparent);
+  }
+  .batt-health-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .batt-health-badge.warn {
+    background: color-mix(in srgb, var(--warn) 12%, transparent);
+    color: var(--warn);
+    border-color: color-mix(in srgb, var(--warn) 35%, transparent);
+  }
+  .batt-health-badge.crit {
+    background: color-mix(in srgb, var(--bad) 12%, transparent);
+    color: var(--bad);
+    border-color: color-mix(in srgb, var(--bad) 35%, transparent);
+  }
+  .batt-chart-wrap { position: relative; height: 240px; margin-bottom: 16px; }
+  .batt-chart-wrap svg { width: 100%; height: 100%; display: block; }
+  .batt-chart-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px; padding-top: 14px; border-top: 1px solid var(--line);
+  }
+  .batt-chart-stats .k {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    color: var(--ink-soft); letter-spacing: 1.4px; text-transform: uppercase;
+    font-weight: 600; margin-bottom: 4px;
+  }
+  .batt-chart-stats .v {
+    font-family: 'JetBrains Mono', monospace; font-size: 15px;
+    color: var(--ink); font-weight: 600;
+  }
+  .batt-chart-stats .v .u { font-size: 10px; color: var(--ink-soft); font-weight: 400; margin-left: 3px; }
+  .batt-chart-stats .v.good { color: var(--good); }
+  .batt-chart-stats .v.warn { color: var(--warn); }
+  .batt-chart-stats .v.crit { color: var(--bad); }
+  .batt-events {
+    margin-top: 14px; padding: 10px 14px;
+    background: color-mix(in srgb, var(--info) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--info) 25%, transparent);
+    border-radius: 2px;
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--ink); letter-spacing: 0.3px;
+  }
+  .batt-events .ev-marker {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--info); flex-shrink: 0;
+  }
+  .batt-events .ev-date { color: var(--info); font-weight: 600; margin-left: auto; }
+  .batt-events.no-events {
+    background: color-mix(in srgb, var(--good) 5%, transparent);
+    border-color: color-mix(in srgb, var(--good) 20%, transparent);
+    color: var(--ink-soft);
+  }
+  .batt-events.no-events .ev-marker { background: var(--good); }
+  @media (max-width: 560px) {
+    .batt-chart-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ── Info icon + floating tooltip ── */
+  .info-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: transparent; border: 1px solid var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: 'Space Grotesk', sans-serif; font-size: 9px; font-weight: 600;
+    cursor: pointer; padding: 0; margin-left: 5px;
+    vertical-align: middle; line-height: 1;
+    transition: border-color 0.15s, color 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+  }
+  .info-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .info-btn:active { transform: scale(0.92); }
+  .info-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .info-tip {
+    position: fixed; z-index: 9999;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 2px;
+    padding: 12px 14px 11px;
+    font-family: 'Space Grotesk', sans-serif; font-size: 12px;
+    color: var(--ink); line-height: 1.5;
+    max-width: 280px; min-width: 180px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+    opacity: 0; pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  .info-tip.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  .info-tip-title {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+    letter-spacing: 1.4px; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 6px;
+    padding-right: 18px;
+  }
+  .info-tip-close {
+    position: absolute; top: 6px; right: 8px;
+    background: none; border: none; cursor: pointer;
+    color: var(--ink-soft); font-size: 13px; line-height: 1;
+    padding: 2px 4px; border-radius: 2px;
+  }
+  .info-tip-close:hover { color: var(--bad); }
+
+
   .health-pill {
     display: inline-block; padding: 3px 10px; border-radius: 2px;
     font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600;
@@ -1107,27 +1259,44 @@
   <!-- All KPIs in one row · green border = /status · orange border = /data -->
   <div class="kpis kpis-all">
     <div class="kpi kpi-status kpi-location">
-      <div class="label">Location</div>
+      <div class="label" data-info="Device installation location stored in the cloud config. Updates whenever /status returns a new 'location' field.">Location</div>
       <div class="value mono kpi-location-value"><span id="kpiLocation">—</span></div>
     </div>
     <div class="kpi kpi-status">
-      <div class="label">Health</div>
+      <div class="label" data-info="Overall device health derived from data freshness, comms status, battery, and diagnostic flags. Green = healthy. Amber = warning. Red = critical or offline.">Health</div>
       <div class="value"><span class="health-pill health-unknown" id="kpiHealth">—</span></div>
     </div>
-    <div class="kpi kpi-data">
-      <div class="label">Battery</div>
-      <div class="value mono"><span id="kpiBattery">—</span><span class="unit">V</span></div>
+    <div class="kpi kpi-battery" id="kpiBattCard">
+      <div class="kpi-batt-top">
+        <div class="label" data-info="Battery voltage and estimated capacity. 2× D alkaline cells: 3.20 V = 100% (fresh), 2.80 V = 50% (knee), 2.40 V = 0% cutoff. Drift rate and days-to-replacement are computed from the post-replacement decline slope.">Battery</div>
+        <div class="pct" id="kpiBattPct">—</div>
+      </div>
+      <div class="kpi-batt-row">
+        <div class="kpi-batt-volt"><span id="kpiBattery">—</span><span class="u">V</span></div>
+        <div class="kpi-batt-mv" id="kpiBattMv">— mV</div>
+      </div>
+      <div class="kpi-batt-bar" id="kpiBattBar">
+        <div class="kpi-batt-seg"></div><div class="kpi-batt-seg"></div>
+        <div class="kpi-batt-seg"></div><div class="kpi-batt-seg"></div>
+        <div class="kpi-batt-seg"></div><div class="kpi-batt-seg"></div>
+        <div class="kpi-batt-seg"></div><div class="kpi-batt-seg"></div>
+        <div class="kpi-batt-seg"></div><div class="kpi-batt-seg"></div>
+      </div>
+      <div class="kpi-batt-meta">
+        <span id="kpiBattDrift">—</span>
+        <span id="kpiBattProj">—</span>
+      </div>
     </div>
     <div class="kpi kpi-data">
-      <div class="label">Total kWh</div>
+      <div class="label" data-info="Total energy consumed across all valid 5-minute intervals in the selected date range. Sum of intervalKwh1..12 across every frame.">Total kWh</div>
       <div class="value mono"><span id="kpiTotal">0.00</span><span class="unit">kWh</span></div>
     </div>
     <div class="kpi kpi-data">
-      <div class="label">Avg kW</div>
+      <div class="label" data-info="Average power draw per interval. For 5-min/15-min resolution this is kW. For 1-day resolution, it shows average kWh per day instead.">Avg kW</div>
       <div class="value mono"><span id="kpiAvg">0.00</span><span class="unit">kW</span></div>
     </div>
     <div class="kpi kpi-data">
-      <div class="label">Total Pulses</div>
+      <div class="label" data-info="Total pulse count from the meter's optical sensor. Energy is calculated as pulses ÷ configured pulses-per-kWh rate.">Total Pulses</div>
       <div class="value mono"><span id="kpiPulses">0</span></div>
     </div>
   </div>
@@ -1194,35 +1363,65 @@
 
   <section id="page-engineer" class="page-section">
 
+    <!-- Device Diagnostics: live values from latest frame -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Device Diagnostics</h2>
+        <div class="meta">from latest frame · live</div>
+      </div>
+      <div class="diag-grid">
+        <div class="diag-item diag-good">
+          <div class="diag-label" data-info="Consecutive failed sensor reads. Should be 0 or very low. Persistent non-zero values indicate the optical sensor cannot reliably detect pulses — check placement and lens cleanliness.">Consec Fails</div>
+          <div class="diag-value" id="engDiagConsec">—</div>
+          <div class="diag-key">consecutiveFailCount</div>
+        </div>
+        <div class="diag-item diag-info">
+          <div class="diag-label" data-info="Number of times the sensor has auto-recalibrated to track ambient light changes. Periodic increases are normal. Rapid jumps may indicate environmental instability.">Recal Count</div>
+          <div class="diag-value" id="engDiagRecal">—</div>
+          <div class="diag-key">recalCount</div>
+        </div>
+        <div class="diag-item diag-good">
+          <div class="diag-label" data-info="Frames where the device measured zero pulses despite expecting activity. Should be low. High values during known active hours indicate sensor or meter issues.">Zero Buckets</div>
+          <div class="diag-value" id="engDiagZero">—</div>
+          <div class="diag-key">zeroBucketCount</div>
+        </div>
+        <div class="diag-item diag-good">
+          <div class="diag-label" data-info="Lowest optical contrast value (light vs dark differential) the sensor saw. Higher = stronger signal. Below ~150 typically means the sensor struggles to reliably detect pulses.">Min Contrast</div>
+          <div class="diag-value" id="engDiagContrast">—</div>
+          <div class="diag-key">minContrast</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Engineer KPIs: orange border = computed from /data, green = calibration/status -->
     <div class="kpis kpis-engineer">
       <div class="kpi kpi-data" title="Highest 30-min rolling average kW in the selected range">
-        <div class="label">Maximum Demand</div>
+        <div class="label" data-info="Highest 30-minute rolling average kW in the selected range. This is the figure utilities use for demand-charge tariffs. Brief spikes shorter than 30 min are smoothed out.">Maximum Demand</div>
         <div class="value"><span id="engKpiMd">—</span> <span class="unit">kW</span></div>
         <div class="sub" id="engKpiMdTime">—</div>
       </div>
       <div class="kpi kpi-data" title="Lowest sustained kW (5th percentile) — your always-on draw">
-        <div class="label">Baseline Load</div>
+        <div class="label" data-info="Your always-on / baseline load. Computed as the 5th percentile of all 5-min kW readings, which captures sustained low-power draw while ignoring brief zero-readings from comms gaps.">Baseline Load</div>
         <div class="value"><span id="engKpiBaseline">—</span> <span class="unit">kW</span></div>
         <div class="sub">p5 · always-on draw</div>
       </div>
       <div class="kpi kpi-data" title="Average kW divided by peak kW — usage steadiness">
-        <div class="label">Load Factor</div>
+        <div class="label" data-info="Load Factor = Average kW ÷ Peak kW × 100. High values (>50%) mean steady load. Low values (<25%) mean spiky usage with brief peaks — typically pays more under demand tariffs.">Load Factor</div>
         <div class="value"><span id="engKpiLoadFactor">—</span> <span class="unit">%</span></div>
         <div class="sub">Avg / Peak ratio</div>
       </div>
       <div class="kpi kpi-status" title="Average measured pulses-per-kWh vs configured pulseRate">
-        <div class="label">Calibration Drift</div>
+        <div class="label" data-info="Measured pulses-per-kWh vs configured pulseRate. 100% = perfect calibration. Large drift (>5%) suggests sensor placement issues, wrong pulseRate setting, or meter aging.">Calibration Drift</div>
         <div class="value"><span id="engKpiCalDrift">—</span> <span class="unit">%</span></div>
         <div class="sub" id="engKpiCalDriftSub">—</div>
       </div>
       <div class="kpi kpi-data" title="Detected gaps or missing frames in the selected range">
-        <div class="label">Total Outages</div>
+        <div class="label" data-info="Number of detected gaps in the data — frames missing or comms dropped. Total gap minutes and longest single gap shown below. Caused by GSM signal loss, server downtime, or device reset.">Total Outages</div>
         <div class="value"><span id="engKpiOutages">—</span> <span class="unit">events</span></div>
         <div class="sub" id="engKpiOutagesSub">—</div>
       </div>
       <div class="kpi kpi-status" title="Battery voltage change from first to last frame in range">
-        <div class="label">Battery Drift</div>
+        <div class="label" data-info="Battery voltage change from first to last frame in the selected range. Negative = discharging (normal). Positive jumps usually indicate battery replacement. Use the Battery Voltage chart below for trend visibility.">Battery Drift</div>
         <div class="value"><span id="engKpiBattDrift">—</span> <span class="unit">mV</span></div>
         <div class="sub" id="engKpiBattDriftSub">—</div>
       </div>
@@ -1235,6 +1434,41 @@
         <div class="meta" data-tz-label="Highest 30-min rolling avg per {tz} day">Highest 30-min rolling avg per UTC+8 day</div>
       </div>
       <div class="chart-wrap"><canvas id="mdByDayChart"></canvas></div>
+    </div>
+
+    <!-- Battery Voltage over time -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Battery Voltage</h2>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span class="batt-health-badge" id="battHealthBadge"><span class="dot"></span><span id="battHealthLabel">—</span></span>
+          <div class="meta" id="battChartRangeLabel">range</div>
+        </div>
+      </div>
+      <div class="batt-chart-wrap"><svg id="battChart" viewBox="0 0 1100 240" preserveAspectRatio="none"></svg></div>
+      <div class="batt-chart-stats">
+        <div>
+          <div class="k">Current</div>
+          <div class="v" id="battStatCurrent">—</div>
+        </div>
+        <div>
+          <div class="k">Drift / day</div>
+          <div class="v" id="battStatDrift">—</div>
+        </div>
+        <div>
+          <div class="k">Range</div>
+          <div class="v" id="battStatRange">—</div>
+        </div>
+        <div>
+          <div class="k">Days to cutoff</div>
+          <div class="v" id="battStatDays">—</div>
+        </div>
+      </div>
+      <div class="batt-events no-events" id="battEvents">
+        <span class="ev-marker"></span>
+        <span id="battEventsText">No battery replacement events detected</span>
+        <span class="ev-date" id="battEventsDate"></span>
+      </div>
     </div>
 
     <!-- Top 10 Peak Intervals + Outages log (2-column) -->
@@ -1282,36 +1516,6 @@
       </div>
     </div>
 
-    <!-- Device Diagnostics: live values from latest frame -->
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Device Diagnostics</h2>
-        <div class="meta">from latest frame · live</div>
-      </div>
-      <div class="diag-grid">
-        <div class="diag-item diag-good">
-          <div class="diag-label">Consec Fails</div>
-          <div class="diag-value" id="engDiagConsec">—</div>
-          <div class="diag-key">consecutiveFailCount</div>
-        </div>
-        <div class="diag-item diag-info">
-          <div class="diag-label">Recal Count</div>
-          <div class="diag-value" id="engDiagRecal">—</div>
-          <div class="diag-key">recalCount</div>
-        </div>
-        <div class="diag-item diag-good">
-          <div class="diag-label">Zero Buckets</div>
-          <div class="diag-value" id="engDiagZero">—</div>
-          <div class="diag-key">zeroBucketCount</div>
-        </div>
-        <div class="diag-item diag-good">
-          <div class="diag-label">Min Contrast</div>
-          <div class="diag-value" id="engDiagContrast">—</div>
-          <div class="diag-key">minContrast</div>
-        </div>
-      </div>
-    </div>
-
   </section>
 
   <section id="page-analyst" class="page-section">
@@ -1323,15 +1527,15 @@
         <div class="meta">5-min interval values over selected range</div>
       </div>
       <div class="stat-grid">
-        <div class="stat-item"><div class="stat-label">min</div><div class="stat-value" id="anStatMin">—</div></div>
-        <div class="stat-item"><div class="stat-label">max</div><div class="stat-value" id="anStatMax">—</div></div>
-        <div class="stat-item highlight"><div class="stat-label">mean</div><div class="stat-value" id="anStatMean">—</div></div>
-        <div class="stat-item"><div class="stat-label">median</div><div class="stat-value" id="anStatMedian">—</div></div>
-        <div class="stat-item"><div class="stat-label">p25</div><div class="stat-value" id="anStatP25">—</div></div>
-        <div class="stat-item"><div class="stat-label">p75</div><div class="stat-value" id="anStatP75">—</div></div>
-        <div class="stat-item"><div class="stat-label">p95</div><div class="stat-value" id="anStatP95">—</div></div>
-        <div class="stat-item"><div class="stat-label">p99</div><div class="stat-value" id="anStatP99">—</div></div>
-        <div class="stat-item"><div class="stat-label">stddev</div><div class="stat-value" id="anStatStddev">—</div></div>
+        <div class="stat-item"><div class="stat-label" data-info="Lowest 5-minute kW reading in range. 0 means at least one interval saw zero pulses — equipment off, or comms dropped.">min</div><div class="stat-value" id="anStatMin">—</div></div>
+        <div class="stat-item"><div class="stat-label" data-info="Highest single 5-minute kW reading. Your peak instant. May include brief inrush events (motor starts, kettle).">max</div><div class="stat-value" id="anStatMax">—</div></div>
+        <div class="stat-item highlight"><div class="stat-label" data-info="Arithmetic average across all readings. Multiply by hours to estimate total energy. Sensitive to outliers — see median for a 'typical' value.">mean</div><div class="stat-value" id="anStatMean">—</div></div>
+        <div class="stat-item"><div class="stat-label" data-info="The middle reading — half the time you're below this, half above. Less sensitive to spikes than mean. Mean > median = right-skewed (lumpy) load.">median</div><div class="stat-value" id="anStatMedian">—</div></div>
+        <div class="stat-item"><div class="stat-label" data-info="25th percentile. 25% of intervals are at or below this value — roughly your 'quiet hours' load.">p25</div><div class="stat-value" id="anStatP25">—</div></div>
+        <div class="stat-item"><div class="stat-label" data-info="75th percentile. 75% of intervals are below this — the boundary of your 'active' load.">p75</div><div class="stat-value" id="anStatP75">—</div></div>
+        <div class="stat-item"><div class="stat-label" data-info="95th percentile. Only the top 5% of intervals exceed this. Useful for sizing — if you only had 95% capacity, this is what you'd cover.">p95</div><div class="stat-value" id="anStatP95">—</div></div>
+        <div class="stat-item"><div class="stat-label" data-info="99th percentile. Only the top 1% of intervals exceed this. The 'sustained peak' indicator — less fooled by single-spike anomalies than max.">p99</div><div class="stat-value" id="anStatP99">—</div></div>
+        <div class="stat-item"><div class="stat-label" data-info="Standard deviation — how spread out the load is around the mean. Higher = lumpy/spiky. Lower = flat/steady. Roughly: mean ± stddev covers ~68% of readings.">stddev</div><div class="stat-value" id="anStatStddev">—</div></div>
       </div>
     </div>
 
@@ -1564,11 +1768,6 @@ let kwChart = null, kwhChart = null, lastRows = [];
 function activeDevice() {
   return cfg.devices.find(d => d.id === cfg.activeId) || cfg.devices[0];
 }
-// Read per-device settings with sensible fallback. dev=undefined uses active.
-function devCfg(field, fallback, dev) {
-  const d = dev || activeDevice() || {};
-  return d[field] != null && d[field] !== '' ? d[field] : fallback;
-}
 function expandUrl(template, dev) {
   return template.replace(/\{deviceId\}/g, encodeURIComponent(dev.deviceId));
 }
@@ -1606,7 +1805,7 @@ document.getElementById('deviceSelect').addEventListener('change', (e) => {
   cfg.activeId = e.target.value;
   saveCfg(cfg);
   syncFilterInputsFromCfg();
-  fetchData(); fetchStatus();
+  applyPreset('all'); fetchStatus();
 });
 
 function escapeHtml(s) {
@@ -1856,7 +2055,6 @@ async function probeResolutions(d) {
   }
 
   const text = report.join('\n');
-  console.log(text);
 
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:500; display:flex; align-items:center; justify-content:center; padding:20px;';
@@ -1892,7 +2090,6 @@ async function testEndpoint(d, which) {
     const txt = await r.text();
     if (r.ok) {
       toast('OK ' + r.status + ' · ' + txt.slice(0, 80), 'success');
-      console.log('[test ' + which + ']', txt.slice(0, 500));
     } else {
       toast('HTTP ' + r.status + ' · ' + txt.slice(0, 80), 'error');
     }
@@ -2020,7 +2217,7 @@ document.getElementById('saveModal').addEventListener('click', () => {
     document.getElementById('welcomeBanner').hidden = true;
   }
   toast('Settings saved · fetching…', 'success');
-  fetchData(); fetchStatus(); startStatusPolling();
+  applyPreset('all'); fetchStatus(); startStatusPolling();
 });
 
 /* =========================
@@ -2086,8 +2283,31 @@ async function fetchData() {
     lastRows = rows;
     window._rawRows = rawRows;        // 5-min source rows for Engineer / Analyst pages
     window._latestFrames = frames;    // raw API frames for diagnostics
+
+    // "All saved" preset post-processing: narrow FROM/TO to the device's actual
+    // earliest and latest data, then re-render the inputs (and persist).
+    if (window._allSavedPending) {
+      window._allSavedPending = false;
+      if (rawRows.length) {
+        let minMs = rawRows[0].dt.getTime(), maxMs = minMs;
+        for (const r of rawRows) {
+          const t = r.dt.getTime();
+          if (t < minMs) minMs = t;
+          if (t > maxMs) maxMs = t;
+        }
+        const actualFromIso = new Date(minMs).toISOString();
+        const actualToIso   = new Date(maxMs + 86400 * 1000).toISOString(); // +1d so the last day is inclusive
+        dev.from = actualFromIso;
+        dev.to   = actualToIso;
+        saveCfg(cfg);
+        setFilterInputs(isoMYTDate(new Date(minMs)), isoMYTDate(new Date(maxMs)));
+      } else {
+        toast('No data found for this device');
+      }
+    }
     updateStatus(frames, rows, dev);
     renderKpis(rows);
+    renderBattery(frames);
     renderCharts(rows);
     renderTable(rows);
     renderEngineer(rawRows, rows, frames);
@@ -2114,7 +2334,6 @@ async function fetchStatus() {
       throw new Error('HTTP ' + resp.status + ' ' + resp.statusText + (body ? ' · ' + body.slice(0,120) : ''));
     }
     const s = await resp.json();
-    console.log('[status] payload:', s);
     renderStatus(s);
   } catch (err) {
     console.warn('Status fetch failed:', url, err);
@@ -2428,7 +2647,337 @@ function setBatteryKpi(mv, ts) {
   if (isNaN(t) || t < _lastBattTs) return;
   _lastBattTs = t;
   el.textContent = (n / 1000).toFixed(2);
+  // Update the rest of the new battery card (mV, %, segments, color zone)
+  updateBatteryKpiCard(n);
 }
+
+// ── Battery curve & health helpers ──────────────────────────────────────
+// 2× D alkaline cells: ~3.3V fresh, 2.4V cutoff. Knee around 2.8V.
+// Piecewise mapping voltage(mV) → remaining % (0..100).
+function mvToPercent(mv) {
+  if (!isFinite(mv) || mv <= 0) return 0;
+  const v = mv / 1000;
+  if (v >= 3.20) return 100;
+  if (v >= 3.00) return Math.round(75 + (v - 3.00) * (25 / 0.20)); // 75..100
+  if (v >= 2.80) return Math.round(50 + (v - 2.80) * (25 / 0.20)); // 50..75
+  if (v >= 2.60) return Math.round(25 + (v - 2.60) * (25 / 0.20)); // 25..50
+  if (v >= 2.40) return Math.round(0  + (v - 2.40) * (25 / 0.20)); // 0..25
+  return 0;
+}
+function mvToHealth(mv) {
+  const v = mv / 1000;
+  if (v >= 2.80) return 'good';
+  if (v >= 2.50) return 'warn';
+  return 'crit';
+}
+
+// Update the Live Battery KPI card (voltage, mV, %, segments, accent color)
+function updateBatteryKpiCard(mv) {
+  const card = document.getElementById('kpiBattCard');
+  if (!card) return;
+  const pct = mvToPercent(mv);
+  const health = mvToHealth(mv);
+  card.classList.remove('warn', 'crit');
+  if (health !== 'good') card.classList.add(health);
+  const pctEl = document.getElementById('kpiBattPct');
+  const mvEl  = document.getElementById('kpiBattMv');
+  if (pctEl) pctEl.textContent = pct + '%';
+  if (mvEl)  mvEl.textContent  = Math.round(mv) + ' mV';
+  // Segments: fill = ceil(pct/10)
+  const bar = document.getElementById('kpiBattBar');
+  if (bar) {
+    const segs = bar.querySelectorAll('.kpi-batt-seg');
+    const fillCount = Math.max(1, Math.ceil(pct / 10));
+    const fillClass = 'f-' + health;
+    segs.forEach((seg, i) => {
+      seg.classList.remove('f-good', 'f-warn', 'f-crit');
+      if (i < fillCount) seg.classList.add(fillClass);
+    });
+  }
+}
+
+// Extract per-frame battery readings (one mV per frame timestamp).
+function extractBattSeries(frames) {
+  if (!Array.isArray(frames)) return [];
+  const pts = [];
+  for (const f of frames) {
+    const mv = Number(f.batteryMillivolts);
+    const ts = new Date(f.timestamp).getTime();
+    if (isFinite(mv) && mv > 0 && !isNaN(ts)) pts.push({ ts, mv });
+  }
+  pts.sort((a, b) => a.ts - b.ts);
+  return pts;
+}
+
+// Detect battery-replacement events: voltage jump > 200 mV upward between
+// consecutive frames. Returns array of { ts, before, after, delta }.
+function detectBattReplacements(pts) {
+  const events = [];
+  for (let i = 1; i < pts.length; i++) {
+    const delta = pts[i].mv - pts[i - 1].mv;
+    if (delta > 200) {
+      events.push({ ts: pts[i].ts, before: pts[i - 1].mv, after: pts[i].mv, delta });
+    }
+  }
+  return events;
+}
+
+// Compute mV-per-day drift over the points AFTER the last replacement event
+// (or all points if no replacement). Negative = discharging.
+function computeBattDrift(pts, events) {
+  const startIdx = events.length ? pts.findIndex(p => p.ts >= events[events.length - 1].ts) : 0;
+  const slice = pts.slice(Math.max(0, startIdx));
+  if (slice.length < 2) return { mvPerDay: 0, days: slice.length, fromMv: null, toMv: null };
+  const first = slice[0], last = slice[slice.length - 1];
+  const days = Math.max(0.01, (last.ts - first.ts) / 86400000);
+  const mvPerDay = (last.mv - first.mv) / days; // negative for discharging
+  return { mvPerDay, days, fromMv: first.mv, toMv: last.mv };
+}
+
+// Project days remaining until voltage hits CUTOFF (2400 mV), based on drift.
+const BATT_CUTOFF_MV = 2400;
+function projectDaysToCutoff(currentMv, mvPerDay) {
+  if (!isFinite(mvPerDay) || mvPerDay >= 0) return null; // no discharge or rising
+  const margin = currentMv - BATT_CUTOFF_MV;
+  if (margin <= 0) return 0;
+  return Math.max(0, Math.round(margin / Math.abs(mvPerDay)));
+}
+
+// SVG-safe MYT date for chart x-axis labels: "DD MMM"
+function fmtBattAxisLabel(ms) {
+  const p = tz.partsOf(new Date(ms));
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return String(p.d).padStart(2, '0') + ' ' + months[p.mo - 1];
+}
+
+// Master battery render — called from fetchData after frames are loaded.
+function renderBattery(frames) {
+  const pts = extractBattSeries(frames);
+  const card = document.getElementById('kpiBattCard');
+  const driftEl = document.getElementById('kpiBattDrift');
+  const projEl  = document.getElementById('kpiBattProj');
+
+  if (!pts.length) {
+    if (driftEl) driftEl.textContent = '—';
+    if (projEl)  projEl.textContent  = 'no data';
+    renderBatteryChart([], null, null);
+    return;
+  }
+
+  // Refresh the Live card mV to latest from /data (in case /status hasn't fired)
+  const last = pts[pts.length - 1];
+  setBatteryKpi(last.mv, last.ts);
+
+  const events = detectBattReplacements(pts);
+  const drift = computeBattDrift(pts, events);
+  const daysToCutoff = projectDaysToCutoff(last.mv, drift.mvPerDay);
+  const health = mvToHealth(last.mv);
+
+  // Live KPI card: drift + projection line
+  if (driftEl) {
+    if (drift.mvPerDay < 0) {
+      driftEl.innerHTML = '<span class="down">↓ ' + Math.abs(drift.mvPerDay).toFixed(1) + ' mV/day</span>';
+    } else if (drift.mvPerDay > 0) {
+      driftEl.innerHTML = '<span class="down" style="color:var(--good)">↑ ' + drift.mvPerDay.toFixed(1) + ' mV/day</span>';
+    } else {
+      driftEl.textContent = '— mV/day';
+    }
+  }
+  if (projEl) {
+    if (health === 'crit') {
+      projEl.innerHTML = '<span class="crit-txt">⚠ Replace soon</span>';
+    } else if (daysToCutoff != null) {
+      projEl.textContent = '~' + daysToCutoff + ' days → 2.40 V';
+    } else {
+      projEl.textContent = 'stable';
+    }
+  }
+
+  renderBatteryChart(pts, events, drift);
+}
+
+// Draw the SVG line chart on the Engineer page.
+// vbW/vbH match the SVG's viewBox; we don't use preserveAspectRatio scaling
+// in our coord math (SVG handles that).
+function renderBatteryChart(pts, events, drift) {
+  const svg = document.getElementById('battChart');
+  if (!svg) return;
+  const vbW = 1100, vbH = 240;
+  const padL = 60, padR = 30, padT = 20, padB = 30;
+  const innerW = vbW - padL - padR;
+  const innerH = vbH - padT - padB;
+
+  // Update badge + stats panel
+  const badge = document.getElementById('battHealthBadge');
+  const badgeLabel = document.getElementById('battHealthLabel');
+  const statCurrent = document.getElementById('battStatCurrent');
+  const statDrift   = document.getElementById('battStatDrift');
+  const statRange   = document.getElementById('battStatRange');
+  const statDays    = document.getElementById('battStatDays');
+  const rangeLabel  = document.getElementById('battChartRangeLabel');
+  const evBox       = document.getElementById('battEvents');
+  const evText      = document.getElementById('battEventsText');
+  const evDate      = document.getElementById('battEventsDate');
+
+  if (!pts.length) {
+    svg.innerHTML = '<text x="550" y="120" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#9aa0aa" letter-spacing="1">NO BATTERY DATA IN RANGE</text>';
+    if (badge) badge.className = 'batt-health-badge';
+    if (badgeLabel) badgeLabel.textContent = '—';
+    [statCurrent, statDrift, statRange, statDays].forEach(el => { if (el) { el.textContent = '—'; el.className = 'v'; } });
+    if (rangeLabel) rangeLabel.textContent = '';
+    if (evBox) evBox.className = 'batt-events no-events';
+    if (evText) evText.textContent = 'No battery data';
+    if (evDate) evDate.textContent = '';
+    return;
+  }
+
+  const last = pts[pts.length - 1];
+  const first = pts[0];
+  const health = mvToHealth(last.mv);
+  const minMs = first.ts;
+  const maxMs = Math.max(last.ts, minMs + 1);
+  // Y axis: 2.1 V .. 3.3 V (always fixed for stable comparison)
+  const yMin = 2100, yMax = 3300;
+  const x = ms => padL + ((ms - minMs) / (maxMs - minMs)) * innerW;
+  const y = mv => padT + (1 - (Math.max(yMin, Math.min(yMax, mv)) - yMin) / (yMax - yMin)) * innerH;
+
+  // Color per segment based on local health
+  const segColor = mv => mv >= 2800 ? '#5ce0a0' : mv >= 2500 ? '#f0c75e' : '#ff6b5a';
+
+  // Split points into runs delimited by replacement events
+  const evSet = new Set((events || []).map(e => e.ts));
+  const runs = [];
+  let cur = [];
+  for (const p of pts) {
+    if (evSet.has(p.ts) && cur.length) {
+      runs.push(cur);
+      cur = [];
+    }
+    cur.push(p);
+  }
+  if (cur.length) runs.push(cur);
+
+  // Y grid lines + labels at fixed mV stops
+  const yStops = [3300, 3000, 2700, 2400, 2100];
+  let gridSvg = '<g stroke="#2a2f3c" stroke-width="0.5">';
+  for (const v of yStops) gridSvg += `<line x1="${padL}" y1="${y(v)}" x2="${vbW - padR}" y2="${y(v)}"/>`;
+  gridSvg += '</g><g font-family="JetBrains Mono" font-size="10" fill="#9aa0aa">';
+  for (const v of yStops) gridSvg += `<text x="${padL - 10}" y="${y(v) + 4}" text-anchor="end">${(v/1000).toFixed(1)}V</text>`;
+  gridSvg += '</g>';
+
+  // Cutoff line at 2.40 V
+  const cutoffSvg = `
+    <line x1="${padL}" y1="${y(BATT_CUTOFF_MV)}" x2="${vbW - padR}" y2="${y(BATT_CUTOFF_MV)}" stroke="#ff6b5a" stroke-width="1" stroke-dasharray="4 4" opacity="0.7"/>
+    <text x="${vbW - padR - 4}" y="${y(BATT_CUTOFF_MV) - 5}" font-family="JetBrains Mono" font-size="9" fill="#ff6b5a" text-anchor="end" letter-spacing="0.5">CUTOFF · 2.40 V</text>`;
+
+  // Polylines per run, colored by avg health
+  let runsSvg = '';
+  for (const run of runs) {
+    if (run.length < 2) {
+      // Single point — draw as dot
+      const p = run[0];
+      runsSvg += `<circle cx="${x(p.ts)}" cy="${y(p.mv)}" r="3" fill="${segColor(p.mv)}"/>`;
+      continue;
+    }
+    const avgMv = run.reduce((s, p) => s + p.mv, 0) / run.length;
+    const color = segColor(avgMv);
+    const points = run.map(p => `${x(p.ts).toFixed(1)},${y(p.mv).toFixed(1)}`).join(' ');
+    runsSvg += `<polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`;
+  }
+
+  // Replacement event vertical markers
+  let evSvg = '';
+  for (const e of (events || [])) {
+    const ex = x(e.ts);
+    evSvg += `
+      <line x1="${ex}" y1="${padT}" x2="${ex}" y2="${padT + innerH}" stroke="#6fb5ff" stroke-width="1" stroke-dasharray="2 3" opacity="0.6"/>
+      <circle cx="${ex}" cy="${padT}" r="4" fill="#6fb5ff"/>`;
+  }
+
+  // Current value dot (pulsing via larger faded outer)
+  const lastX = x(last.ts), lastY = y(last.mv);
+  const dotColor = segColor(last.mv);
+  const dotSvg = `
+    <circle cx="${lastX}" cy="${lastY}" r="8" fill="${dotColor}" opacity="0.25"/>
+    <circle cx="${lastX}" cy="${lastY}" r="4" fill="${dotColor}"/>`;
+
+  // X axis labels (first, middle, last)
+  const midMs = (minMs + maxMs) / 2;
+  const axisSvg = `
+    <g font-family="JetBrains Mono" font-size="10" fill="#9aa0aa">
+      <text x="${padL}" y="${vbH - 6}">${fmtBattAxisLabel(minMs)}</text>
+      <text x="${padL + innerW / 2}" y="${vbH - 6}" text-anchor="middle">${fmtBattAxisLabel(midMs)}</text>
+      <text x="${vbW - padR}" y="${vbH - 6}" text-anchor="end">${fmtBattAxisLabel(maxMs)}</text>
+    </g>`;
+
+  svg.innerHTML = gridSvg + cutoffSvg + runsSvg + evSvg + dotSvg + axisSvg;
+
+  // Update badge
+  if (badge && badgeLabel) {
+    badge.className = 'batt-health-badge' + (health === 'good' ? '' : ' ' + health);
+    const pct = mvToPercent(last.mv);
+    const lbl = health === 'good' ? 'Good' : health === 'warn' ? 'Warn' : 'Critical';
+    badgeLabel.textContent = lbl + ' · ' + pct + '%';
+  }
+
+  // Update stats
+  if (statCurrent) {
+    statCurrent.textContent = Math.round(last.mv) + ' mV';
+    statCurrent.className = 'v ' + health;
+  }
+  if (statDrift) {
+    if (drift && drift.mvPerDay < 0) {
+      statDrift.innerHTML = Math.abs(drift.mvPerDay).toFixed(1) + '<span class="u">mV ↓</span>';
+    } else if (drift && drift.mvPerDay > 0) {
+      statDrift.innerHTML = drift.mvPerDay.toFixed(1) + '<span class="u">mV ↑</span>';
+    } else {
+      statDrift.textContent = '—';
+    }
+    statDrift.className = 'v';
+  }
+  if (statRange) {
+    statRange.textContent = Math.round(first.mv) + ' → ' + Math.round(last.mv);
+    statRange.className = 'v';
+  }
+  if (statDays) {
+    const days = projectDaysToCutoff(last.mv, drift ? drift.mvPerDay : 0);
+    if (days == null) {
+      statDays.textContent = 'stable';
+      statDays.className = 'v';
+    } else if (days < 14) {
+      statDays.textContent = '~' + days;
+      statDays.className = 'v crit';
+    } else if (days < 60) {
+      statDays.textContent = '~' + days;
+      statDays.className = 'v warn';
+    } else {
+      statDays.textContent = '~' + days;
+      statDays.className = 'v good';
+    }
+  }
+
+  // Update range label in panel head
+  if (rangeLabel) {
+    rangeLabel.textContent = fmtBattAxisLabel(minMs) + ' → ' + fmtBattAxisLabel(maxMs);
+  }
+
+  // Update event strip — show most recent if any
+  if (evBox && evText && evDate) {
+    if (events && events.length) {
+      const e = events[events.length - 1];
+      evBox.className = 'batt-events';
+      evText.textContent = 'Battery replacement detected — voltage jumped from ' +
+        (e.before/1000).toFixed(2) + ' V to ' + (e.after/1000).toFixed(2) +
+        ' V (+' + Math.round(e.delta) + ' mV)';
+      evDate.textContent = fmtBattAxisLabel(e.ts);
+    } else {
+      evBox.className = 'batt-events no-events';
+      evText.textContent = 'No battery replacement events detected';
+      evDate.textContent = '';
+    }
+  }
+}
+
 // =========================================================================
 // Timezone helpers — all timestamp display goes through `tz` so swapping the
 // active device automatically updates labels, axes, exports, etc.
@@ -2497,11 +3046,6 @@ function fmtMYT(d) {
   const p = tz.partsOf(d);
   return p.y + '-' + String(p.mo).padStart(2, '0') + '-' + String(p.d).padStart(2, '0') +
     ' ' + String(p.h).padStart(2, '0') + ':' + String(p.mi).padStart(2, '0') + tz.offset();
-}
-function fmtMYTDate(d) {
-  // Locale-friendly date (DD/MM/YYYY) — used by older code; kept for compatibility
-  const p = tz.partsOf(d);
-  return String(p.d).padStart(2, '0') + '/' + String(p.mo).padStart(2, '0') + '/' + p.y;
 }
 function fmtMYTTime(d) {
   const p = tz.partsOf(d);
@@ -3747,14 +4291,21 @@ function applyPreset(name) {
       from = `${y}-${m}-01`; to = today; break;
     }
     case 'all': {
-      // Fall back to the active device's saved default range
+      // "All saved" — fetch a wide range, then narrow the FROM/TO inputs to
+      // the actual earliest/latest data the device returns.
       const dev = activeDevice();
       if (!dev) return;
-      dev.from = dev.from || '2026-01-01T16:00:00Z';
-      dev.to   = dev.to   || '2028-12-31T16:00:00Z';
+      // Wide query window: 3 years back, 1 day forward (UTC).
+      const nowMs = Date.now();
+      const wideFromIso = new Date(nowMs - 3 * 365 * 86400 * 1000).toISOString();
+      const wideToIso   = new Date(nowMs + 1 * 86400 * 1000).toISOString();
+      dev.from = wideFromIso;
+      dev.to   = wideToIso;
       saveCfg(cfg);
-      setFilterInputs(dev.from.slice(0, 10), dev.to.slice(0, 10));
+      // Show the wide window in the inputs while loading (will narrow after fetch).
+      setFilterInputs(wideFromIso.slice(0, 10), wideToIso.slice(0, 10));
       highlightPreset('all');
+      window._allSavedPending = true;
       fetchData();
       return;
     }
@@ -3823,12 +4374,6 @@ function csvEscape(v) {
   const s = String(v);
   return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
-function buildCsv(headers, rows) {
-  const lines = [headers.map(csvEscape).join(',')];
-  for (const r of rows) lines.push(r.map(csvEscape).join(','));
-  return lines.join('\r\n');
-}
-
 // Shared metadata block prepended to every export
 function exportMetadata() {
   const dev = activeDevice() || {};
@@ -4044,7 +4589,7 @@ function exportEngineerKpisCsv() {
     ['Calibration Drift', cal ? (cal.ratio * 100).toFixed(2) : '—', '%', cal ? 'vs ' + cal.configured + ' imp/kWh' : ''],
     ['Total Outages', out.events, 'events', out.totalMinutes + ' min total'],
     ['Longest Outage', out.longestMinutes, 'min', ''],
-    ['Battery Drift', bat ? bat.deltaMv : '—', 'mV', bat ? bat.startMv + '→' + bat.endMv + ' mV' : '']
+    ['Battery Drift', bat ? bat.deltaMv : '—', 'mV', bat ? bat.startMv + ' -> ' + bat.endMv + ' mV' : '']
   ];
   const csv = csvWithMetadata([], rows);
   downloadFile(exportFilename('engineer', 'kpis', 'csv'), csv, 'text/csv');
@@ -4130,7 +4675,7 @@ function exportEngineerPdf() {
       ['Load Factor', (lf != null ? lf.toFixed(0) + ' %' : '—'), 'Avg / Peak'],
       ['Calibration Drift', (cal ? (cal.ratio * 100).toFixed(1) + ' %' : '—'), cal ? 'vs ' + cal.configured + ' imp/kWh' : ''],
       ['Total Outages', String(out.events), out.totalMinutes ? out.totalMinutes + ' min total · longest ' + out.longestMinutes + ' min' : 'no gaps'],
-      ['Battery Drift', (bat ? (bat.deltaMv > 0 ? '+' : '') + bat.deltaMv + ' mV' : '—'), bat ? bat.startMv + '→' + bat.endMv + ' mV' : '']
+      ['Battery Drift', (bat ? (bat.deltaMv > 0 ? '+' : '') + bat.deltaMv + ' mV' : '—'), bat ? bat.startMv + ' -> ' + bat.endMv + ' mV' : '']
     ],
     theme: 'grid',
     styles: { fontSize: 9, cellPadding: 4 },
@@ -4147,10 +4692,11 @@ function exportEngineerPdf() {
     theme: 'grid',
     styles: { fontSize: 9, cellPadding: 4 },
     headStyles: { fillColor: [26, 26, 26], textColor: 255, fontSize: 9 },
-    didDrawPage: (data) => {
+    didDrawPage: (() => { let first = true; return (data) => {
+      if (!first) return; first = false;
       doc.setFontSize(11); doc.setTextColor(40);
       doc.text('Top 10 Peak Intervals', 40, data.settings.startY - 6);
-    }
+    }; })()
   });
 
   // Outages
@@ -4163,10 +4709,11 @@ function exportEngineerPdf() {
     theme: 'grid',
     styles: { fontSize: 9, cellPadding: 4 },
     headStyles: { fillColor: [26, 26, 26], textColor: 255, fontSize: 9 },
-    didDrawPage: (data) => {
+    didDrawPage: (() => { let first = true; return (data) => {
+      if (!first) return; first = false;
       doc.setFontSize(11); doc.setTextColor(40);
       doc.text('Outages / Gaps', 40, data.settings.startY - 6);
-    }
+    }; })()
   });
 
   // Device Diagnostics
@@ -4182,10 +4729,11 @@ function exportEngineerPdf() {
     theme: 'grid',
     styles: { fontSize: 9, cellPadding: 4 },
     headStyles: { fillColor: [26, 26, 26], textColor: 255, fontSize: 9 },
-    didDrawPage: (data) => {
+    didDrawPage: (() => { let first = true; return (data) => {
+      if (!first) return; first = false;
       doc.setFontSize(11); doc.setTextColor(40);
       doc.text('Device Diagnostics (latest frame)', 40, data.settings.startY - 6);
-    }
+    }; })()
   });
 
   doc.save(exportFilename('engineer', 'report', 'pdf'));
@@ -4310,10 +4858,11 @@ function exportAnalystPdf() {
     theme: 'grid',
     styles: { fontSize: 9, cellPadding: 4 },
     headStyles: { fillColor: [26, 26, 26], textColor: 255, fontSize: 9 },
-    didDrawPage: (data) => {
+    didDrawPage: (() => { let first = true; return (data) => {
+      if (!first) return; first = false;
       doc.setFontSize(11); doc.setTextColor(40);
       doc.text('Distribution (16 bins)', 40, data.settings.startY - 6);
-    }
+    }; })()
   });
 
   // Heatmap matrix
@@ -4335,10 +4884,11 @@ function exportAnalystPdf() {
     styles: { fontSize: 6, cellPadding: 2, halign: 'center' },
     headStyles: { fillColor: [26, 26, 26], textColor: 255, fontSize: 6 },
     columnStyles: { 0: { fillColor: [240, 240, 240], textColor: 0, fontStyle: 'bold' } },
-    didDrawPage: (data) => {
+    didDrawPage: (() => { let first = true; return (data) => {
+      if (!first) return; first = false;
       doc.setFontSize(11); doc.setTextColor(40);
       doc.text('24 × 7 Heatmap (avg kW)', 40, data.settings.startY - 6);
-    }
+    }; })()
   });
 
   doc.save(exportFilename('analyst', 'report', 'pdf'));
@@ -4393,6 +4943,123 @@ exportMenu.addEventListener('click', (e) => {
 });
 
 /* =========================
+   Info tooltips — auto-inject ⓘ button next to every [data-info] label.
+   Click/tap toggles the floating tip. Hover also shows it on desktop.
+   ========================= */
+(function() {
+  const tip = document.createElement('div');
+  tip.className = 'info-tip';
+  tip.innerHTML =
+    '<button class="info-tip-close" type="button" aria-label="Close">✕</button>' +
+    '<div class="info-tip-title" id="_infoTipTitle"></div>' +
+    '<div id="_infoTipBody"></div>';
+  document.body.appendChild(tip);
+  let activeBtn = null;
+  let isHoverShown = false;
+
+  function showTip(btn, fromHover) {
+    const titleSrc = btn.previousSibling && btn.previousSibling.nodeType === 3
+      ? btn.previousSibling.textContent.trim()
+      : (btn.parentElement && btn.parentElement.textContent.trim().replace(/[ⓘℹi]\s*$/, '').trim()) || 'Info';
+    const body = btn.getAttribute('data-info-body') || '';
+    document.getElementById('_infoTipTitle').textContent = titleSrc;
+    document.getElementById('_infoTipBody').textContent = body;
+    tip.classList.add('show');
+    if (activeBtn && activeBtn !== btn) activeBtn.classList.remove('active');
+    activeBtn = btn;
+    if (!fromHover) btn.classList.add('active');
+    isHoverShown = !!fromHover;
+    requestAnimationFrame(() => positionTip(btn));
+  }
+
+  function hideTip() {
+    tip.classList.remove('show');
+    if (activeBtn) activeBtn.classList.remove('active');
+    activeBtn = null;
+    isHoverShown = false;
+  }
+
+  function positionTip(btn) {
+    const rect = btn.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+    const gap = 8;
+    let left = rect.left + rect.width / 2 - tipRect.width / 2;
+    let top = rect.bottom + gap;
+    // Clamp horizontally
+    if (left < 10) left = 10;
+    if (left + tipRect.width > window.innerWidth - 10) {
+      left = window.innerWidth - tipRect.width - 10;
+    }
+    // Flip vertically if it would overflow bottom
+    if (top + tipRect.height > window.innerHeight - 10) {
+      top = rect.top - tipRect.height - gap;
+      if (top < 10) top = 10;
+    }
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+
+  // Auto-inject info buttons next to every [data-info] element.
+  function injectInfoButtons() {
+    document.querySelectorAll('[data-info]').forEach(el => {
+      // Don't double-inject
+      if (el.querySelector(':scope > .info-btn')) return;
+      const body = el.getAttribute('data-info');
+      if (!body) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'info-btn';
+      btn.setAttribute('aria-label', 'Show info');
+      btn.setAttribute('data-info-body', body);
+      btn.textContent = 'i';
+      el.appendChild(btn);
+    });
+  }
+
+  // Click handler — toggle on info-btn click, dismiss on outside click
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.info-tip-close')) { hideTip(); return; }
+    const btn = e.target.closest('.info-btn');
+    if (btn) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (activeBtn === btn && !isHoverShown) hideTip();
+      else showTip(btn, false);
+      return;
+    }
+    if (!e.target.closest('.info-tip')) hideTip();
+  });
+
+  // Hover-to-show on desktop (only when no click-locked tip is open)
+  document.addEventListener('mouseover', (e) => {
+    const btn = e.target.closest('.info-btn');
+    if (!btn) return;
+    if (activeBtn && !isHoverShown) return; // a clicked tip takes priority
+    showTip(btn, true);
+  });
+  document.addEventListener('mouseout', (e) => {
+    const btn = e.target.closest('.info-btn');
+    if (!btn || !isHoverShown) return;
+    // Delay hide to let user move to tip if needed
+    setTimeout(() => {
+      if (isHoverShown && !tip.matches(':hover') && !btn.matches(':hover')) hideTip();
+    }, 100);
+  });
+  tip.addEventListener('mouseleave', () => {
+    if (isHoverShown) hideTip();
+  });
+
+  // Dismiss on scroll/resize/escape
+  window.addEventListener('scroll', hideTip, true);
+  window.addEventListener('resize', hideTip);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTip(); });
+
+  injectInfoButtons();
+  // Re-inject in case dynamic content adds more labels later (cheap, idempotent)
+  window._refreshInfoButtons = injectInfoButtons;
+})();
+
+/* =========================
    Bootstrap
    ========================= */
 renderDeviceSelect();
@@ -4403,7 +5070,7 @@ document.getElementById('welcomeSetupBtn').addEventListener('click', openModal);
 const dev = activeDevice();
 const isConfigured = dev && dev.key && dev.dataUrl && dev.deviceId;
 if (isConfigured) {
-  fetchData();
+  applyPreset('all');
   fetchStatus();
   startStatusPolling();
 } else {
