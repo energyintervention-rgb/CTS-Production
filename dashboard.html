@@ -3330,7 +3330,7 @@ async function generateWorkerReport(name){
     return {type:'work', label:'Working Day'};
   }
 
-  let totalDays=0,present=0,onTimeCnt=0,lateCnt=0,absentCnt=0,otCnt=0,totalHours=0;
+  let totalDays=0,present=0,onTimeCnt=0,lateCnt=0,absentCnt=0,otCnt=0,totalHours=0,totalLateMin=0;
   const isFlex = isFlexWorker(name);
   const flexAtt = pr.flexAttendance||{};
   const rows = dates.map((date,i)=>{
@@ -3391,6 +3391,7 @@ async function generateWorkerReport(name){
           statusColor = '#1f6391'; statusBg = '#e1eef7';
         } else if(attStatus.lateMin > 0){
           lateCnt++;
+          totalLateMin += attStatus.lateMin;
           lateStr = fmtLateDuration(attStatus.lateMin);
           status = attStatus.severity.tier === 'mismatch'
             ? '⚠ Shift mismatch? +' + lateStr
@@ -3497,7 +3498,7 @@ async function generateWorkerReport(name){
   <div class="sum">
     <div class="sc s1"><div class="k">Attendance</div><div class="v">${attendRate}%</div></div>
     <div class="sc s2"><div class="k">Total Hours</div><div class="v">${isFlex?minsToHHMM(Math.round(totalHours*60)):totalHours.toFixed(1)+'h'}</div></div>
-    <div class="sc s3"><div class="k">Late</div><div class="v">${lateCnt}</div></div>
+    <div class="sc s3"><div class="k">Late</div><div class="v">${lateCnt}</div>${totalLateMin>0?`<div style="font-size:8px;color:#5a5a5a;margin-top:2px;font-weight:600;font-family:monospace">${fmtLateDuration(totalLateMin)} total</div>`:''}</div>
     <div class="sc s4"><div class="k">Absent</div><div class="v">${absentCnt}</div></div>
   </div>
   <div class="sec">Daily Attendance</div>
@@ -3513,7 +3514,7 @@ async function generateWorkerReport(name){
     </tr></thead>
     <tbody>${rows}
     <tr class="tot">
-      <td colspan="4" style="font-size:10px">TOTAL — ${totalDays} workday${totalDays===1?'':'s'} · ${present} present · ${absentCnt} absent · ${lateCnt} late · ${otCnt} OT day${otCnt===1?'':'s'}</td>
+      <td colspan="4" style="font-size:10px">TOTAL — ${totalDays} workday${totalDays===1?'':'s'} · ${present} present · ${absentCnt} absent · ${lateCnt} late${totalLateMin>0?` (${fmtLateDuration(totalLateMin)})`:''} · ${otCnt} OT day${otCnt===1?'':'s'}</td>
       <td class="hrs" style="font-size:11px">${isFlex?minsToHHMM(Math.round(totalHours*60)):totalHours.toFixed(1)+'h'}</td>
       <td></td>
     </tr>
