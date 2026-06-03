@@ -3739,47 +3739,48 @@ async function generateWorkerReport(name, fromOverride, toOverride){
   const holidays = pr.plan.holidays||[];
   const att = pr.attendance||{};
 
-  // Build a full calendar — every day from the start of the FIRST record's month
-  // through today. Empty rest days and holidays still get their own row so the
-  // report reads like a true calendar.
-  const recordDates = Object.keys(att)
-    .filter(k => k.startsWith(name+'_'))
-    .map(k => k.replace(name+'_',''))
-    .sort();
-  // Also include flex-attendance dates if this is a flex worker
-  if(isFlexWorker(name)){
-    const flexKeys = Object.keys(pr.flexAttendance||{})
-      .filter(k => k.startsWith(name+'_'))
-      .map(k => k.replace(name+'_',''));
-    flexKeys.forEach(d => { if(!recordDates.includes(d)) recordDates.push(d); });
-    recordDates.sort();
+  // Collect dates that have ACTUAL records — attendance, flexAttendance, or flexSessions.
+  // Deleted dates simply won't appear because they're not in any of these maps.
+  // This is intentional: "delete = gone from report" semantics.
+  const recordSet = new Set();
+  Object.keys(att).filter(k => k.startsWith(name+'_')).forEach(k => recordSet.add(k.replace(name+'_','')));
+  if(pr.flexAttendance){
+    Object.keys(pr.flexAttendance).filter(k => k.startsWith(name+'_')).forEach(k => {
+      const sessions = pr.flexAttendance[k];
+      if(sessions && sessions.length > 0) recordSet.add(k.replace(name+'_',''));
+    });
+  }
+  if(pr.flexSessions){
+    Object.keys(pr.flexSessions).filter(k => k.startsWith(name+'_')).forEach(k => {
+      const sessions = pr.flexSessions[k];
+      if(sessions && sessions.length > 0) recordSet.add(k.replace(name+'_',''));
+    });
+  }
+  const recordDates = [...recordSet].sort();
+
+  // Filter to optional date-range override (admin/supervisor picker).
+  // If no override, show ALL records this worker has.
+  let dates;
+  if(fromOverride && toOverride){
+    dates = recordDates.filter(d => d >= fromOverride && d <= toOverride);
+  } else {
+    dates = recordDates;
   }
 
-  // Determine date range:
-  // - If admin/supervisor passed an explicit range, honor it
-  // - Otherwise: start of the first record's month → today (the default)
-  let startDate, endDate;
-  if(fromOverride && toOverride){
-    startDate = new Date(fromOverride);
-    endDate = new Date(toOverride);
-  } else if(recordDates.length > 0){
-    const first = new Date(recordDates[0]);
-    startDate = new Date(first.getFullYear(), first.getMonth(), 1);
-    endDate = new Date(TODAY);
-  } else {
-    const t = new Date(TODAY);
-    startDate = new Date(t.getFullYear(), t.getMonth(), 1);
-    endDate = new Date(TODAY);
-  }
-  // Build the full date list (YYYY-MM-DD strings)
-  const dates = [];
-  const cursor = new Date(startDate);
-  while(cursor <= endDate){
-    const y = cursor.getFullYear();
-    const m = String(cursor.getMonth()+1).padStart(2,'0');
-    const d = String(cursor.getDate()).padStart(2,'0');
-    dates.push(y+'-'+m+'-'+d);
-    cursor.setDate(cursor.getDate()+1);
+  // Empty result → show friendly message instead of empty table
+  if(dates.length === 0){
+    const reportTitle = fromOverride && toOverride
+      ? `Attendance Report — ${name} (${fromOverride} to ${toOverride})`
+      : `Attendance Report — ${name}`;
+    const html = `<!DOCTYPE html><html><head><title>${escH(reportTitle)}</title><style>body{font-family:system-ui,sans-serif;padding:40px;color:#1a1a1a;}h1{color:#ff5b2e;}p{color:#5a5a5a;line-height:1.6;}</style></head><body>
+      <h1>${escH(reportTitle)}</h1>
+      <p>No attendance records found${fromOverride?` in the range <strong>${fromOverride}</strong> to <strong>${toOverride}</strong>`:''}.</p>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;margin-top:30px;">Generated ${new Date().toLocaleString('en-MY',{timeZone:'Asia/Kuala_Lumpur'})}</p>
+    </body></html>`;
+    const win = window.open('', '_blank');
+    win.document.write(html); win.document.close();
+    showToast('No records to report');
+    return;
   }
 
   function getDayType(dateStr){
