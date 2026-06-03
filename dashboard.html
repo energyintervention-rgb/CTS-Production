@@ -792,6 +792,7 @@ body::before {
       <div>
         <div class="snav-uname" id="snav-uname">—</div>
         <div class="snav-urole" id="snav-urole">—</div>
+        <span id="idleTimerBadge" style="display:none;margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.5px;color:#fff;background:var(--bad);padding:2px 6px;border-radius:2px;font-weight:700;">⏻ Auto-logout in 60s</span>
       </div>
     </div>
     <button class="snav-item danger" onclick="logout()">
@@ -1476,7 +1477,71 @@ function saveSession(sess,remember){
   }
 }
 
+// ────────────────────────────────────────────────────────────────
+// IDLE AUTO-LOGOUT — admin & supervisor only
+// 10 minutes of no mouse/keyboard/touch activity → auto-logout.
+// Worker sessions are not auto-logged (workers may leave a tablet
+// open during their shift). The countdown shows in the session
+// banner as "Auto-logout in MM:SS" once we get within 60 seconds.
+// ────────────────────────────────────────────────────────────────
+const IDLE_TIMEOUT_MINUTES = 10;
+const IDLE_WARNING_SECONDS = 60;
+let _idleSecondsLeft = IDLE_TIMEOUT_MINUTES * 60;
+let _idleInterval = null;
+let _idleActivityBound = false;
+
+function startIdleTimer(){
+  // Only enforce on admin / supervisor
+  if(!SESSION || (SESSION.role !== 'admin' && SESSION.role !== 'supervisor')) return;
+  resetIdleTimer();
+  // Bind activity listeners once (passive for performance)
+  if(!_idleActivityBound){
+    ['mousemove','mousedown','keydown','scroll','touchstart','click'].forEach(evt => {
+      document.addEventListener(evt, resetIdleTimer, { passive: true });
+    });
+    _idleActivityBound = true;
+  }
+  // Countdown — runs every second, fires logout when reaches 0
+  if(_idleInterval) clearInterval(_idleInterval);
+  _idleInterval = setInterval(() => {
+    _idleSecondsLeft--;
+    updateIdleBanner();
+    if(_idleSecondsLeft <= 0){
+      clearInterval(_idleInterval); _idleInterval = null;
+      const role = SESSION ? SESSION.role : 'session';
+      showToast('⏻ Auto-logged out after '+IDLE_TIMEOUT_MINUTES+' min of inactivity','warn');
+      logActivity('AUTO_LOGOUT', role+' session auto-logged out after '+IDLE_TIMEOUT_MINUTES+'min idle');
+      setTimeout(logout, 600);  // brief delay so toast is visible
+    }
+  }, 1000);
+  updateIdleBanner();
+}
+
+function resetIdleTimer(){
+  _idleSecondsLeft = IDLE_TIMEOUT_MINUTES * 60;
+  updateIdleBanner();
+}
+
+function stopIdleTimer(){
+  if(_idleInterval){ clearInterval(_idleInterval); _idleInterval = null; }
+  const el = document.getElementById('idleTimerBadge');
+  if(el) el.style.display = 'none';
+}
+
+function updateIdleBanner(){
+  // Show countdown badge only when we're inside the warning window (last minute)
+  const el = document.getElementById('idleTimerBadge');
+  if(!el) return;
+  if(_idleSecondsLeft <= IDLE_WARNING_SECONDS){
+    el.style.display = 'inline-block';
+    el.textContent = '⏻ Auto-logout in ' + _idleSecondsLeft + 's';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
 function logout(){
+  stopIdleTimer();
   logActivity('LOGOUT','Logged out',SESSION?SESSION.name:'unknown');
   SESSION=null;
   localStorage.removeItem('cts_session');
@@ -1697,8 +1762,8 @@ function onLoginSuccess(){
     S.chartProjectId=SESSION.projectId;
     showWorkerView();
     setTimeout(checkAutoClockOut,800);
-  } else if(SESSION.role==='supervisor') showSupervisorView();
-  else showAdminView();
+  } else if(SESSION.role==='supervisor') { showSupervisorView(); startIdleTimer(); }
+  else { showAdminView(); startIdleTimer(); }
 }
 
 function showWorkerView(){
