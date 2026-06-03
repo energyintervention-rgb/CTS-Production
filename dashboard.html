@@ -1106,7 +1106,36 @@ body::before {
     <h3 style="text-align:center;">Confirm Clock In</h3>
     <p style="text-align:center;line-height:1.6;" id="clockInMsg"></p>
     <label style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;display:block;margin-bottom:6px;text-transform:uppercase;" id="clockInReasonLabel">REASON / NOTE (OPTIONAL)</label>
-    <input class="modal-input" id="clockInReason" placeholder="e.g. Traffic, MC, Early shift…" onkeydown="if(event.key==='Enter')confirmClockIn()">
+    <select class="modal-input" id="clockInReasonSelect" style="margin-bottom:6px;" onchange="onReasonPicked('clockInReason',this.value)">
+      <option value="">— Pick a reason —</option>
+      <optgroup label="On Time">
+        <option>Normal shift start</option>
+        <option>Early shift</option>
+        <option>Night shift</option>
+      </optgroup>
+      <optgroup label="Late — Personal">
+        <option>Traffic</option>
+        <option>Weather</option>
+        <option>Vehicle problem</option>
+        <option>Family emergency</option>
+        <option>Overslept</option>
+        <option>Medical / MC</option>
+      </optgroup>
+      <optgroup label="Off-site / Travel (excused)">
+        <option>Airport pickup / drop-off</option>
+        <option>Client visit</option>
+        <option>Site visit</option>
+        <option>Travel — Singapore</option>
+        <option>Travel — other state</option>
+        <option>Outstation</option>
+        <option>Offsite work</option>
+      </optgroup>
+      <optgroup label="Other">
+        <option>Flex shift</option>
+        <option value="__other">Other (type below)</option>
+      </optgroup>
+    </select>
+    <input class="modal-input" id="clockInReason" placeholder="Type custom reason or pick from list above…" onkeydown="if(event.key==='Enter')confirmClockIn()">
     <div id="clockInHint" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--bad);margin-bottom:8px;display:none;">⚠ Please provide a reason for being late.</div>
     <p style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-soft);margin-bottom:14px;line-height:1.5;">This record is final once submitted.<br>Only Admin can make changes after this.</p>
     <div class="modal-actions">
@@ -1141,7 +1170,31 @@ body::before {
     <h3 style="text-align:center;" id="clockOutTitle">Confirm Clock Out</h3>
     <p style="text-align:center;line-height:1.6;" id="clockOutMsg"></p>
     <label style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;display:block;margin-bottom:6px;text-transform:uppercase;" id="clockOutReasonLabel">REASON / NOTE (OPTIONAL)</label>
-    <input class="modal-input" id="clockOutReason" placeholder="e.g. Shift complete, Early leave…" onkeydown="if(event.key==='Enter')confirmClockOut()">
+    <select class="modal-input" id="clockOutReasonSelect" style="margin-bottom:6px;" onchange="onReasonPicked('clockOutReason',this.value)">
+      <option value="">— Pick a reason —</option>
+      <optgroup label="Normal">
+        <option>Shift complete</option>
+        <option>End of overtime</option>
+        <option>End of flex session</option>
+      </optgroup>
+      <optgroup label="Early Leave">
+        <option>Medical / MC</option>
+        <option>Family emergency</option>
+        <option>Personal appointment</option>
+        <option>Early dismissal by supervisor</option>
+        <option>Feeling unwell</option>
+      </optgroup>
+      <optgroup label="Off-site / Travel">
+        <option>Leaving for client visit</option>
+        <option>Leaving for site visit</option>
+        <option>Travel — flight catch</option>
+        <option>Outstation</option>
+      </optgroup>
+      <optgroup label="Other">
+        <option value="__other">Other (type below)</option>
+      </optgroup>
+    </select>
+    <input class="modal-input" id="clockOutReason" placeholder="Type custom reason or pick from list above…" onkeydown="if(event.key==='Enter')confirmClockOut()">
     <div id="clockOutHint" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--bad);margin-bottom:8px;display:none;">⚠ Please provide a reason for leaving early.</div>
     <p style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-soft);margin-bottom:14px;line-height:1.5;">This record is final once submitted.<br>Only Admin can make changes after this.</p>
     <div class="modal-actions">
@@ -2318,6 +2371,33 @@ function isOvernightClockout(inStr,outStr){
   const [oh,om]=outStr.substring(0,5).split(':').map(Number);
   return (oh*60+om)<(ih*60+im);
 }
+// Reason-picker handler — when user selects from the dropdown, copy value into
+// the matching text input. "Other" clears the input so user can type freely.
+function onReasonPicked(inputId, selected){
+  const inp = document.getElementById(inputId);
+  if(!inp) return;
+  if(selected === '__other' || selected === ''){
+    inp.value = '';
+    inp.focus();
+  } else {
+    inp.value = selected;
+  }
+}
+
+// Reset both the dropdown and the text input when opening a modal
+function resetReasonField(modalId){
+  const map = {
+    clockInModal: ['clockInReasonSelect','clockInReason'],
+    clockOutModal: ['clockOutReasonSelect','clockOutReason']
+  };
+  const pair = map[modalId];
+  if(!pair) return;
+  const sel = document.getElementById(pair[0]);
+  const inp = document.getElementById(pair[1]);
+  if(sel) sel.value = '';
+  if(inp) inp.value = '';
+}
+
 function nowHMS(){
   const n=new Date();
   return n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0')+':'+n.getSeconds().toString().padStart(2,'0');
@@ -2591,7 +2671,7 @@ function requestClockin(name){
   lbl.textContent=isLate?'REASON FOR LATE (REQUIRED)':'REASON / NOTE (OPTIONAL)';
   lbl.style.color=isLate?'var(--warn)':'var(--ink-soft)';
   hint.style.display='none';
-  document.getElementById('clockInReason').value='';
+  resetReasonField('clockInModal');
   document.getElementById('clockInModal').classList.add('show');
   setTimeout(()=>document.getElementById('clockInReason').focus(),200);
 }
@@ -2634,6 +2714,7 @@ function proceedToClockOut(){
   lbl.textContent=isEarly?'REASON FOR LEAVING EARLY (REQUIRED)':'REASON / NOTE (OPTIONAL)';
   lbl.style.color=isEarly?'var(--warn)':'var(--ink-soft)';
   document.getElementById('clockOutHint').style.display='none';
+  resetReasonField('clockOutModal');
   document.getElementById('clockOutReason').value=rec.reason||'';
   document.getElementById('clockOutBtn').textContent=isEarly?'Confirm Early Leave':'Yes, Clock Out';
   document.getElementById('clockOutModal').classList.add('show');
