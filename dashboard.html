@@ -1240,6 +1240,12 @@ body::before {
     <div style="text-align:center;margin-bottom:8px;font-size:1.8rem;">🗑</div>
     <h3 style="text-align:center;color:var(--bad);">Permanent Cleanup</h3>
     <p style="text-align:center;line-height:1.6;font-size:12px;color:var(--ink-soft);margin-bottom:10px;" id="cleanupMsg">—</p>
+    <div id="cleanupWorkerField" style="display:none;margin-bottom:10px;">
+      <label style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink-soft);display:block;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">WORKER (target)</label>
+      <select class="modal-input" id="cleanupWorker" onchange="onCleanupWorkerChanged()" style="margin-bottom:0;">
+        <option value="__all">All workers in this project</option>
+      </select>
+    </div>
     <div id="cleanupRangeFields" style="display:none;background:color-mix(in srgb, var(--bad) 5%, transparent);border:1px solid color-mix(in srgb, var(--bad) 25%, transparent);border-radius:2px;padding:8px 10px;margin-bottom:10px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div>
@@ -3570,6 +3576,21 @@ function openCleanupModal(mode){
   document.getElementById('cleanupConfirmBtn').style.cursor = 'not-allowed';
   document.getElementById('cleanupRangeFields').style.display = (mode === 'range') ? 'block' : 'none';
 
+  const pr = attProject();
+
+  // Populate worker dropdown — visible for 'project' and 'range' modes only (not 'all' nuclear)
+  const workerField = document.getElementById('cleanupWorkerField');
+  const workerSel = document.getElementById('cleanupWorker');
+  if(mode === 'all'){
+    workerField.style.display = 'none';
+  } else {
+    workerField.style.display = 'block';
+    const workers = (pr.workers || []);
+    workerSel.innerHTML = '<option value="__all">All workers in this project</option>' +
+      workers.map(w => `<option value="${escH(w)}">${escH(w)}</option>`).join('');
+    workerSel.value = '__all';
+  }
+
   if(mode === 'range'){
     const t = new Date();
     const first = new Date(t.getFullYear(), t.getMonth(), 1);
@@ -3577,18 +3598,14 @@ function openCleanupModal(mode){
     document.getElementById('cleanupTo').value = isoDate(t);
   }
 
-  const pr = attProject();
   const msg = document.getElementById('cleanupMsg');
   const preview = document.getElementById('cleanupPreview');
 
   if(mode === 'project'){
-    const count = Object.keys(pr.attendance||{}).length
-                + Object.keys(pr.flexAttendance||{}).length
-                + Object.keys(pr.flexSessions||{}).length;
-    msg.innerHTML = `This will permanently delete <strong>all attendance and flex sessions</strong> in <strong>${escH(pr.name)}</strong>.`;
-    preview.textContent = count + ' record' + (count===1?'':'s') + ' will be deleted from "' + pr.name + '"';
+    updateCleanupProjectPreview();
+    msg.innerHTML = `Permanently delete attendance records in <strong>${escH(pr.name)}</strong>.`;
   } else if(mode === 'range'){
-    msg.innerHTML = `This will permanently delete attendance records within the selected range in <strong>${escH(pr.name)}</strong>.`;
+    msg.innerHTML = `Permanently delete attendance records within the selected date range in <strong>${escH(pr.name)}</strong>.`;
     updateCleanupRangePreview();
   } else if(mode === 'all'){
     let total = 0;
@@ -3597,11 +3614,35 @@ function openCleanupModal(mode){
       total += Object.keys(p.flexAttendance||{}).length;
       total += Object.keys(p.flexSessions||{}).length;
     });
-    msg.innerHTML = `<strong style="color:var(--bad)">⚠ NUCLEAR OPTION</strong><br>This will permanently delete attendance from <strong>ALL ${(S.projects||[]).length} project(s)</strong>.`;
+    msg.innerHTML = `<strong style="color:var(--bad)">⚠ NUCLEAR OPTION</strong><br>Delete attendance from <strong>ALL ${(S.projects||[]).length} project(s)</strong> for <strong>ALL workers</strong>.`;
     preview.textContent = total + ' record' + (total===1?'':'s') + ' will be deleted across ' + (S.projects||[]).length + ' project(s)';
   }
 
   document.getElementById('cleanupModal').classList.add('show');
+}
+
+// Re-compute preview when worker dropdown changes
+function onCleanupWorkerChanged(){
+  if(_cleanupMode === 'project') updateCleanupProjectPreview();
+  else if(_cleanupMode === 'range') updateCleanupRangePreview();
+}
+
+// Helper: does this key belong to the selected worker?
+function inWorkerScope(key){
+  const sel = document.getElementById('cleanupWorker');
+  if(!sel || sel.value === '__all') return true;
+  return key.startsWith(sel.value + '_');
+}
+
+function updateCleanupProjectPreview(){
+  if(_cleanupMode !== 'project') return;
+  const pr = attProject();
+  const count = Object.keys(pr.attendance||{}).filter(inWorkerScope).length
+              + Object.keys(pr.flexAttendance||{}).filter(inWorkerScope).length
+              + Object.keys(pr.flexSessions||{}).filter(inWorkerScope).length;
+  const workerSel = document.getElementById('cleanupWorker');
+  const target = (workerSel && workerSel.value !== '__all') ? workerSel.value : 'all workers';
+  document.getElementById('cleanupPreview').textContent = count + ' record' + (count===1?'':'s') + ' will be deleted from "' + pr.name + '" for ' + target;
 }
 
 function updateCleanupRangePreview(){
@@ -3612,6 +3653,7 @@ function updateCleanupRangePreview(){
   let count = 0;
   if(from && to){
     const inRange = key => {
+      if(!inWorkerScope(key)) return false;
       const d = key.split('_').slice(-1)[0]; // last underscore-separated part is the date
       return d >= from && d <= to;
     };
@@ -3619,7 +3661,9 @@ function updateCleanupRangePreview(){
     count += Object.keys(pr.flexAttendance||{}).filter(inRange).length;
     count += Object.keys(pr.flexSessions||{}).filter(inRange).length;
   }
-  document.getElementById('cleanupPreview').textContent = count + ' record' + (count===1?'':'s') + ' will be deleted in range ' + (from||'?') + ' to ' + (to||'?');
+  const workerSel = document.getElementById('cleanupWorker');
+  const target = (workerSel && workerSel.value !== '__all') ? workerSel.value : 'all workers';
+  document.getElementById('cleanupPreview').textContent = count + ' record' + (count===1?'':'s') + ' will be deleted in range ' + (from||'?') + ' to ' + (to||'?') + ' for ' + target;
 }
 
 function onCleanupTyped(val){
@@ -3637,26 +3681,40 @@ function confirmCleanup(){
   let deletedCount = 0;
   let scopeLabel = '';
 
+  const workerSel = document.getElementById('cleanupWorker');
+  const selectedWorker = (workerSel && workerSel.value !== '__all') ? workerSel.value : null;
+  const workerLabel = selectedWorker || 'all workers';
+
   if(mode === 'project'){
-    deletedCount = Object.keys(pr.attendance||{}).length
-                 + Object.keys(pr.flexAttendance||{}).length
-                 + Object.keys(pr.flexSessions||{}).length;
-    pr.attendance = {};
-    pr.flexAttendance = {};
-    if(pr.flexSessions) pr.flexSessions = {};
-    scopeLabel = pr.name;
+    if(selectedWorker){
+      // Delete only this worker's records
+      const prefix = selectedWorker + '_';
+      Object.keys(pr.attendance||{}).filter(k => k.startsWith(prefix)).forEach(k => { delete pr.attendance[k]; deletedCount++; });
+      Object.keys(pr.flexAttendance||{}).filter(k => k.startsWith(prefix)).forEach(k => { delete pr.flexAttendance[k]; deletedCount++; });
+      Object.keys(pr.flexSessions||{}).filter(k => k.startsWith(prefix)).forEach(k => { delete pr.flexSessions[k]; deletedCount++; });
+    } else {
+      // Wipe everything
+      deletedCount = Object.keys(pr.attendance||{}).length
+                   + Object.keys(pr.flexAttendance||{}).length
+                   + Object.keys(pr.flexSessions||{}).length;
+      pr.attendance = {};
+      pr.flexAttendance = {};
+      if(pr.flexSessions) pr.flexSessions = {};
+    }
+    scopeLabel = pr.name + ' / ' + workerLabel;
   } else if(mode === 'range'){
     const from = document.getElementById('cleanupFrom').value;
     const to = document.getElementById('cleanupTo').value;
     if(!from || !to){ showToast('⚠ Pick both dates','warn'); return; }
     const inRange = key => {
+      if(selectedWorker && !key.startsWith(selectedWorker + '_')) return false;
       const d = key.split('_').slice(-1)[0];
       return d >= from && d <= to;
     };
     Object.keys(pr.attendance||{}).filter(inRange).forEach(k => { delete pr.attendance[k]; deletedCount++; });
     Object.keys(pr.flexAttendance||{}).filter(inRange).forEach(k => { delete pr.flexAttendance[k]; deletedCount++; });
     Object.keys(pr.flexSessions||{}).filter(inRange).forEach(k => { delete pr.flexSessions[k]; deletedCount++; });
-    scopeLabel = pr.name + ' / ' + from + ' to ' + to;
+    scopeLabel = pr.name + ' / ' + workerLabel + ' / ' + from + ' to ' + to;
   } else if(mode === 'all'){
     (S.projects||[]).forEach(p => {
       deletedCount += Object.keys(p.attendance||{}).length;
@@ -3739,11 +3797,17 @@ async function generateWorkerReport(name, fromOverride, toOverride){
   const holidays = pr.plan.holidays||[];
   const att = pr.attendance||{};
 
-  // Collect dates that have ACTUAL records — attendance, flexAttendance, or flexSessions.
+  // Collect dates that have ACTUAL records — attendance with clock-in/out/OT data,
+  // or any flex sessions. Empty/blank records (e.g. accidentally saved blank edits)
+  // are excluded so they don't pollute the report.
   // Deleted dates simply won't appear because they're not in any of these maps.
-  // This is intentional: "delete = gone from report" semantics.
   const recordSet = new Set();
-  Object.keys(att).filter(k => k.startsWith(name+'_')).forEach(k => recordSet.add(k.replace(name+'_','')));
+  Object.keys(att).filter(k => k.startsWith(name+'_')).forEach(k => {
+    const rec = att[k];
+    if(rec && (rec.clockIn || rec.clockOut || rec.overtimeStatus || rec.overtimeReason)){
+      recordSet.add(k.replace(name+'_',''));
+    }
+  });
   if(pr.flexAttendance){
     Object.keys(pr.flexAttendance).filter(k => k.startsWith(name+'_')).forEach(k => {
       const sessions = pr.flexAttendance[k];
@@ -3758,28 +3822,51 @@ async function generateWorkerReport(name, fromOverride, toOverride){
   }
   const recordDates = [...recordSet].sort();
 
-  // Filter to optional date-range override (admin/supervisor picker).
-  // If no override, show ALL records this worker has.
-  let dates;
+  // Determine the calendar range to display:
+  // - If admin/supervisor passed an override range, use it
+  // - Otherwise: start of the first record's month → today
+  // - Otherwise (no records): just current month
+  let startDate, endDate;
   if(fromOverride && toOverride){
-    dates = recordDates.filter(d => d >= fromOverride && d <= toOverride);
+    startDate = new Date(fromOverride);
+    endDate = new Date(toOverride);
+  } else if(recordDates.length > 0){
+    const first = new Date(recordDates[0]);
+    startDate = new Date(first.getFullYear(), first.getMonth(), 1);
+    endDate = new Date(TODAY);
   } else {
-    dates = recordDates;
+    const t = new Date(TODAY);
+    startDate = new Date(t.getFullYear(), t.getMonth(), 1);
+    endDate = new Date(TODAY);
   }
 
-  // Empty result → show friendly message instead of empty table
+  // Build the full calendar — every day from start to end (so the report reads
+  // like a calendar, with Rest/Holiday days clearly visible).
+  // Empty days will still render but with "No sessions" markers — they ARE empty
+  // because either no clock-in happened OR the record was deleted (same result).
+  const dates = [];
+  const cursor = new Date(startDate);
+  while(cursor <= endDate){
+    const y = cursor.getFullYear();
+    const m = String(cursor.getMonth()+1).padStart(2,'0');
+    const d = String(cursor.getDate()).padStart(2,'0');
+    dates.push(y+'-'+m+'-'+d);
+    cursor.setDate(cursor.getDate()+1);
+  }
+
+  // Edge case: still empty (shouldn't happen, but safety net)
   if(dates.length === 0){
     const reportTitle = fromOverride && toOverride
       ? `Attendance Report — ${name} (${fromOverride} to ${toOverride})`
       : `Attendance Report — ${name}`;
     const html = `<!DOCTYPE html><html><head><title>${escH(reportTitle)}</title><style>body{font-family:system-ui,sans-serif;padding:40px;color:#1a1a1a;}h1{color:#ff5b2e;}p{color:#5a5a5a;line-height:1.6;}</style></head><body>
       <h1>${escH(reportTitle)}</h1>
-      <p>No attendance records found${fromOverride?` in the range <strong>${fromOverride}</strong> to <strong>${toOverride}</strong>`:''}.</p>
+      <p>No date range to display.</p>
       <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;margin-top:30px;">Generated ${new Date().toLocaleString('en-MY',{timeZone:'Asia/Kuala_Lumpur'})}</p>
     </body></html>`;
     const win = window.open('', '_blank');
     win.document.write(html); win.document.close();
-    showToast('No records to report');
+    showToast('Nothing to report');
     return;
   }
 
