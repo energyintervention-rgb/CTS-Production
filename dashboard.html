@@ -3396,9 +3396,43 @@ async function generateWorkerReport(name){
   const holidays = pr.plan.holidays||[];
   const att = pr.attendance||{};
 
-  const dateSet = new Set(Object.keys(att).filter(k=>k.startsWith(name+'_')).map(k=>k.replace(name+'_','')));
-  dateSet.add(TODAY);
-  const dates = [...dateSet].sort();
+  // Build a full calendar — every day from the start of the FIRST record's month
+  // through today. Empty rest days and holidays still get their own row so the
+  // report reads like a true calendar.
+  const recordDates = Object.keys(att)
+    .filter(k => k.startsWith(name+'_'))
+    .map(k => k.replace(name+'_',''))
+    .sort();
+  // Also include flex-attendance dates if this is a flex worker
+  if(isFlexWorker(name)){
+    const flexKeys = Object.keys(pr.flexAttendance||{})
+      .filter(k => k.startsWith(name+'_'))
+      .map(k => k.replace(name+'_',''));
+    flexKeys.forEach(d => { if(!recordDates.includes(d)) recordDates.push(d); });
+    recordDates.sort();
+  }
+
+  // Determine the start date: first day of the month of the earliest record
+  // (falls back to first day of current month if no records yet)
+  let startDate;
+  if(recordDates.length > 0){
+    const first = new Date(recordDates[0]);
+    startDate = new Date(first.getFullYear(), first.getMonth(), 1);
+  } else {
+    const t = new Date(TODAY);
+    startDate = new Date(t.getFullYear(), t.getMonth(), 1);
+  }
+  const endDate = new Date(TODAY);
+  // Build the full date list (YYYY-MM-DD strings)
+  const dates = [];
+  const cursor = new Date(startDate);
+  while(cursor <= endDate){
+    const y = cursor.getFullYear();
+    const m = String(cursor.getMonth()+1).padStart(2,'0');
+    const d = String(cursor.getDate()).padStart(2,'0');
+    dates.push(y+'-'+m+'-'+d);
+    cursor.setDate(cursor.getDate()+1);
+  }
 
   function getDayType(dateStr){
     const d = new Date(dateStr);
@@ -3441,7 +3475,7 @@ async function generateWorkerReport(name){
       ).join('');
       return `<tr style="background:${rowBg}">
         <td class="nw" style="font-family:monospace;font-size:10px;font-weight:600">${date.slice(8,10)+'/'+date.slice(5,7)}<br><span style="font-size:8px;color:#5a5a5a;font-weight:400">${DAY_NAMES[new Date(date).getDay()]}</span></td>
-        <td><span class="badge" style="background:${dtBg};color:${dtColor}">${dayInfo.type==='holiday'?'Holiday':dayInfo.type==='rest'?'Rest':'Working'}</span></td>
+        <td><span class="badge" style="background:${dtBg};color:${dtColor}">${dayInfo.type==='holiday'?'Holiday':dayInfo.type==='rest'?'Rest':'Working'}</span>${dayInfo.type==='holiday'&&dayInfo.label?`<br><span style="font-size:7px;color:#5b21b6;font-weight:600;letter-spacing:0.3px">${escH(dayInfo.label.replace('Public Holiday — ',''))}</span>`:''}</td>
         <td>${flexSessHtml||'<span style="color:#aaa;font-size:9px">No sessions</span>'}</td>
         <td style="font-size:9px;color:#5a5a5a">—</td>
         <td class="hrs">${dayTotalMins>0?hhMM:'—'}</td>
@@ -3510,9 +3544,7 @@ async function generateWorkerReport(name){
       }
       if(hours>0) totalHours += hours;
     }
-    else if(date !== TODAY) {
-      return '';
-    }
+    // Note: empty rest/holiday days fall through and render with "No sessions" — full calendar view
 
     const sessionHtml = rec.clockIn
       ? `<span class="sess">IN ${rec.clockIn} → OUT ${rec.clockOut||'—'}${(rec.overnight||isOvernightClockout(rec.clockIn,rec.clockOut))?' <span class="on">(+1d)</span>':''} ${rec.clockIn&&rec.clockOut?'· '+minsToHHMM(Math.round(hours*60)):''}</span>`
@@ -3523,18 +3555,17 @@ async function generateWorkerReport(name){
       : '';
     return `<tr style="background:${rowBg}">
       <td class="nw" style="font-family:monospace;font-size:10px;font-weight:600">${date.slice(8,10)+'/'+date.slice(5,7)}<br><span style="font-size:8px;color:#5a5a5a;font-weight:400">${DAY_NAMES[new Date(date).getDay()]}</span></td>
-      <td><span class="badge" style="background:${dtBg};color:${dtColor}">${dayInfo.type==='holiday'?'Holiday':dayInfo.type==='rest'?'Rest':'Working'}</span>${shiftBadge}</td>
+      <td><span class="badge" style="background:${dtBg};color:${dtColor}">${dayInfo.type==='holiday'?'Holiday':dayInfo.type==='rest'?'Rest':'Working'}</span>${dayInfo.type==='holiday'&&dayInfo.label?`<br><span style="font-size:7px;color:#5b21b6;font-weight:600;letter-spacing:0.3px">${escH(dayInfo.label.replace('Public Holiday — ',''))}</span>`:''}${shiftBadge}</td>
       <td>${sessionHtml||'<span style="color:#aaa;font-size:9px">No sessions</span>'}</td>
       <td style="font-size:9px;color:${statusColor}">${escH(rec.reason||rec.overtimeReason||'—')}</td>
       <td class="hrs">${hrsStr}</td>
       <td><span class="badge" style="background:${statusBg};color:${statusColor}">${status==='—'?'—':status}</span></td>
     </tr>`;
-  }).filter(row => row).join('');
+  }).join('');
 
   // Attendance % is now: present (incl. flex+travel as on-time) / totalDays (workdays only)
   const attendRate = totalDays>0?Math.round(present/totalDays*100):0;
-  // Rows shown count for the footer summary
-  const shownRows = rows.split('<tr').length - 1;
+  const shownRows = dates.length;
   const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
   <style>
