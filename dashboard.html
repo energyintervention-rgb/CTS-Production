@@ -3582,7 +3582,9 @@ function openCleanupModal(mode){
   const preview = document.getElementById('cleanupPreview');
 
   if(mode === 'project'){
-    const count = Object.keys(pr.attendance||{}).length + Object.keys(pr.flexAttendance||{}).length;
+    const count = Object.keys(pr.attendance||{}).length
+                + Object.keys(pr.flexAttendance||{}).length
+                + Object.keys(pr.flexSessions||{}).length;
     msg.innerHTML = `This will permanently delete <strong>all attendance and flex sessions</strong> in <strong>${escH(pr.name)}</strong>.`;
     preview.textContent = count + ' record' + (count===1?'':'s') + ' will be deleted from "' + pr.name + '"';
   } else if(mode === 'range'){
@@ -3593,6 +3595,7 @@ function openCleanupModal(mode){
     (S.projects||[]).forEach(p => {
       total += Object.keys(p.attendance||{}).length;
       total += Object.keys(p.flexAttendance||{}).length;
+      total += Object.keys(p.flexSessions||{}).length;
     });
     msg.innerHTML = `<strong style="color:var(--bad)">⚠ NUCLEAR OPTION</strong><br>This will permanently delete attendance from <strong>ALL ${(S.projects||[]).length} project(s)</strong>.`;
     preview.textContent = total + ' record' + (total===1?'':'s') + ' will be deleted across ' + (S.projects||[]).length + ' project(s)';
@@ -3614,6 +3617,7 @@ function updateCleanupRangePreview(){
     };
     count += Object.keys(pr.attendance||{}).filter(inRange).length;
     count += Object.keys(pr.flexAttendance||{}).filter(inRange).length;
+    count += Object.keys(pr.flexSessions||{}).filter(inRange).length;
   }
   document.getElementById('cleanupPreview').textContent = count + ' record' + (count===1?'':'s') + ' will be deleted in range ' + (from||'?') + ' to ' + (to||'?');
 }
@@ -3634,7 +3638,9 @@ function confirmCleanup(){
   let scopeLabel = '';
 
   if(mode === 'project'){
-    deletedCount = Object.keys(pr.attendance||{}).length + Object.keys(pr.flexAttendance||{}).length;
+    deletedCount = Object.keys(pr.attendance||{}).length
+                 + Object.keys(pr.flexAttendance||{}).length
+                 + Object.keys(pr.flexSessions||{}).length;
     pr.attendance = {};
     pr.flexAttendance = {};
     if(pr.flexSessions) pr.flexSessions = {};
@@ -3649,11 +3655,13 @@ function confirmCleanup(){
     };
     Object.keys(pr.attendance||{}).filter(inRange).forEach(k => { delete pr.attendance[k]; deletedCount++; });
     Object.keys(pr.flexAttendance||{}).filter(inRange).forEach(k => { delete pr.flexAttendance[k]; deletedCount++; });
+    Object.keys(pr.flexSessions||{}).filter(inRange).forEach(k => { delete pr.flexSessions[k]; deletedCount++; });
     scopeLabel = pr.name + ' / ' + from + ' to ' + to;
   } else if(mode === 'all'){
     (S.projects||[]).forEach(p => {
       deletedCount += Object.keys(p.attendance||{}).length;
       deletedCount += Object.keys(p.flexAttendance||{}).length;
+      deletedCount += Object.keys(p.flexSessions||{}).length;
       p.attendance = {};
       p.flexAttendance = {};
       if(p.flexSessions) p.flexSessions = {};
