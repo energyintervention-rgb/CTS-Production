@@ -1243,13 +1243,13 @@ body::before {
     <div id="cleanupRangeFields" style="display:none;background:color-mix(in srgb, var(--bad) 5%, transparent);border:1px solid color-mix(in srgb, var(--bad) 25%, transparent);border-radius:2px;padding:8px 10px;margin-bottom:10px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div>
-          <label style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink-soft);display:block;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">FROM</label>
-          <input class="modal-input" id="cleanupFrom" type="date">
-        </div>
-        <div>
-          <label style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink-soft);display:block;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">TO</label>
-          <input class="modal-input" id="cleanupTo" type="date">
-        </div>
+        <label style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink-soft);display:block;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">FROM</label>
+        <input class="modal-input" id="cleanupFrom" type="date" onchange="updateCleanupRangePreview()">
+      </div>
+      <div>
+        <label style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink-soft);display:block;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">TO</label>
+        <input class="modal-input" id="cleanupTo" type="date" onchange="updateCleanupRangePreview()">
+      </div>
       </div>
     </div>
     <div id="cleanupPreview" style="background:var(--bg);border:1px solid var(--line);border-radius:2px;padding:8px 10px;margin-bottom:10px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink);">—</div>
@@ -3588,8 +3588,6 @@ function openCleanupModal(mode){
   } else if(mode === 'range'){
     msg.innerHTML = `This will permanently delete attendance records within the selected range in <strong>${escH(pr.name)}</strong>.`;
     updateCleanupRangePreview();
-    document.getElementById('cleanupFrom').addEventListener('change', updateCleanupRangePreview);
-    document.getElementById('cleanupTo').addEventListener('change', updateCleanupRangePreview);
   } else if(mode === 'all'){
     let total = 0;
     (S.projects||[]).forEach(p => {
