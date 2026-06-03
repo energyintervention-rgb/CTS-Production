@@ -1234,6 +1234,20 @@ function makeProject(id, name){
         Sun:{on:false,start:'08:00',end:'13:00'}
       }
     },
+    // ──── Attendance v2 (added 2026-06-03) ────
+    // Multiple named shifts. Workers can be assigned to a shift; absent assignment falls back to 'day'.
+    shifts: {
+      day:    { start: '08:00', end: '17:00', label: 'Day' },
+      night:  { start: '20:00', end: '04:00', label: 'Night' }     // overnight: end < start = wraps to next day
+    },
+    // workerName → 'day' | 'night' | 'flex' (flex = no late penalty, sessions tracked separately)
+    workerShifts: {},
+    // Clock-in reasons that auto-mark as Approved Off-site (lowercased substring match)
+    travelKeywords: ['airport','flight','travel','trip','offsite','off-site','client visit','singapore','overseas','out of town','outstation'],
+    // Minimum hours worked on a rest/holiday before OT is auto-approved (below this → "Short OT", not Approved)
+    otMinHours: 4,
+    // Late tolerance buckets (minutes). minor ≤ 15, moderate ≤ 60, major ≤ 120, mismatch > 120
+    lateTiers: { minor: 15, moderate: 60, major: 120 },
     attendance:{},
     plan:{
       startDate:'2026-06-01',endDate:'2026-07-31',
@@ -2135,6 +2149,116 @@ function getAttRecord(name){ return attProject().attendance[attKey(name)]||{cloc
 function setAttRecord(name,data){ attProject().attendance[attKey(name)]=data; saveState(); }
 
 const DAY_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+// ════════════════════════════════════════════════════════════════════
+// ATTENDANCE v2 HELPERS — shift-aware, travel-aware, tier-aware
+// Added to fix late-calculation bugs from screenshot (night shifts marked
+// "+12h late", business trips marked late, OT auto-approved on 1h blips).
+// ════════════════════════════════════════════════════════════════════
+
+// Get the shift name for a worker. Defaults to 'day' if not set.
+function getWorkerShift(name){
+  const pr = attProject();
+  if(!pr.workerShifts) return 'day';
+  return pr.workerShifts[name] || 'day';
+}
+
+// Set the worker's shift assignment
+function setWorkerShift(name, shiftName){
+  const pr = attProject();
+  if(!pr.workerShifts) pr.workerShifts = {};
+  pr.workerShifts[name] = shiftName;
+  saveState();
+  renderAttendance();
+}
+
+// Get the schedule for a given shift name. Returns {start, end, label, isFlex}.
+// Falls back to project's daily schedule (legacy) if shift not defined.
+function getShiftSchedule(shiftName, pr){
+  pr = pr || attProject();
+  // Flex worker = no shift start, no late penalty
+  if(shiftName === 'flex') return { start: '00:00', end: '23:59', label: 'Flex', isFlex: true };
+  const shifts = pr.shifts || {};
+  const sh = shifts[shiftName];
+  if(sh) return { start: sh.start, end: sh.end, label: sh.label || shiftName, isFlex: false };
+  // Legacy fallback — use the day-of-week schedule
+  const dn = DAY_NAMES[new Date().getDay()];
+  const wh = pr.workHours && pr.workHours.schedule && pr.workHours.schedule[dn];
+  if(wh) return { start: wh.start || '08:00', end: wh.end || '17:00', label: 'Day', isFlex: false };
+  return { start: '08:00', end: '17:00', label: 'Day', isFlex: false };
+}
+
+// Does the clock-in reason indicate an approved off-site (business travel)?
+function isTravelReason(reason){
+  if(!reason) return false;
+  const pr = attProject();
+  const keywords = pr.travelKeywords || [];
+  const lc = String(reason).toLowerCase();
+  return keywords.some(k => lc.includes(String(k).toLowerCase()));
+}
+
+// Classify a late duration (in minutes) into a tier. Returns {tier, label, color, bg}.
+function classifyLate(lateMin){
+  const pr = attProject();
+  const tiers = pr.lateTiers || { minor: 15, moderate: 60, major: 120 };
+  if(lateMin <= 0)           return { tier: 'onTime',   label: 'On Time',                color: '#2d6a4f', bg: '#e6f0ec' };
+  if(lateMin <= tiers.minor) return { tier: 'minor',    label: 'Late (minor)',           color: '#d4a017', bg: '#faf3e0' };
+  if(lateMin <= tiers.moderate) return { tier: 'moderate', label: 'Late',                color: '#e07b1f', bg: '#fdeed8' };
+  if(lateMin <= tiers.major) return { tier: 'major',    label: 'Very Late',              color: '#c1311e', bg: '#f7e6e3' };
+  return                          { tier: 'mismatch', label: 'Possible Shift Mismatch',  color: '#7a1b14', bg: '#f0c5be' };
+}
+
+// Format a minutes value as "Xh Ym" (or "Ym" if under 1h)
+function fmtLateDuration(mins){
+  if(mins <= 0) return '';
+  const h = Math.floor(mins/60), m = mins%60;
+  if(h === 0) return m + 'm';
+  return h + 'h ' + String(m).padStart(2,'0') + 'm';
+}
+
+// Shift-aware, travel-aware late calculation.
+// Returns: { lateMin, status, reasonExcused, shiftLabel, severity:{tier,label,color,bg} }
+// status: 'onTime' | 'late' | 'flex' | 'travel' | 'absent'
+function calcAttendanceStatus(workerName, clockInTime, reason, pr){
+  pr = pr || attProject();
+  if(!clockInTime) return { lateMin: 0, status: 'absent', reasonExcused: false, shiftLabel: '—', severity: classifyLate(0) };
+
+  const shiftName = getWorkerShift(workerName);
+  const sched = getShiftSchedule(shiftName, pr);
+
+  // Flex = no late penalty
+  if(sched.isFlex) return { lateMin: 0, status: 'flex', reasonExcused: false, shiftLabel: sched.label, severity: classifyLate(0) };
+
+  // Travel reason = excused
+  if(isTravelReason(reason)) return { lateMin: 0, status: 'travel', reasonExcused: true, shiftLabel: sched.label, severity: { tier:'travel', label:'Off-site (Travel)', color:'#1f6391', bg:'#e1eef7' } };
+
+  // Compute minutes late vs the WORKER'S shift start
+  const [sh, sm] = sched.start.split(':').map(Number);
+  const [th, tm] = clockInTime.substring(0,5).split(':').map(Number);
+  let diff = (th*60 + tm) - (sh*60 + sm);
+  // Handle wraparound: night shift starts 20:00, worker clocks in 21:00 → 60 min late.
+  // BUT if worker clocks in 03:00 (3am) for a 20:00 shift, that's actually -17h = wrap to +7h late
+  // → for night shifts, treat negative-large as "next day clock-in" only if shift ends past midnight.
+  const [eh, em] = sched.end.split(':').map(Number);
+  const isOvernightShift = (eh*60 + em) < (sh*60 + sm);
+  if(diff < -12*60 && isOvernightShift){
+    // Clocked in next morning — very late on the night shift
+    diff += 24*60;
+  } else if(diff < 0){
+    // Clocked in BEFORE shift start = on time (or early)
+    diff = 0;
+  }
+
+  const lateMin = Math.max(0, diff);
+  return {
+    lateMin,
+    status: lateMin > 0 ? 'late' : 'onTime',
+    reasonExcused: false,
+    shiftLabel: sched.label,
+    severity: classifyLate(lateMin)
+  };
+}
+
+
 function getTodaySchedule(pr){
   try{
     const dn=DAY_NAMES[new Date().getDay()];
@@ -2222,17 +2346,27 @@ function renderAttendance(){
   body.innerHTML=dispWorkers.map(name=>{
     const rec=getAttRecord(name);
     const isOTDay=!!(dayOff)||!!(rec.overtimeStatus);
-    const status=isOTDay?(rec.clockIn?'ot':'absent'):getClockStatus(rec.clockIn);
-    const lateMin=isOTDay?0:calcLate(rec.clockIn);
+    // ──── Attendance v2: shift+travel aware ────
+    const reasonText = rec.reason || rec.overtimeReason || '';
+    const attV2 = calcAttendanceStatus(name, rec.clockIn, reasonText, pr);
+    // Map v2 status to legacy 'status' string for backward-compatible UI
+    let status;
+    if(isOTDay && rec.clockIn) status = 'ot';
+    else if(!rec.clockIn) status = 'absent';
+    else if(attV2.status === 'flex') status = 'flex';
+    else if(attV2.status === 'travel') status = 'travel';
+    else if(attV2.status === 'late') status = 'late';
+    else status = 'onTime';
+    const lateMin = isOTDay ? 0 : attV2.lateMin;
     const isFlex=isFlexWorker(name);
     const flexSess=isFlex?getFlexSessions(name):[];
     const flexAct=isFlex?activeFlexSession(flexSess):null;
     const flexTM=isFlex?flexTotalMins(flexSess):0;
     const hours=isFlex?flexTM/60:calcHours(rec.clockIn,rec.clockOut);
-    const lateStr=lateMin>0?Math.floor(lateMin/60)+'h '+String(lateMin%60).padStart(2,'0')+'m late':'';
+    const lateStr=lateMin>0?fmtLateDuration(lateMin)+' late':'';
     const initials=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-    const colors={onTime:'var(--good)',late:'var(--warn)',tooEarly:'var(--info)',absent:'var(--ink-soft)',ot:'var(--good)'};
-    const stxt={onTime:'ON TIME',late:'LATE',tooEarly:'EARLY',absent:'ABSENT',ot:'OT'};
+    const colors={onTime:'var(--good)',late:'var(--warn)',tooEarly:'var(--info)',absent:'var(--ink-soft)',ot:'var(--good)',flex:'var(--info)',travel:'var(--info)'};
+    const stxt={onTime:'ON TIME',late:'LATE',tooEarly:'EARLY',absent:'ABSENT',ot:'OT',flex:'FLEX',travel:'OFF-SITE'};
     const key=name.replace(/\s/g,'_');
     const wU=getWorkerUnits(pr,name);
     const wT=getWorkerDailyTarget(pr,name);
@@ -2586,12 +2720,22 @@ function renderWorkersConfig(){
     </label>`).join('');
     const utc=getWorkerUTC(w);
     const utcOpts=UTC_OPTIONS.map(o=>`<option value="${o.v}"${o.v===utc?' selected':''}>${o.s}</option>`).join('');
+    // Attendance v2: shift assignment dropdown
+    const curShift = getWorkerShift(w);
+    const shiftOpts = Object.keys(pr.shifts||{day:{},night:{}}).map(s=>{
+      const sh=pr.shifts[s]; const lbl = (sh.label||s) + ' '+(sh.start||'')+'-'+(sh.end||'');
+      return `<option value="${escH(s)}"${s===curShift?' selected':''}>${escH(lbl)}</option>`;
+    }).join('') + `<option value="flex"${curShift==='flex'?' selected':''}>Flex (no late penalty)</option>`;
     return `<div style="background:var(--bg);border:1px solid var(--line);border-radius:2px;padding:10px 12px;margin-bottom:8px;">
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
         <input class="admin-input" value="${escH(w)}" onchange="attProject().workers[${i}]=this.value" style="flex:1 1 100px;min-width:80px;">
         <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
           <label style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-soft);white-space:nowrap;">Target:</label>
           <input class="admin-input" type="number" placeholder="${aT}" value="${cT}" style="width:62px;flex:none;text-align:center;" onchange="setWorkerTarget('${escH(w)}',this.value)">
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+          <label style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-soft);white-space:nowrap;">Shift:</label>
+          <select class="admin-input" style="padding:4px 5px;font-size:10px;flex:none;width:130px;max-width:140px;" onchange="setWorkerShift('${escH(w)}',this.value)">${shiftOpts}</select>
         </div>
         <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
           <label style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-soft);white-space:nowrap;">UTC:</label>
@@ -3193,7 +3337,6 @@ async function generateWorkerReport(name){
     const rec = att[name+'_'+date]||{};
     const dayInfo = getDayType(date);
     const isOTRec = dayInfo.type!=='work' || !!rec.overtimeStatus;
-    const lateMin = isOTRec ? 0 : calcLate(rec.clockIn);
     const rowBg = dayInfo.type!=='work'?(dayInfo.type==='holiday'?'#f5f3fa':'#eef4fa'):i%2===0?'#ffffff':'#f9f7f3';
     const dtColor = dayInfo.type==='holiday'?'#5b21b6':dayInfo.type==='rest'?'#2a5f9e':'#5a5a5a';
     const dtBg    = dayInfo.type==='holiday'?'#ede9fe':dayInfo.type==='rest'?'#e6f1fb':'#f9f7f3';
@@ -3226,39 +3369,97 @@ async function generateWorkerReport(name){
     }
 
     const hours = calcHours(rec.clockIn,rec.clockOut);
-    const lateStr = lateMin>0?Math.floor(lateMin/60)+'h '+String(lateMin%60).padStart(2,'0')+'m':'';
+    // ──── Attendance v2: shift-aware + travel-aware + tier-aware ────
+    const reasonText = rec.reason || rec.overtimeReason || '';
+    const att = calcAttendanceStatus(name, rec.clockIn, reasonText, pr);
+    const otMinHours = (pr.otMinHours != null) ? pr.otMinHours : 4;
+
     let status='—', statusColor='#1a1a1a', statusBg='#f9f7f3';
+    let lateStr = '';
+
     if(dayInfo.type==='work'){
       totalDays++;
       if(rec.clockIn){
         present++;
-        if(lateMin>0){ lateCnt++; status='Late +'+lateStr; statusColor='#d4a017'; statusBg='#faf3e0'; }
-        else{ onTimeCnt++; status='On Time'; statusColor='#2d6a4f'; statusBg='#e6f0ec'; }
-        if(hours>0) totalHours+=hours;
-      } else { absentCnt++; status='Absent'; statusColor='#c1311e'; statusBg='#f7e6e3'; }
+        if(att.status === 'flex'){
+          onTimeCnt++;
+          status = 'Flex';
+          statusColor = '#1f6391'; statusBg = '#e1eef7';
+        } else if(att.status === 'travel'){
+          onTimeCnt++;
+          status = 'Off-site (Travel)';
+          statusColor = '#1f6391'; statusBg = '#e1eef7';
+        } else if(att.lateMin > 0){
+          lateCnt++;
+          lateStr = fmtLateDuration(att.lateMin);
+          // Mismatch tier suggests shift was misconfigured — flag prominently
+          status = att.severity.tier === 'mismatch'
+            ? '⚠ Shift mismatch? +' + lateStr
+            : att.severity.label + ' +' + lateStr;
+          statusColor = att.severity.color; statusBg = att.severity.bg;
+        } else {
+          onTimeCnt++;
+          status = 'On Time';
+          statusColor = '#2d6a4f'; statusBg = '#e6f0ec';
+        }
+        if(hours>0) totalHours += hours;
+      } else {
+        absentCnt++;
+        status = 'Absent';
+        statusColor = '#c1311e'; statusBg = '#f7e6e3';
+      }
     } else if(rec.clockIn){
-      const otStat = rec.overtimeStatus||'unapproved';
-      if(otStat==='approved'){ otCnt++; status='OT Approved'+(rec.overtimeApprovedBy?' by '+rec.overtimeApprovedBy:''); statusColor='#2d6a4f'; statusBg='#e6f0ec'; }
-      else if(otStat==='pending'){ status='OT Pending'; statusColor='#d4a017'; statusBg='#faf3e0'; }
-      else if(otStat==='rejected'){ status='OT Rejected'; statusColor='#c1311e'; statusBg='#f7e6e3'; }
-      else { status='OT'; statusColor='#ff5b2e'; statusBg='#fef1ed'; }
-      if(hours>0) totalHours+=hours;
+      // Rest day / Holiday with sessions = OT
+      const otStat = rec.overtimeStatus || 'unapproved';
+      // Auto-approval gating: only count as Approved if hours >= otMinHours
+      if(otStat === 'approved' && hours >= otMinHours){
+        otCnt++;
+        status = 'OT Approved' + (rec.overtimeApprovedBy ? ' by ' + rec.overtimeApprovedBy : '');
+        statusColor = '#2d6a4f'; statusBg = '#e6f0ec';
+      } else if(otStat === 'approved' && hours < otMinHours){
+        // Approved but didn't meet minimum hours threshold
+        status = 'OT Short (<' + otMinHours + 'h)';
+        statusColor = '#d4a017'; statusBg = '#faf3e0';
+      } else if(otStat === 'pending'){
+        status = 'OT Pending';
+        statusColor = '#d4a017'; statusBg = '#faf3e0';
+      } else if(otStat === 'rejected'){
+        status = 'OT Rejected';
+        statusColor = '#c1311e'; statusBg = '#f7e6e3';
+      } else {
+        status = 'OT';
+        statusColor = '#ff5b2e'; statusBg = '#fef1ed';
+      }
+      if(hours>0) totalHours += hours;
     }
+    // Empty rest/holiday days: don't render row at all (cleaner report)
+    // unless it's TODAY (always show current day)
+    else if(date !== TODAY) {
+      return ''; // skip this row entirely
+    }
+
     const sessionHtml = rec.clockIn
       ? `<span class="sess">IN ${rec.clockIn} → OUT ${rec.clockOut||'—'}${(rec.overnight||isOvernightClockout(rec.clockIn,rec.clockOut))?' <span class="on">(+1d)</span>':''} ${rec.clockIn&&rec.clockOut?'· '+minsToHHMM(Math.round(hours*60)):''}</span>`
       : '';
     const hrsStr = rec.clockIn&&rec.clockOut ? minsToHHMM(Math.round(hours*60)) : '—';
+    // Show shift label as a subtle subscript on the Day Type cell
+    const shiftBadge = (dayInfo.type === 'work' && rec.clockIn && att.shiftLabel)
+      ? `<br><span style="font-size:7px;color:#5a5a5a;font-weight:400;letter-spacing:0.4px">${escH(att.shiftLabel)} shift</span>`
+      : '';
     return `<tr style="background:${rowBg}">
       <td class="nw" style="font-family:monospace;font-size:10px;font-weight:600">${date.slice(8,10)+'/'+date.slice(5,7)}<br><span style="font-size:8px;color:#5a5a5a;font-weight:400">${DAY_NAMES[new Date(date).getDay()]}</span></td>
-      <td><span class="badge" style="background:${dtBg};color:${dtColor}">${dayInfo.type==='holiday'?'Holiday':dayInfo.type==='rest'?'Rest':'Working'}</span></td>
+      <td><span class="badge" style="background:${dtBg};color:${dtColor}">${dayInfo.type==='holiday'?'Holiday':dayInfo.type==='rest'?'Rest':'Working'}</span>${shiftBadge}</td>
       <td>${sessionHtml||'<span style="color:#aaa;font-size:9px">No sessions</span>'}</td>
-      <td style="font-size:9px;color:${statusColor==='#d4a017'?'#d4a017':'#5a5a5a'}">${escH(rec.reason||rec.overtimeReason||'—')}</td>
+      <td style="font-size:9px;color:${statusColor}">${escH(rec.reason||rec.overtimeReason||'—')}</td>
       <td class="hrs">${hrsStr}</td>
       <td><span class="badge" style="background:${statusBg};color:${statusColor}">${status==='—'?'—':status}</span></td>
     </tr>`;
-  }).join('');
+  }).filter(row => row).join('');
 
+  // Attendance % is now: present (incl. flex+travel as on-time) / totalDays (workdays only)
   const attendRate = totalDays>0?Math.round(present/totalDays*100):0;
+  // Rows shown count for the footer summary
+  const shownRows = rows.split('<tr').length - 1;
   const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
   <style>
@@ -3319,7 +3520,7 @@ async function generateWorkerReport(name){
     </tr></thead>
     <tbody>${rows}
     <tr class="tot">
-      <td colspan="4" style="font-size:10px">TOTAL — ${totalDays} days · ${present} present</td>
+      <td colspan="4" style="font-size:10px">TOTAL — ${totalDays} workday${totalDays===1?'':'s'} · ${present} present · ${absentCnt} absent · ${lateCnt} late · ${otCnt} OT day${otCnt===1?'':'s'}</td>
       <td class="hrs" style="font-size:11px">${isFlex?minsToHHMM(Math.round(totalHours*60)):totalHours.toFixed(1)+'h'}</td>
       <td></td>
     </tr>
