@@ -3371,7 +3371,7 @@ async function generateWorkerReport(name){
     const hours = calcHours(rec.clockIn,rec.clockOut);
     // ──── Attendance v2: shift-aware + travel-aware + tier-aware ────
     const reasonText = rec.reason || rec.overtimeReason || '';
-    const att = calcAttendanceStatus(name, rec.clockIn, reasonText, pr);
+    const attStatus = calcAttendanceStatus(name, rec.clockIn, reasonText, pr);
     const otMinHours = (pr.otMinHours != null) ? pr.otMinHours : 4;
 
     let status='—', statusColor='#1a1a1a', statusBg='#f9f7f3';
@@ -3381,22 +3381,21 @@ async function generateWorkerReport(name){
       totalDays++;
       if(rec.clockIn){
         present++;
-        if(att.status === 'flex'){
+        if(attStatus.status === 'flex'){
           onTimeCnt++;
           status = 'Flex';
           statusColor = '#1f6391'; statusBg = '#e1eef7';
-        } else if(att.status === 'travel'){
+        } else if(attStatus.status === 'travel'){
           onTimeCnt++;
           status = 'Off-site (Travel)';
           statusColor = '#1f6391'; statusBg = '#e1eef7';
-        } else if(att.lateMin > 0){
+        } else if(attStatus.lateMin > 0){
           lateCnt++;
-          lateStr = fmtLateDuration(att.lateMin);
-          // Mismatch tier suggests shift was misconfigured — flag prominently
-          status = att.severity.tier === 'mismatch'
+          lateStr = fmtLateDuration(attStatus.lateMin);
+          status = attStatus.severity.tier === 'mismatch'
             ? '⚠ Shift mismatch? +' + lateStr
-            : att.severity.label + ' +' + lateStr;
-          statusColor = att.severity.color; statusBg = att.severity.bg;
+            : attStatus.severity.label + ' +' + lateStr;
+          statusColor = attStatus.severity.color; statusBg = attStatus.severity.bg;
         } else {
           onTimeCnt++;
           status = 'On Time';
@@ -3409,15 +3408,12 @@ async function generateWorkerReport(name){
         statusColor = '#c1311e'; statusBg = '#f7e6e3';
       }
     } else if(rec.clockIn){
-      // Rest day / Holiday with sessions = OT
       const otStat = rec.overtimeStatus || 'unapproved';
-      // Auto-approval gating: only count as Approved if hours >= otMinHours
       if(otStat === 'approved' && hours >= otMinHours){
         otCnt++;
         status = 'OT Approved' + (rec.overtimeApprovedBy ? ' by ' + rec.overtimeApprovedBy : '');
         statusColor = '#2d6a4f'; statusBg = '#e6f0ec';
       } else if(otStat === 'approved' && hours < otMinHours){
-        // Approved but didn't meet minimum hours threshold
         status = 'OT Short (<' + otMinHours + 'h)';
         statusColor = '#d4a017'; statusBg = '#faf3e0';
       } else if(otStat === 'pending'){
@@ -3432,19 +3428,16 @@ async function generateWorkerReport(name){
       }
       if(hours>0) totalHours += hours;
     }
-    // Empty rest/holiday days: don't render row at all (cleaner report)
-    // unless it's TODAY (always show current day)
     else if(date !== TODAY) {
-      return ''; // skip this row entirely
+      return '';
     }
 
     const sessionHtml = rec.clockIn
       ? `<span class="sess">IN ${rec.clockIn} → OUT ${rec.clockOut||'—'}${(rec.overnight||isOvernightClockout(rec.clockIn,rec.clockOut))?' <span class="on">(+1d)</span>':''} ${rec.clockIn&&rec.clockOut?'· '+minsToHHMM(Math.round(hours*60)):''}</span>`
       : '';
     const hrsStr = rec.clockIn&&rec.clockOut ? minsToHHMM(Math.round(hours*60)) : '—';
-    // Show shift label as a subtle subscript on the Day Type cell
-    const shiftBadge = (dayInfo.type === 'work' && rec.clockIn && att.shiftLabel)
-      ? `<br><span style="font-size:7px;color:#5a5a5a;font-weight:400;letter-spacing:0.4px">${escH(att.shiftLabel)} shift</span>`
+    const shiftBadge = (dayInfo.type === 'work' && rec.clockIn && attStatus.shiftLabel)
+      ? `<br><span style="font-size:7px;color:#5a5a5a;font-weight:400;letter-spacing:0.4px">${escH(attStatus.shiftLabel)} shift</span>`
       : '';
     return `<tr style="background:${rowBg}">
       <td class="nw" style="font-family:monospace;font-size:10px;font-weight:600">${date.slice(8,10)+'/'+date.slice(5,7)}<br><span style="font-size:8px;color:#5a5a5a;font-weight:400">${DAY_NAMES[new Date(date).getDay()]}</span></td>
