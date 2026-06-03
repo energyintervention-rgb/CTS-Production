@@ -3086,14 +3086,35 @@ function saveEditRecord(name){
 
 function clearTodayRecord(name){
   if(!confirm(`Clear today's attendance record for ${name}?\nThis cannot be undone.`)) return;
+  // Clear the regular attendance record
   setAttRecord(name,{clockIn:'',clockOut:'',gps_in:'',gps_out:'',status:'',lateMin:0,reason:'',overtimeStatus:'',overtimeReason:'',overtimeApprovedBy:'',overnight:false,earlyLeave:false});
-  logActivity('CLEAR_RECORD',`Admin cleared today's record for ${name}`);
+  // Also clear flex sessions for today (flex workers store sessions separately)
+  const pr = attProject();
+  const key = name + '_' + TODAY;
+  let flexCleared = 0;
+  if(pr.flexAttendance && pr.flexAttendance[key]){
+    flexCleared += (pr.flexAttendance[key]||[]).length;
+    delete pr.flexAttendance[key];
+  }
+  if(pr.flexSessions && pr.flexSessions[key]){
+    flexCleared += (pr.flexSessions[key]||[]).length;
+    delete pr.flexSessions[key];
+  }
+  saveState();
+  logActivity('CLEAR_RECORD',`Admin cleared today's record for ${name}${flexCleared?' (incl. '+flexCleared+' flex session'+(flexCleared===1?'':'s')+')':''}`);
   renderAttendance();
-  showToast('✓ Today\'s record cleared for '+name);
+  showToast('✓ Today\'s record cleared for '+name+(flexCleared?' ('+flexCleared+' flex session'+(flexCleared===1?'':'s')+' removed)':''));
 }
 
 function clearRecord(name){
+  // Clear regular record
   setAttRecord(name,{clockIn:'',clockOut:'',gps_in:'',gps_out:'',status:'',lateMin:0,reason:''});
+  // Clear today's flex sessions too
+  const pr = attProject();
+  const key = name + '_' + TODAY;
+  if(pr.flexAttendance && pr.flexAttendance[key]) delete pr.flexAttendance[key];
+  if(pr.flexSessions && pr.flexSessions[key]) delete pr.flexSessions[key];
+  saveState();
   renderAttendance();
   showToast('✓ Record cleared for '+name);
 }
