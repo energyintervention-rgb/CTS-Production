@@ -3164,58 +3164,138 @@ function exportCSV(){
 }
 
 function exportAttCSV(){
-  const pr=attProject();
-  const workers=pr.workers||[];
-  const att=pr.attendance||{};
-  const holidays=pr.plan.holidays||[];
+  const pr = attProject();
+  const workers = pr.workers || [];
+  const att = pr.attendance || {};
+  const holidays = (pr.plan && pr.plan.holidays) || [];
+
+  // Get day type (work/rest/holiday) for a given date
   function getDayType(ds){
-    const d=new Date(ds), dn=DAY_NAMES[d.getDay()];
-    const h=holidays.find(hh=>hh.enabled&&hh.date===ds);
-    if(h) return {type:'holiday',label:'Public Holiday — '+h.name};
-    const s=(pr.workHours&&pr.workHours.schedule&&pr.workHours.schedule[dn]);
-    const isR=s?!s.on:(dn==='Sun');
-    if(isR) return {type:'rest',label:'Rest Day — '+dn};
-    return {type:'work',label:''};
+    const d = new Date(ds), dn = DAY_NAMES[d.getDay()];
+    const h = holidays.find(hh => hh.enabled && hh.date === ds);
+    if(h) return { type:'holiday', label:'Public Holiday — '+h.name };
+    const s = (pr.workHours && pr.workHours.schedule && pr.workHours.schedule[dn]);
+    const isR = s ? !s.on : (dn==='Sun');
+    if(isR) return { type:'rest', label:'Rest Day — '+dn };
+    return { type:'work', label:'Working Day' };
   }
-  const dateSet=new Set(Object.keys(att).map(k=>{const p=k.split('_');p.shift();return p.join('_');}));
-  dateSet.add(TODAY);
-  const dates=[...dateSet].sort();
-  let csv='\uFEFF'+'Worker,Date,Day Type,Clock In,Clock Out,Hours,Status,Late Duration,Today Units,Target,Cumulative,Hit Target,Reason,OT Reason\n';
-  const expW=workers.filter(n=>!isWorkerHidden(n));
-  dates.forEach(date=>{
-    const di=getDayType(date);
-    expW.forEach(name=>{
-      const key=name+'_'+date;
-      const rec=att[key]||{clockIn:'',clockOut:'',status:'',lateMin:0,reason:''};
-      const hrs=calcHours(rec.clockIn,rec.clockOut).toFixed(1);
-      const outStr=rec.clockOut?(rec.clockOut+((rec.overnight||isOvernightClockout(rec.clockIn,rec.clockOut))?' (+1d)':'')):'';
-      if(!pr.workerUpdates) pr.workerUpdates={};
-      const asg=(pr.workerAssignments&&pr.workerAssignments[name])||[];
-      const aP=pr.parts.filter(p=>asg.includes(p.name));
-      let tU=0;
-      aP.forEach(p=>{ const sk='workerDay_'+date+'_'+pr.id+'_'+p.name+'_'+name; tU+=parseInt(localStorage.getItem(sk)||'0'); });
-      const cum=aP.reduce((a,p)=>a+(pr.workerUpdates[p.name]&&pr.workerUpdates[p.name][name]||0),0);
-      const cumT=aP.reduce((a,p)=>a+p.total,0);
-      const tgt=getWorkerDailyTarget(pr,name);
-      const hit=tU>=tgt?'Yes':'No';
-      if(di.type!=='work'){
-        let otSt;
-        if(!rec.clockIn) otSt=di.label;
-        else if(rec.overtimeStatus==='approved') otSt='OT Approved'+(rec.overtimeApprovedBy?' by '+rec.overtimeApprovedBy:'');
-        else if(rec.overtimeStatus==='pending') otSt='OT Pending';
-        else if(rec.overtimeStatus==='rejected') otSt='OT Rejected';
-        else otSt='OT (no approval)';
-        csv+=`"${name}","${date}","${di.label}","${rec.clockIn||''}","${outStr}","${rec.clockIn?hrs+'h':''}","${otSt}","","${tU}","${tgt}","${cum}/${cumT}","${hit}","${rec.reason||''}","${rec.overtimeReason||''}"\n`;
-      } else {
-        const lm=rec.lateMin||0;
-        const ls=lm>0?Math.floor(lm/60)+'h '+String(lm%60).padStart(2,'0')+'m':'';
-        const status=rec.clockIn?(lm>0?'Late':'On Time'):'Absent';
-        csv+=`"${name}","${date}","Working Day","${rec.clockIn||''}","${outStr}","${rec.clockIn?hrs+'h':''}","${status}","${ls}","${tU}","${tgt}","${cum}/${cumT}","${hit}","${rec.reason||''}","${rec.overtimeReason||''}"\n`;
+
+  // Build full calendar — start of first record's month → today (matches PDF report)
+  const allRecordDates = new Set();
+  Object.keys(att).forEach(k => {
+    const parts = k.split('_'); parts.shift();
+    allRecordDates.add(parts.join('_'));
+  });
+  if(pr.flexAttendance){
+    Object.keys(pr.flexAttendance).forEach(k => {
+      const parts = k.split('_'); parts.shift();
+      allRecordDates.add(parts.join('_'));
+    });
+  }
+  const recordDates = [...allRecordDates].sort();
+
+  let startDate, endDate;
+  if(recordDates.length > 0){
+    const first = new Date(recordDates[0]);
+    startDate = new Date(first.getFullYear(), first.getMonth(), 1);
+    endDate = new Date(TODAY);
+  } else {
+    const t = new Date(TODAY);
+    startDate = new Date(t.getFullYear(), t.getMonth(), 1);
+    endDate = new Date(TODAY);
+  }
+  const dates = [];
+  const cursor = new Date(startDate);
+  while(cursor <= endDate){
+    const y = cursor.getFullYear();
+    const m = String(cursor.getMonth()+1).padStart(2,'0');
+    const d = String(cursor.getDate()).padStart(2,'0');
+    dates.push(y+'-'+m+'-'+d);
+    cursor.setDate(cursor.getDate()+1);
+  }
+
+  const otMinHours = (pr.otMinHours != null) ? pr.otMinHours : 4;
+
+  // CSV header (with BOM for Excel UTF-8)
+  let csv = '\uFEFF' + 'Worker,Shift,Date,Day,Day Type,Clock In,Clock Out,Hours,Status,Late Duration,Today Units,Target,Cumulative,Hit Target,Reason,OT Reason\n';
+
+  const expW = workers.filter(n => !isWorkerHidden(n));
+
+  dates.forEach(date => {
+    const di = getDayType(date);
+    const dayName = DAY_NAMES[new Date(date).getDay()];
+
+    expW.forEach(name => {
+      const key = name + '_' + date;
+      const rec = att[key] || { clockIn:'', clockOut:'', reason:'' };
+      const reasonText = rec.reason || rec.overtimeReason || '';
+      const isFlex = isFlexWorker(name);
+      const flexSess = (pr.flexAttendance && pr.flexAttendance[key]) || [];
+
+      // ── v2 status (shift + travel + tier aware) ──
+      const attStat = calcAttendanceStatus(name, rec.clockIn, reasonText, pr);
+      const shiftLabel = attStat.shiftLabel || 'Day';
+
+      // Production fields (carry from previous logic)
+      if(!pr.workerUpdates) pr.workerUpdates = {};
+      const asg = (pr.workerAssignments && pr.workerAssignments[name]) || [];
+      const aP = pr.parts.filter(p => asg.includes(p.name));
+      let tU = 0;
+      aP.forEach(p => {
+        const sk = 'workerDay_'+date+'_'+pr.id+'_'+p.name+'_'+name;
+        tU += parseInt(localStorage.getItem(sk) || '0');
+      });
+      const cum = aP.reduce((a,p) => a + ((pr.workerUpdates[p.name] && pr.workerUpdates[p.name][name]) || 0), 0);
+      const cumT = aP.reduce((a,p) => a + p.total, 0);
+      const tgt = getWorkerDailyTarget(pr, name);
+      const hit = tU >= tgt ? 'Yes' : 'No';
+
+      // ── For flex workers with sessions, emit one row per session ──
+      if(isFlex && flexSess.length > 0){
+        flexSess.forEach((s, idx) => {
+          const sHrs = (s.clockIn && s.clockOut) ? calcHours(s.clockIn, s.clockOut).toFixed(1) : '';
+          const sOut = s.clockOut ? (s.clockOut + (isOvernightClockout(s.clockIn, s.clockOut) ? ' (+1d)' : '')) : '';
+          csv += `"${name}","Flex #${idx+1}","${date}","${dayName}","${di.label}","${s.clockIn||''}","${sOut}","${sHrs?sHrs+'h':''}","Flex","","${tU}","${tgt}","${cum}/${cumT}","${hit}","${rec.reason||''}",""\n`;
+        });
+        return;
       }
+
+      // ── Regular non-flex row ──
+      const hrs = calcHours(rec.clockIn, rec.clockOut).toFixed(1);
+      const outStr = rec.clockOut ? (rec.clockOut + ((rec.overnight || isOvernightClockout(rec.clockIn, rec.clockOut)) ? ' (+1d)' : '')) : '';
+      const lateDur = attStat.lateMin > 0 ? fmtLateDuration(attStat.lateMin) : '';
+
+      let status;
+      if(di.type !== 'work'){
+        // Rest / Holiday row
+        if(!rec.clockIn) status = di.label;  // no work on rest/holiday → just label
+        else if(rec.overtimeStatus === 'approved' && calcHours(rec.clockIn, rec.clockOut) >= otMinHours){
+          status = 'OT Approved' + (rec.overtimeApprovedBy ? ' by ' + rec.overtimeApprovedBy : '');
+        }
+        else if(rec.overtimeStatus === 'approved') status = 'OT Short (<' + otMinHours + 'h)';
+        else if(rec.overtimeStatus === 'pending') status = 'OT Pending';
+        else if(rec.overtimeStatus === 'rejected') status = 'OT Rejected';
+        else status = 'OT (no approval)';
+      } else {
+        // Workday row — v2 status
+        if(!rec.clockIn) status = 'Absent';
+        else if(attStat.status === 'flex') status = 'Flex';
+        else if(attStat.status === 'travel') status = 'Off-site (Travel)';
+        else if(attStat.lateMin > 0){
+          status = attStat.severity.tier === 'mismatch'
+            ? 'Shift Mismatch'
+            : attStat.severity.label;
+        } else {
+          status = 'On Time';
+        }
+      }
+
+      csv += `"${name}","${shiftLabel}","${date}","${dayName}","${di.label}","${rec.clockIn||''}","${outStr}","${rec.clockIn?hrs+'h':''}","${status}","${lateDur}","${tU}","${tgt}","${cum}/${cumT}","${hit}","${rec.reason||''}","${rec.overtimeReason||''}"\n`;
     });
   });
-  downloadFile('CTS_'+pr.name.replace(/\s+/g,'_')+'_attendance_'+TODAY+'.csv',csv,'text/csv');
-  showToast('✓ Attendance CSV exported');
+
+  downloadFile('CTS_' + pr.name.replace(/\s+/g,'_') + '_attendance_' + TODAY + '.csv', csv, 'text/csv');
+  showToast('✓ Attendance CSV exported (' + dates.length + ' days × ' + expW.length + ' workers)');
 }
 
 function downloadFile(filename,content,type){
