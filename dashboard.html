@@ -2313,7 +2313,7 @@ let _waMsgBuilder = null;  // lets section-specific WA buttons inject their mess
 
 // Shared PDF pipeline — renders HTML in a hidden popup, snapshots with html2canvas,
 // splits into A4 pages via jsPDF. Used by sharePDF dispatchers below.
-async function _generatePDFFromHTML(html, filename, waitMs){
+async function _generatePDFFromHTML(html, filename, waitMs, title){
   const win = window.open('','_blank','width=900,height=700');
   if(!win){ showToast('⚠ Allow popups to download PDF','warn'); return; }
   win.document.write(html); win.document.close(); win.focus();
@@ -2326,16 +2326,15 @@ async function _generatePDFFromHTML(html, filename, waitMs){
     win.close();
     const {jsPDF} = window.jspdf;
     const A4_W = 210, A4_H = 297;
+    const HEADER_H = 13;            // mm reserved on pages 2+ for repeating header band
     const FOOTER_H = 12;
     const visibleH = A4_H - FOOTER_H;
+    const contentH_subsequent = A4_H - HEADER_H - FOOTER_H;  // usable area per non-first page
     const imgW = A4_W, imgH = (canvas.height * imgW) / canvas.width;
     const pdf = new jsPDF({orientation:'p', unit:'mm', format:'a4'});
     const imgData = canvas.toDataURL('image/jpeg', 0.97);
 
     // ─── Smart page-break detection (darkness-min) ───
-    // Compute "darkness" of each pixel row near each prospective page break.
-    // The row with MINIMUM darkness in the search range is the gap between
-    // table rows — that's where we cleanly break the page.
     const ctx = canvas.getContext('2d');
     const mmToPx = canvas.height / imgH;
     function rowDarkness(yPx){
@@ -2361,42 +2360,60 @@ async function _generatePDFFromHTML(html, filename, waitMs){
         if(d < bestDarkness){
           bestDarkness = d;
           bestPx = targetPx - dy;
-          if(d === 0) break;  // Perfect gap found
+          if(d === 0) break;
         }
       }
       return bestPx / mmToPx;
     }
 
-    // Build list of page-start positions (in mm of image coords)
+    // Build page-start positions — page 1 uses visibleH (no top header reserved,
+    // since the HTML already has the big header). Pages 2+ use less because of
+    // the repeating header band on top.
     const pageStarts = [0];
-    let cursor = visibleH;
+    let cursor = visibleH;  // first page break target
     while(cursor < imgH){
-      const cleanY = findCleanBreakMm(cursor, 30);  // search up to 30mm backward
-      if(cleanY <= pageStarts[pageStarts.length - 1] + 10) break;  // safety: avoid tiny/repeat pages
+      const cleanY = findCleanBreakMm(cursor, 30);
+      if(cleanY <= pageStarts[pageStarts.length - 1] + 10) break;
       pageStarts.push(cleanY);
-      cursor = cleanY + visibleH;
+      cursor = cleanY + contentH_subsequent;  // subsequent pages have less content space
     }
     const totalPages = pageStarts.length;
 
     const safe = filename.replace(/[^a-zA-Z0-9_-]/g,'_').replace(/_+/g,'_');
     const today = new Date().toLocaleDateString('en-MY');
+    // Sensible title: strip CTS_ prefix and date suffix, replace _ with space
+    const headerTitle = title || filename.replace(/^CTS_/,'').replace(/_\d{8}$/,'').replace(/_/g,' ');
 
     for(let p = 0; p < totalPages; p++){
       if(p > 0) pdf.addPage();
       const yStart = pageStarts[p];
       const yEnd = (p + 1 < totalPages) ? pageStarts[p + 1] : imgH;
-      const contentHeightMm = Math.min(yEnd - yStart, A4_H);  // how much of this page has content
+      const isFirst = (p === 0);
+      // On page 1: image starts at top (HTML's big header is visible)
+      // On pages 2+: image shifted down by HEADER_H to make room for repeating header band
+      const topOffset = isFirst ? 0 : HEADER_H;
 
-      pdf.addImage(imgData, 'JPEG', 0, -yStart, imgW, imgH);
+      pdf.addImage(imgData, 'JPEG', 0, topOffset - yStart, imgW, imgH);
 
-      // FIX: White cover from the ACTUAL clean break point down — not just from visibleH.
-      // This hides everything below the clean break (which is also where the NEXT page starts).
-      // Prevents duplication of rows on both pages.
-      const coverStart = Math.min(contentHeightMm, visibleH);
+      // ── Top header band on pages 2+ (page 1's header is part of the HTML) ──
+      if(!isFirst){
+        // White cover hides image content that would peek above the band
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(0, 0, A4_W, HEADER_H, 'F');
+        // Orange repeating header band
+        pdf.setFillColor(255, 91, 46);
+        pdf.rect(0, 0, A4_W, HEADER_H - 2, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(8);
+        pdf.text(headerTitle + ' — continued', 5, HEADER_H - 5);
+        pdf.text('Page ' + (p + 1) + ' of ' + totalPages, A4_W - 30, HEADER_H - 5);
+      }
+
+      // ── Bottom cover + footer band ──
+      const visibleBottom = isFirst ? visibleH : (HEADER_H + (yEnd - yStart));
+      const coverStart = Math.min(visibleBottom, A4_H - FOOTER_H);
       pdf.setFillColor(255, 255, 255);
       pdf.rect(0, coverStart, A4_W, A4_H - coverStart, 'F');
-
-      // Orange CTS footer band at the very bottom
       pdf.setFillColor(255, 91, 46);
       pdf.rect(0, A4_H - FOOTER_H + 2, A4_W, FOOTER_H - 2, 'F');
       pdf.setTextColor(255, 255, 255);
@@ -4618,13 +4635,14 @@ async function generateWorkerReport(name, fromOverride, toOverride){
     win.close();
     const {jsPDF}=window.jspdf;
     const A4_W=210, A4_H=297;
+    const HEADER_H = 13;
     const FOOTER_H = 12;
     const visibleH = A4_H - FOOTER_H;
+    const contentH_subsequent = A4_H - HEADER_H - FOOTER_H;
     const imgW = A4_W, imgH = (canvas.height*imgW)/canvas.width;
     const pdf = new jsPDF({orientation:'p',unit:'mm',format:'a4'});
     const imgData = canvas.toDataURL('image/jpeg',0.97);
 
-    // Smart break detection (darkness-min)
     const ctx = canvas.getContext('2d');
     const mmToPx = canvas.height / imgH;
     function rowDarkness(yPx){
@@ -4647,11 +4665,7 @@ async function generateWorkerReport(name, fromOverride, toOverride){
       let bestDarkness = rowDarkness(targetPx);
       for(let dy = 1; dy < rangePx; dy++){
         const d = rowDarkness(targetPx - dy);
-        if(d < bestDarkness){
-          bestDarkness = d;
-          bestPx = targetPx - dy;
-          if(d === 0) break;
-        }
+        if(d < bestDarkness){ bestDarkness = d; bestPx = targetPx - dy; if(d === 0) break; }
       }
       return bestPx / mmToPx;
     }
@@ -4661,22 +4675,36 @@ async function generateWorkerReport(name, fromOverride, toOverride){
       const cleanY = findCleanBreakMm(cursor, 30);
       if(cleanY <= pageStarts[pageStarts.length - 1] + 10) break;
       pageStarts.push(cleanY);
-      cursor = cleanY + visibleH;
+      cursor = cleanY + contentH_subsequent;
     }
     const totalPages = pageStarts.length;
 
     const safeName = name.replace(/[^a-zA-Z0-9_-]/g,'_').replace(/_+/g,'_');
     const todayStr = new Date().toLocaleDateString('en-MY');
+    const headerTitle = 'Attendance Report — ' + name;
 
     for(let p = 0; p < totalPages; p++){
       if(p > 0) pdf.addPage();
       const yStart = pageStarts[p];
       const yEnd = (p + 1 < totalPages) ? pageStarts[p + 1] : imgH;
-      const contentHeightMm = Math.min(yEnd - yStart, A4_H);
+      const isFirst = (p === 0);
+      const topOffset = isFirst ? 0 : HEADER_H;
 
-      pdf.addImage(imgData,'JPEG',0,-yStart,imgW,imgH);
+      pdf.addImage(imgData,'JPEG',0, topOffset - yStart, imgW, imgH);
 
-      const coverStart = Math.min(contentHeightMm, visibleH);
+      if(!isFirst){
+        pdf.setFillColor(255,255,255);
+        pdf.rect(0, 0, A4_W, HEADER_H, 'F');
+        pdf.setFillColor(255,91,46);
+        pdf.rect(0, 0, A4_W, HEADER_H - 2, 'F');
+        pdf.setTextColor(255,255,255);
+        pdf.setFontSize(8);
+        pdf.text(headerTitle + ' — continued', 5, HEADER_H - 5);
+        pdf.text('Page '+(p+1)+' of '+totalPages, A4_W-30, HEADER_H - 5);
+      }
+
+      const visibleBottom = isFirst ? visibleH : (HEADER_H + (yEnd - yStart));
+      const coverStart = Math.min(visibleBottom, A4_H - FOOTER_H);
       pdf.setFillColor(255,255,255);
       pdf.rect(0, coverStart, A4_W, A4_H - coverStart, 'F');
 
