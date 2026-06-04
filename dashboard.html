@@ -474,6 +474,7 @@ body::before {
   background: var(--bg); border: 1px solid var(--line); color: var(--ink);
   border-radius: 2px; font-family: 'JetBrains Mono', monospace; font-size: 14px;
   outline: none; margin-bottom: 10px; transition: border-color 0.15s;
+  color-scheme: dark;
 }
 .modal-input:focus { border-color: var(--accent); }
 .modal-actions { display: flex; gap: 8px; }
@@ -2304,9 +2305,100 @@ function sendWhatsApp(){
 }
 function sendToContact(idx){
   const c=activeProject().waContacts[idx];
-  const msg=buildWAMessage();
+  const msg=(_waMsgBuilder||buildWAMessage)();
+  _waMsgBuilder = null;  // reset after use
   closeModal('waPickerModal');
   window.open('https://wa.me/'+c.number+'?text='+encodeURIComponent(msg),'_blank');
+}
+
+// ════════════════════════════════════════════════════════════════════
+// SHARE-BAR HANDLERS — previously missing, causing onclick ReferenceErrors
+// ════════════════════════════════════════════════════════════════════
+
+let _waMsgBuilder = null;  // lets section-specific WA buttons inject their message builder
+
+// Generic PDF print/export. Triggers the browser's print dialog — the existing
+// @media print rules already hide chrome (topbar, nav, share-bar, etc.).
+// User saves as PDF from the dialog.
+function sharePDF(section){
+  // section param kept for compatibility; rules apply to whatever's currently visible
+  window.print();
+  showToast('📄 Use browser dialog → "Save as PDF"');
+}
+
+// Combined CSV export — chains existing CSV exporters in sequence
+function exportAllCSV(){
+  // Run attendance CSV (existing)
+  try { exportAttCSV(); } catch(e) { console.error('Attendance CSV failed:', e); }
+  // Run assembly/parts CSV (existing)
+  setTimeout(() => {
+    try { exportCSV(); } catch(e) { console.error('Assembly CSV failed:', e); }
+  }, 500);
+  showToast('✓ Exported attendance + assembly CSVs');
+}
+
+// WhatsApp send for the attendance view — reuses the same contact picker but
+// injects an attendance-summary message builder
+function sendAttWhatsApp(){
+  _waMsgBuilder = buildAttendanceWAMessage;
+  sendWhatsApp();
+}
+
+// WhatsApp send for the charts view — same pattern
+function sendChartWhatsApp(){
+  _waMsgBuilder = buildChartsWAMessage;
+  sendWhatsApp();
+}
+
+// Build a WhatsApp-friendly attendance summary for today
+function buildAttendanceWAMessage(){
+  const pr = attProject();
+  const dispWorkers = (pr.workers || []).filter(w => !isWorkerHidden(w));
+  const lines = ['*Attendance — ' + pr.name + '*', 'Date: ' + TODAY, ''];
+  let present = 0, late = 0, absent = 0, ot = 0;
+  dispWorkers.forEach(name => {
+    const rec = getAttRecord(name);
+    const isFlex = isFlexWorker(name);
+    const flexSess = isFlex ? getFlexSessions(name) : [];
+    if(isFlex && flexSess.length > 0){
+      const totalMin = flexTotalMins(flexSess);
+      lines.push('🔵 ' + name + ' (Flex) — ' + flexSess.length + ' session(s) · ' + minsToHHMM(totalMin));
+      present++;
+    } else if(rec.clockIn){
+      const reasonText = rec.reason || rec.overtimeReason || '';
+      const status = calcAttendanceStatus(name, rec.clockIn, reasonText, pr);
+      if(rec.overtimeStatus){ ot++; lines.push('🟢 ' + name + ' (OT) — IN ' + rec.clockIn + ' → OUT ' + (rec.clockOut||'pending')); }
+      else if(status.status === 'late'){ late++; lines.push('🟡 ' + name + ' — IN ' + rec.clockIn + ' (Late ' + fmtLateDuration(status.lateMin) + ')'); }
+      else if(status.status === 'travel'){ present++; lines.push('🟦 ' + name + ' — Off-site: ' + reasonText); }
+      else { present++; lines.push('🟢 ' + name + ' — IN ' + rec.clockIn + ' → OUT ' + (rec.clockOut||'pending')); }
+    } else {
+      absent++;
+      lines.push('🔴 ' + name + ' — Absent');
+    }
+  });
+  lines.push('');
+  lines.push('Summary: ' + present + ' present · ' + late + ' late · ' + absent + ' absent · ' + ot + ' OT');
+  lines.push('— CTS Production');
+  return lines.join('\n');
+}
+
+// Build a WhatsApp-friendly charts summary
+function buildChartsWAMessage(){
+  const allParts = S.projects.flatMap(pr => pr.parts.map(p => ({proj: pr.name, ...p})));
+  const totalUpdated = allParts.reduce((a,x) => a + x.updated, 0);
+  const totalTarget = allParts.reduce((a,x) => a + x.total, 0);
+  const overall = totalTarget > 0 ? Math.round(totalUpdated/totalTarget*100) : 0;
+  const lines = ['*Production Progress*', 'Date: ' + TODAY, ''];
+  S.projects.forEach(pr => {
+    const u = pr.parts.reduce((a,x) => a+x.updated, 0);
+    const t = pr.parts.reduce((a,x) => a+x.total, 0);
+    const p = t > 0 ? Math.round(u/t*100) : 0;
+    lines.push('📦 ' + pr.name + ' — ' + u + '/' + t + ' (' + p + '%)');
+  });
+  lines.push('');
+  lines.push('Overall: ' + totalUpdated + '/' + totalTarget + ' (' + overall + '%)');
+  lines.push('— CTS Production');
+  return lines.join('\n');
 }
 
 function renderWAContactsConfig(){
@@ -2947,8 +3039,11 @@ function renderWorkersConfig(){
     const utcOpts=UTC_OPTIONS.map(o=>`<option value="${o.v}"${o.v===utc?' selected':''}>${o.s}</option>`).join('');
     // Attendance v2: shift assignment dropdown
     const curShift = getWorkerShift(w);
-    const shiftOpts = Object.keys(pr.shifts||{day:{},night:{}}).map(s=>{
-      const sh=pr.shifts[s]; const lbl = (sh.label||s) + ' '+(sh.start||'')+'-'+(sh.end||'');
+    // Default shifts if project doesn't have them (legacy projects from before v2)
+    const shiftsObj = pr.shifts || { day:{start:'08:00',end:'17:00',label:'Day'}, night:{start:'20:00',end:'04:00',label:'Night'} };
+    const shiftOpts = Object.keys(shiftsObj).map(s=>{
+      const sh = shiftsObj[s] || {};
+      const lbl = (sh.label||s) + ' '+(sh.start||'')+'-'+(sh.end||'');
       return `<option value="${escH(s)}"${s===curShift?' selected':''}>${escH(lbl)}</option>`;
     }).join('') + `<option value="flex"${curShift==='flex'?' selected':''}>Flex (no late penalty)</option>`;
     return `<div style="background:var(--bg);border:1px solid var(--line);border-radius:2px;padding:10px 12px;margin-bottom:8px;">
