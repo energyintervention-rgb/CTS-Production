@@ -832,7 +832,6 @@ body::before {
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
         <button class="btn-sm btn-cyan" onclick="saveAssemblyConfig()">Save Changes</button>
         <button class="btn-sm btn-red" onclick="exportCSV()">Export CSV</button>
-        <button class="btn-sm btn-amber" onclick="printReport()">Print PDF</button>
       </div>
 
       <div class="admin-section" style="margin-top:14px;">
@@ -908,11 +907,6 @@ body::before {
         <span>Status</span>
       </div>
       <div id="partsBody"></div>
-    </div>
-
-    <div class="report-btns" id="reportBtns" style="display:none;margin-top:14px;gap:8px;">
-      <button class="btn-sm btn-red" onclick="exportCSV()">📊 Export CSV</button>
-      <button class="btn-sm btn-amber" onclick="printReport()">🖨 Print PDF</button>
     </div>
   </div>
 
@@ -2332,18 +2326,36 @@ async function _generatePDFFromHTML(html, filename, waitMs){
     win.close();
     const {jsPDF} = window.jspdf;
     const A4_W = 210, A4_H = 297;
+    const FOOTER_H = 12;            // mm reserved at bottom of each page for footer band
+    const visibleH = A4_H - FOOTER_H;
     const imgW = A4_W, imgH = (canvas.height * imgW) / canvas.width;
     const pdf = new jsPDF({orientation:'p', unit:'mm', format:'a4'});
     const imgData = canvas.toDataURL('image/jpeg', 0.97);
+    const totalPages = Math.max(1, Math.ceil(imgH / visibleH));
+    const safe = filename.replace(/[^a-zA-Z0-9_-]/g,'_').replace(/_+/g,'_');
+    const today = new Date().toLocaleDateString('en-MY');
     let y = 0;
+    let pageNum = 0;
     while(y < imgH){
       if(y > 0) pdf.addPage();
+      pageNum++;
+      // Place the image at offset -y; the page only shows what's visible
       pdf.addImage(imgData, 'JPEG', 0, -y, imgW, imgH);
-      y += A4_H;
+      // White cover over the bottom footer-band area — hides any row that would be
+      // partially cut off at the page boundary (cleaner than a chopped row)
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(0, visibleH, A4_W, FOOTER_H, 'F');
+      // Orange CTS footer band with page number
+      pdf.setFillColor(255, 91, 46);
+      pdf.rect(0, visibleH + 2, A4_W, FOOTER_H - 2, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(7);
+      pdf.text('CTS Production · ' + today + ' · ' + safe, 5, visibleH + 8);
+      pdf.text('Page ' + pageNum + ' of ' + totalPages, A4_W - 30, visibleH + 8);
+      y += visibleH;
     }
-    const safe = filename.replace(/[^a-zA-Z0-9_-]/g,'_').replace(/_+/g,'_');
     pdf.save(safe + '.pdf');
-    showToast('✓ PDF downloaded');
+    showToast('✓ PDF downloaded ('+totalPages+' page'+(totalPages===1?'':'s')+')');
   }catch(e){
     try{ win.close(); }catch(_){}
     showToast('⚠ PDF failed: '+e.message,'warn');
@@ -3605,12 +3617,6 @@ function downloadFile(filename,content,type){
   a.download=filename; a.click();
 }
 
-function printReport(){
-  // @media print rules already hide chrome (.report-btns, .topbar, .nav-pills etc.)
-  // No need to toggle visibility — just print.
-  window.print();
-}
-
 function toggleEditPanel(name){
   const id='edit-'+name.replace(/\s/g,'_');
   const el=document.getElementById(id);
@@ -4561,16 +4567,33 @@ async function generateWorkerReport(name, fromOverride, toOverride){
     const canvas = await html2canvas(win.document.body,{scale:2,useCORS:true,backgroundColor:'#ffffff',windowWidth:794,windowHeight:win.document.body.scrollHeight});
     win.close();
     const {jsPDF}=window.jspdf;
-    const A4_W=210,A4_H=297,imgW=A4_W,imgH=(canvas.height*imgW)/canvas.width;
-    const pdf=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
-    // Cache the data URL once — was being re-encoded for each page (wasted CPU)
+    const A4_W=210, A4_H=297;
+    const FOOTER_H = 12;
+    const visibleH = A4_H - FOOTER_H;
+    const imgW = A4_W, imgH = (canvas.height*imgW)/canvas.width;
+    const pdf = new jsPDF({orientation:'p',unit:'mm',format:'a4'});
     const imgData = canvas.toDataURL('image/jpeg',0.97);
-    let y=0;
-    while(y<imgH){if(y>0)pdf.addPage();pdf.addImage(imgData,'JPEG',0,-y,imgW,imgH);y+=A4_H;}
-    // Sanitize filename — strip anything that can't safely be in a filename
+    const totalPages = Math.max(1, Math.ceil(imgH / visibleH));
     const safeName = name.replace(/[^a-zA-Z0-9_-]/g,'_').replace(/_+/g,'_');
+    const todayStr = new Date().toLocaleDateString('en-MY');
+    let y=0, pageNum=0;
+    while(y<imgH){
+      if(y>0) pdf.addPage();
+      pageNum++;
+      pdf.addImage(imgData,'JPEG',0,-y,imgW,imgH);
+      // White cover + orange footer band (same pattern as shared pipeline)
+      pdf.setFillColor(255,255,255);
+      pdf.rect(0, visibleH, A4_W, FOOTER_H, 'F');
+      pdf.setFillColor(255,91,46);
+      pdf.rect(0, visibleH+2, A4_W, FOOTER_H-2, 'F');
+      pdf.setTextColor(255,255,255);
+      pdf.setFontSize(7);
+      pdf.text('CTS Production · '+todayStr+' · '+safeName, 5, visibleH+8);
+      pdf.text('Page '+pageNum+' of '+totalPages, A4_W-30, visibleH+8);
+      y += visibleH;
+    }
     pdf.save(`CTS_${safeName}_report_${TODAY.replace(/-/g,'')}.pdf`);
-    showToast('✓ Report downloaded');
+    showToast('✓ Report downloaded ('+totalPages+' page'+(totalPages===1?'':'s')+')');
     logActivity('REPORT','Downloaded attendance report', name);
   }catch(e){ win.close(); showToast('⚠ Failed: '+e.message,'warn'); }
 }
