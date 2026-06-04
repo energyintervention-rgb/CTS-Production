@@ -3305,9 +3305,9 @@ function downloadFile(filename,content,type){
 }
 
 function printReport(){
-  document.getElementById('reportBtns').style.display='flex';
+  // @media print rules already hide chrome (.report-btns, .topbar, .nav-pills etc.)
+  // No need to toggle visibility — just print.
   window.print();
-  setTimeout(()=>document.getElementById('reportBtns').style.display='none',1000);
 }
 
 function toggleEditPanel(name){
@@ -3969,7 +3969,7 @@ function confirmReportRange(){
 async function generateWorkerReport(name, fromOverride, toOverride){
   showToast('⏳ Generating report…');
   const pr = attProject();
-  const holidays = pr.plan.holidays||[];
+  const holidays = (pr.plan && pr.plan.holidays) || [];
   const att = pr.attendance||{};
 
   // Collect dates that have ACTUAL records — attendance with clock-in/out/OT data,
@@ -4040,6 +4040,7 @@ async function generateWorkerReport(name, fromOverride, toOverride){
       <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;margin-top:30px;">Generated ${new Date().toLocaleString('en-MY',{timeZone:'Asia/Kuala_Lumpur'})}</p>
     </body></html>`;
     const win = window.open('', '_blank');
+    if(!win){ showToast('⚠ Allow popups to view report','warn'); return; }
     win.document.write(html); win.document.close();
     showToast('Nothing to report');
     return;
@@ -4062,7 +4063,6 @@ async function generateWorkerReport(name, fromOverride, toOverride){
   const rows = dates.map((date,i)=>{
     const rec = att[name+'_'+date]||{};
     const dayInfo = getDayType(date);
-    const isOTRec = dayInfo.type!=='work' || !!rec.overtimeStatus;
     const rowBg = dayInfo.type!=='work'?(dayInfo.type==='holiday'?'#f5f3fa':'#eef4fa'):i%2===0?'#ffffff':'#f9f7f3';
     const dtColor = dayInfo.type==='holiday'?'#5b21b6':dayInfo.type==='rest'?'#2a5f9e':'#5a5a5a';
     const dtBg    = dayInfo.type==='holiday'?'#ede9fe':dayInfo.type==='rest'?'#e6f1fb':'#f9f7f3';
@@ -4253,16 +4253,22 @@ async function generateWorkerReport(name, fromOverride, toOverride){
   const win = window.open('','_blank','width=900,height=700');
   if(!win){ showToast('⚠ Allow popups to download PDF','warn'); return; }
   win.document.write(html); win.document.close(); win.focus();
-  await new Promise(r=>setTimeout(r,600));
+  // Bigger wait for larger reports (each ~50 rows adds ~50ms render time)
+  const waitMs = Math.min(2500, 600 + dates.length * 10);
+  await new Promise(r=>setTimeout(r, waitMs));
   try{
     const canvas = await html2canvas(win.document.body,{scale:2,useCORS:true,backgroundColor:'#ffffff',windowWidth:794,windowHeight:win.document.body.scrollHeight});
     win.close();
     const {jsPDF}=window.jspdf;
     const A4_W=210,A4_H=297,imgW=A4_W,imgH=(canvas.height*imgW)/canvas.width;
     const pdf=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+    // Cache the data URL once — was being re-encoded for each page (wasted CPU)
+    const imgData = canvas.toDataURL('image/jpeg',0.97);
     let y=0;
-    while(y<imgH){if(y>0)pdf.addPage();pdf.addImage(canvas.toDataURL('image/jpeg',0.97),'JPEG',0,-y,imgW,imgH);y+=A4_H;}
-    pdf.save(`CTS_${name.replace(/\s+/g,'_')}_report_${TODAY.replace(/-/g,'')}.pdf`);
+    while(y<imgH){if(y>0)pdf.addPage();pdf.addImage(imgData,'JPEG',0,-y,imgW,imgH);y+=A4_H;}
+    // Sanitize filename — strip anything that can't safely be in a filename
+    const safeName = name.replace(/[^a-zA-Z0-9_-]/g,'_').replace(/_+/g,'_');
+    pdf.save(`CTS_${safeName}_report_${TODAY.replace(/-/g,'')}.pdf`);
     showToast('✓ Report downloaded');
     logActivity('REPORT','Downloaded attendance report', name);
   }catch(e){ win.close(); showToast('⚠ Failed: '+e.message,'warn'); }
