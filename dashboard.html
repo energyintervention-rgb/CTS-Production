@@ -2353,17 +2353,26 @@ async function _generatePDFFromHTML(html, filename, waitMs, title){
     function findCleanBreakMm(targetMm, searchRangeMm){
       const targetPx = Math.floor(targetMm * mmToPx);
       const rangePx = Math.floor(searchRangeMm * mmToPx);
-      let bestPx = targetPx;
-      let bestDarkness = rowDarkness(targetPx);
-      for(let dy = 1; dy < rangePx; dy++){
-        const d = rowDarkness(targetPx - dy);
-        if(d < bestDarkness){
-          bestDarkness = d;
-          bestPx = targetPx - dy;
-          if(d === 0) break;
+      // Find the LONGEST contiguous zero-darkness stretch in the search range.
+      // True between-row gaps (padding+border+padding ≈ 7px) are wider than within-row
+      // padding (3px), so the longest stretch reliably identifies the actual gap.
+      let bestLen = 0, bestEnd = targetPx;  // bestEnd = top of best stretch (lowest y in walk-back)
+      let currentLen = 0;
+      for(let dy = 0; dy < rangePx; dy++){
+        const px = targetPx - dy;
+        if(rowDarkness(px) === 0){
+          currentLen++;
+          if(currentLen > bestLen){
+            bestLen = currentLen;
+            bestEnd = px;  // the topmost pixel of the current best stretch
+          }
+        } else {
+          currentLen = 0;
         }
       }
-      return bestPx / mmToPx;
+      // Break at the MIDDLE of the longest stretch so we're well inside the gap
+      const middlePx = bestEnd + Math.floor(bestLen / 2);
+      return middlePx / mmToPx;
     }
 
     // Build page-start positions — page 1 uses visibleH (no top header reserved,
@@ -2409,8 +2418,12 @@ async function _generatePDFFromHTML(html, filename, waitMs, title){
         pdf.text('Page ' + (p + 1) + ' of ' + totalPages, A4_W - 30, HEADER_H - 5);
       }
 
-      // ── Bottom cover + footer band ──
-      const visibleBottom = isFirst ? visibleH : (HEADER_H + (yEnd - yStart));
+      // Use actual clean-break point as the bottom of visible content
+      // (not just visibleH, otherwise rows between the break point and footer get chopped)
+      const contentHeight = yEnd - yStart;
+      const visibleBottom = isFirst
+        ? Math.min(contentHeight, visibleH)
+        : Math.min(HEADER_H + contentHeight, A4_H - FOOTER_H);
       const coverStart = Math.min(visibleBottom, A4_H - FOOTER_H);
       pdf.setFillColor(255, 255, 255);
       pdf.rect(0, coverStart, A4_W, A4_H - coverStart, 'F');
@@ -4661,13 +4674,19 @@ async function generateWorkerReport(name, fromOverride, toOverride){
     function findCleanBreakMm(targetMm, searchRangeMm){
       const targetPx = Math.floor(targetMm * mmToPx);
       const rangePx = Math.floor(searchRangeMm * mmToPx);
-      let bestPx = targetPx;
-      let bestDarkness = rowDarkness(targetPx);
-      for(let dy = 1; dy < rangePx; dy++){
-        const d = rowDarkness(targetPx - dy);
-        if(d < bestDarkness){ bestDarkness = d; bestPx = targetPx - dy; if(d === 0) break; }
+      let bestLen = 0, bestEnd = targetPx;
+      let currentLen = 0;
+      for(let dy = 0; dy < rangePx; dy++){
+        const px = targetPx - dy;
+        if(rowDarkness(px) === 0){
+          currentLen++;
+          if(currentLen > bestLen){ bestLen = currentLen; bestEnd = px; }
+        } else {
+          currentLen = 0;
+        }
       }
-      return bestPx / mmToPx;
+      const middlePx = bestEnd + Math.floor(bestLen / 2);
+      return middlePx / mmToPx;
     }
     const pageStarts = [0];
     let cursor = visibleH;
@@ -4703,7 +4722,10 @@ async function generateWorkerReport(name, fromOverride, toOverride){
         pdf.text('Page '+(p+1)+' of '+totalPages, A4_W-30, HEADER_H - 5);
       }
 
-      const visibleBottom = isFirst ? visibleH : (HEADER_H + (yEnd - yStart));
+      const contentHeight = yEnd - yStart;
+      const visibleBottom = isFirst
+        ? Math.min(contentHeight, visibleH)
+        : Math.min(HEADER_H + contentHeight, A4_H - FOOTER_H);
       const coverStart = Math.min(visibleBottom, A4_H - FOOTER_H);
       pdf.setFillColor(255,255,255);
       pdf.rect(0, coverStart, A4_W, A4_H - coverStart, 'F');
