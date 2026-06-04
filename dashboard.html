@@ -2326,48 +2326,53 @@ async function _generatePDFFromHTML(html, filename, waitMs){
     win.close();
     const {jsPDF} = window.jspdf;
     const A4_W = 210, A4_H = 297;
-    const FOOTER_H = 12;            // mm reserved for footer band
+    const FOOTER_H = 12;
     const visibleH = A4_H - FOOTER_H;
     const imgW = A4_W, imgH = (canvas.height * imgW) / canvas.width;
     const pdf = new jsPDF({orientation:'p', unit:'mm', format:'a4'});
     const imgData = canvas.toDataURL('image/jpeg', 0.97);
 
-    // ─── Smart page-break detection ───
-    // Walk pixel rows backward from each prospective page boundary, find a
-    // mostly-white row (gap between table rows), and break there. Prevents
-    // table rows from being visually chopped at page boundaries.
+    // ─── Smart page-break detection (darkness-min) ───
+    // Compute "darkness" of each pixel row near each prospective page break.
+    // The row with MINIMUM darkness in the search range is the gap between
+    // table rows — that's where we cleanly break the page.
     const ctx = canvas.getContext('2d');
     const mmToPx = canvas.height / imgH;
-    function rowMostlyWhite(yPx){
-      if(yPx < 0 || yPx >= canvas.height) return true;
+    function rowDarkness(yPx){
+      if(yPx < 0 || yPx >= canvas.height) return Infinity;
       try {
         const data = ctx.getImageData(0, yPx, canvas.width, 1).data;
-        const sampleStep = Math.max(1, Math.floor(canvas.width / 30));
-        let whiteCount = 0, total = 0;
-        for(let i = 0; i < canvas.width; i += sampleStep){
+        let darkness = 0;
+        for(let i = 0; i < canvas.width; i++){
           const idx = i * 4;
-          if(data[idx] > 240 && data[idx+1] > 240 && data[idx+2] > 240) whiteCount++;
-          total++;
+          const brightness = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+          if(brightness < 220) darkness += (220 - brightness);
         }
-        return whiteCount / total > 0.92;
-      } catch(_) { return true; }
+        return darkness;
+      } catch(_) { return Infinity; }
     }
     function findCleanBreakMm(targetMm, searchRangeMm){
       const targetPx = Math.floor(targetMm * mmToPx);
       const rangePx = Math.floor(searchRangeMm * mmToPx);
-      // Search backwards from targetPx looking for first mostly-white row
-      for(let dy = 0; dy < rangePx; dy++){
-        if(rowMostlyWhite(targetPx - dy)) return (targetPx - dy) / mmToPx;
+      let bestPx = targetPx;
+      let bestDarkness = rowDarkness(targetPx);
+      for(let dy = 1; dy < rangePx; dy++){
+        const d = rowDarkness(targetPx - dy);
+        if(d < bestDarkness){
+          bestDarkness = d;
+          bestPx = targetPx - dy;
+          if(d === 0) break;  // Perfect gap found
+        }
       }
-      // Couldn't find a clean break — fall back to original position
-      return targetMm;
+      return bestPx / mmToPx;
     }
 
-    // Build list of page-start positions (in mm of image)
+    // Build list of page-start positions (in mm of image coords)
     const pageStarts = [0];
     let cursor = visibleH;
     while(cursor < imgH){
-      const cleanY = findCleanBreakMm(cursor, 20);  // search up to 20mm backward for white space
+      const cleanY = findCleanBreakMm(cursor, 30);  // search up to 30mm backward
+      if(cleanY <= pageStarts[pageStarts.length - 1] + 10) break;  // safety: avoid tiny/repeat pages
       pageStarts.push(cleanY);
       cursor = cleanY + visibleH;
     }
@@ -2378,18 +2383,26 @@ async function _generatePDFFromHTML(html, filename, waitMs){
 
     for(let p = 0; p < totalPages; p++){
       if(p > 0) pdf.addPage();
-      const y = pageStarts[p];
-      pdf.addImage(imgData, 'JPEG', 0, -y, imgW, imgH);
-      // White cover over bottom (hides anything that overflows the clean break)
+      const yStart = pageStarts[p];
+      const yEnd = (p + 1 < totalPages) ? pageStarts[p + 1] : imgH;
+      const contentHeightMm = Math.min(yEnd - yStart, A4_H);  // how much of this page has content
+
+      pdf.addImage(imgData, 'JPEG', 0, -yStart, imgW, imgH);
+
+      // FIX: White cover from the ACTUAL clean break point down — not just from visibleH.
+      // This hides everything below the clean break (which is also where the NEXT page starts).
+      // Prevents duplication of rows on both pages.
+      const coverStart = Math.min(contentHeightMm, visibleH);
       pdf.setFillColor(255, 255, 255);
-      pdf.rect(0, visibleH, A4_W, FOOTER_H, 'F');
-      // Orange CTS footer band with page number
+      pdf.rect(0, coverStart, A4_W, A4_H - coverStart, 'F');
+
+      // Orange CTS footer band at the very bottom
       pdf.setFillColor(255, 91, 46);
-      pdf.rect(0, visibleH + 2, A4_W, FOOTER_H - 2, 'F');
+      pdf.rect(0, A4_H - FOOTER_H + 2, A4_W, FOOTER_H - 2, 'F');
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(7);
-      pdf.text('CTS Production · ' + today + ' · ' + safe, 5, visibleH + 8);
-      pdf.text('Page ' + (p + 1) + ' of ' + totalPages, A4_W - 30, visibleH + 8);
+      pdf.text('CTS Production · ' + today + ' · ' + safe, 5, A4_H - FOOTER_H + 8);
+      pdf.text('Page ' + (p + 1) + ' of ' + totalPages, A4_W - 30, A4_H - FOOTER_H + 8);
     }
 
     pdf.save(safe + '.pdf');
@@ -4611,35 +4624,42 @@ async function generateWorkerReport(name, fromOverride, toOverride){
     const pdf = new jsPDF({orientation:'p',unit:'mm',format:'a4'});
     const imgData = canvas.toDataURL('image/jpeg',0.97);
 
-    // Smart break detection — same approach as shared pipeline
+    // Smart break detection (darkness-min)
     const ctx = canvas.getContext('2d');
     const mmToPx = canvas.height / imgH;
-    function rowMostlyWhite(yPx){
-      if(yPx < 0 || yPx >= canvas.height) return true;
+    function rowDarkness(yPx){
+      if(yPx < 0 || yPx >= canvas.height) return Infinity;
       try {
         const data = ctx.getImageData(0, yPx, canvas.width, 1).data;
-        const sampleStep = Math.max(1, Math.floor(canvas.width / 30));
-        let whiteCount = 0, total = 0;
-        for(let i = 0; i < canvas.width; i += sampleStep){
+        let darkness = 0;
+        for(let i = 0; i < canvas.width; i++){
           const idx = i * 4;
-          if(data[idx] > 240 && data[idx+1] > 240 && data[idx+2] > 240) whiteCount++;
-          total++;
+          const brightness = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+          if(brightness < 220) darkness += (220 - brightness);
         }
-        return whiteCount / total > 0.92;
-      } catch(_) { return true; }
+        return darkness;
+      } catch(_) { return Infinity; }
     }
     function findCleanBreakMm(targetMm, searchRangeMm){
       const targetPx = Math.floor(targetMm * mmToPx);
       const rangePx = Math.floor(searchRangeMm * mmToPx);
-      for(let dy = 0; dy < rangePx; dy++){
-        if(rowMostlyWhite(targetPx - dy)) return (targetPx - dy) / mmToPx;
+      let bestPx = targetPx;
+      let bestDarkness = rowDarkness(targetPx);
+      for(let dy = 1; dy < rangePx; dy++){
+        const d = rowDarkness(targetPx - dy);
+        if(d < bestDarkness){
+          bestDarkness = d;
+          bestPx = targetPx - dy;
+          if(d === 0) break;
+        }
       }
-      return targetMm;
+      return bestPx / mmToPx;
     }
     const pageStarts = [0];
     let cursor = visibleH;
     while(cursor < imgH){
-      const cleanY = findCleanBreakMm(cursor, 20);
+      const cleanY = findCleanBreakMm(cursor, 30);
+      if(cleanY <= pageStarts[pageStarts.length - 1] + 10) break;
       pageStarts.push(cleanY);
       cursor = cleanY + visibleH;
     }
@@ -4650,16 +4670,22 @@ async function generateWorkerReport(name, fromOverride, toOverride){
 
     for(let p = 0; p < totalPages; p++){
       if(p > 0) pdf.addPage();
-      const y = pageStarts[p];
-      pdf.addImage(imgData,'JPEG',0,-y,imgW,imgH);
+      const yStart = pageStarts[p];
+      const yEnd = (p + 1 < totalPages) ? pageStarts[p + 1] : imgH;
+      const contentHeightMm = Math.min(yEnd - yStart, A4_H);
+
+      pdf.addImage(imgData,'JPEG',0,-yStart,imgW,imgH);
+
+      const coverStart = Math.min(contentHeightMm, visibleH);
       pdf.setFillColor(255,255,255);
-      pdf.rect(0, visibleH, A4_W, FOOTER_H, 'F');
+      pdf.rect(0, coverStart, A4_W, A4_H - coverStart, 'F');
+
       pdf.setFillColor(255,91,46);
-      pdf.rect(0, visibleH+2, A4_W, FOOTER_H-2, 'F');
+      pdf.rect(0, A4_H - FOOTER_H + 2, A4_W, FOOTER_H - 2, 'F');
       pdf.setTextColor(255,255,255);
       pdf.setFontSize(7);
-      pdf.text('CTS Production · '+todayStr+' · '+safeName, 5, visibleH+8);
-      pdf.text('Page '+(p+1)+' of '+totalPages, A4_W-30, visibleH+8);
+      pdf.text('CTS Production · '+todayStr+' · '+safeName, 5, A4_H - FOOTER_H + 8);
+      pdf.text('Page '+(p+1)+' of '+totalPages, A4_W-30, A4_H - FOOTER_H + 8);
     }
     pdf.save(`CTS_${safeName}_report_${TODAY.replace(/-/g,'')}.pdf`);
     showToast('✓ Report downloaded ('+totalPages+' page'+(totalPages===1?'':'s')+')');
