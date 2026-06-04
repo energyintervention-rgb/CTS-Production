@@ -2317,13 +2317,314 @@ function sendToContact(idx){
 
 let _waMsgBuilder = null;  // lets section-specific WA buttons inject their message builder
 
-// Generic PDF print/export. Triggers the browser's print dialog — the existing
-// @media print rules already hide chrome (topbar, nav, share-bar, etc.).
-// User saves as PDF from the dialog.
+// Shared PDF pipeline — renders HTML in a hidden popup, snapshots with html2canvas,
+// splits into A4 pages via jsPDF. Used by sharePDF dispatchers below.
+async function _generatePDFFromHTML(html, filename, waitMs){
+  const win = window.open('','_blank','width=900,height=700');
+  if(!win){ showToast('⚠ Allow popups to download PDF','warn'); return; }
+  win.document.write(html); win.document.close(); win.focus();
+  await new Promise(r=>setTimeout(r, waitMs || 900));
+  try{
+    const canvas = await html2canvas(win.document.body, {
+      scale: 2, useCORS: true, backgroundColor: '#ffffff',
+      windowWidth: 794, windowHeight: win.document.body.scrollHeight
+    });
+    win.close();
+    const {jsPDF} = window.jspdf;
+    const A4_W = 210, A4_H = 297;
+    const imgW = A4_W, imgH = (canvas.height * imgW) / canvas.width;
+    const pdf = new jsPDF({orientation:'p', unit:'mm', format:'a4'});
+    const imgData = canvas.toDataURL('image/jpeg', 0.97);
+    let y = 0;
+    while(y < imgH){
+      if(y > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, -y, imgW, imgH);
+      y += A4_H;
+    }
+    const safe = filename.replace(/[^a-zA-Z0-9_-]/g,'_').replace(/_+/g,'_');
+    pdf.save(safe + '.pdf');
+    showToast('✓ PDF downloaded');
+  }catch(e){
+    try{ win.close(); }catch(_){}
+    showToast('⚠ PDF failed: '+e.message,'warn');
+  }
+}
+
+// Shared CSS for all PDF reports (light, A4-friendly, monospace for numbers)
+const _PDF_CSS = `
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a1a;padding:0;width:794px;line-height:1.4}
+  .hdr{background:#ff5b2e;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
+  .hdr h1{font-size:16px;letter-spacing:0.5px}
+  .hdr .meta{font-size:10px;color:rgba(255,255,255,0.85);text-align:right;line-height:1.6}
+  .sec{font-size:9px;letter-spacing:2px;color:#ff5b2e;font-weight:700;padding:10px 20px 6px;text-transform:uppercase;border-top:1px solid #ebe6dc;margin-top:8px}
+  .sec:first-of-type{border-top:none;margin-top:0}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 20px;background:#fef7f3}
+  .stat{background:#fff;border:1px solid #ebe6dc;border-radius:2px;padding:8px 10px;text-align:center}
+  .stat .k{font-size:8px;letter-spacing:1px;color:#5a5a5a;text-transform:uppercase;font-weight:600}
+  .stat .v{font-size:18px;color:#ff5b2e;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:2px}
+  table{width:calc(100% - 40px);margin:0 20px;border-collapse:collapse;table-layout:auto}
+  th{background:#ff5b2e;color:#fff;padding:5px 7px;text-align:left;font-size:9px;font-weight:600;white-space:nowrap;letter-spacing:0.3px}
+  td{padding:5px 7px;border-bottom:1px solid #ebe6dc;font-size:10px;vertical-align:top}
+  td.nw{white-space:nowrap}
+  td.num{font-family:'JetBrains Mono',monospace;font-weight:600}
+  tr:nth-child(even) td{background:#f9f7f3}
+  .badge{display:inline-block;font-size:8px;padding:2px 5px;border-radius:2px;font-weight:600;letter-spacing:0.3px}
+  .bar{display:inline-block;width:80px;height:4px;background:#ebe6dc;border-radius:2px;vertical-align:middle;overflow:hidden;margin-right:6px}
+  .bar i{display:block;height:100%;background:#ff5b2e}
+  .ftr{background:#ff5b2e;padding:6px 20px;display:flex;justify-content:space-between;font-size:8.5px;color:rgba(255,255,255,0.85);margin-top:14px}
+  .pname{font-size:11px;font-weight:700;color:#1a1a1a;padding:8px 20px 2px}
+  .proj-header{display:flex;justify-content:space-between;align-items:baseline;padding:8px 20px 4px;border-top:2px solid #ff5b2e;margin-top:6px}
+  .proj-header h2{font-size:13px;font-weight:700;color:#1a1a1a}
+  .proj-header .pct{font-size:16px;font-weight:700;color:#ff5b2e;font-family:'JetBrains Mono',monospace}
+`;
+
+// ═══════════════════════════════════════════════════════════════
+// SHAREPDF DISPATCHER — routes to section-specific generator
+// ═══════════════════════════════════════════════════════════════
 function sharePDF(section){
-  // section param kept for compatibility; rules apply to whatever's currently visible
+  if(section === 'assembly') return generateAssemblyPDF();
+  if(section === 'attendance') return generateAttendancePDF();
+  if(section === 'charts') return generateChartsPDF();
+  // fallback
   window.print();
-  showToast('📄 Use browser dialog → "Save as PDF"');
+}
+
+// ─── ASSEMBLY PDF ─────────────────────────────────────────────────
+async function generateAssemblyPDF(){
+  showToast('⏳ Generating assembly PDF…');
+  const pr = activeProject();
+  const parts = pr.parts || [];
+  const totalUpdated = parts.reduce((a,p) => a + p.updated, 0);
+  const totalTarget = parts.reduce((a,p) => a + p.total, 0);
+  const overall = totalTarget > 0 ? Math.round(totalUpdated/totalTarget*100) : 0;
+  const today = new Date().toLocaleDateString('en-MY');
+
+  const rows = parts.map((p,i) => {
+    const pct = p.total > 0 ? Math.round(p.updated/p.total*100) : 0;
+    const remaining = p.total - p.updated;
+    let statusBadge, statusBg, statusColor;
+    if(pct >= 100){ statusBadge='COMPLETE'; statusBg='#dcfce7'; statusColor='#15803d'; }
+    else if(pct === 0){ statusBadge='NOT STARTED'; statusBg='#f3f4f6'; statusColor='#5a5a5a'; }
+    else { statusBadge='IN PROGRESS'; statusBg='#faf3e0'; statusColor='#d4a017'; }
+    return `<tr>
+      <td class="num">#${i+1}</td>
+      <td>${escH(p.name)}</td>
+      <td class="num">${p.total}</td>
+      <td class="num">${p.updated}</td>
+      <td class="num">${remaining}</td>
+      <td class="num">${pct}%</td>
+      <td><span class="bar"><i style="width:${pct}%"></i></span></td>
+      <td><span class="badge" style="background:${statusBg};color:${statusColor}">${statusBadge}</span></td>
+    </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html><head><title>Assembly Report — ${escH(pr.name)}</title><style>${_PDF_CSS}</style></head><body>
+    <div class="hdr">
+      <h1>📦 ASSEMBLY REPORT — ${escH(pr.name)}</h1>
+      <div class="meta">Generated: ${today}<br>By: ${escH(SESSION&&SESSION.name||'Admin')}</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="k">Overall</div><div class="v">${overall}%</div></div>
+      <div class="stat"><div class="k">Updated</div><div class="v">${totalUpdated.toLocaleString()}</div></div>
+      <div class="stat"><div class="k">Target</div><div class="v">${totalTarget.toLocaleString()}</div></div>
+      <div class="stat"><div class="k">Parts</div><div class="v">${parts.length}</div></div>
+    </div>
+    <div class="sec">Parts Breakdown</div>
+    <table>
+      <thead><tr>
+        <th>#</th><th>Part Name</th><th>Target</th><th>Updated</th><th>Remaining</th><th>%</th><th>Progress</th><th>Status</th>
+      </tr></thead>
+      <tbody>${rows||'<tr><td colspan="8" style="text-align:center;color:#5a5a5a;padding:20px">No parts defined</td></tr>'}</tbody>
+    </table>
+    <div class="ftr">
+      <span>CTS Production · Generated ${today}</span>
+      <span>${escH(pr.name)} · ${parts.length} parts</span>
+    </div>
+  </body></html>`;
+
+  await _generatePDFFromHTML(html, 'CTS_'+pr.name+'_assembly_'+TODAY.replace(/-/g,''), 800);
+  logActivity('PDF_ASSEMBLY', 'Generated assembly PDF for '+pr.name);
+}
+
+// ─── ATTENDANCE PDF (all workers daily list, like CSV) ────────────
+async function generateAttendancePDF(){
+  showToast('⏳ Generating attendance PDF…');
+  const pr = attProject();
+  const workers = (pr.workers||[]).filter(n=>!isWorkerHidden(n));
+  const att = pr.attendance||{};
+  const holidays = (pr.plan&&pr.plan.holidays)||[];
+  const today = new Date().toLocaleDateString('en-MY');
+
+  function getDayType(ds){
+    const d=new Date(ds), dn=DAY_NAMES[d.getDay()];
+    const h=holidays.find(hh=>hh.enabled&&hh.date===ds);
+    if(h) return {type:'holiday',label:'Holiday: '+h.name,bg:'#f5f3fa'};
+    const s=(pr.workHours&&pr.workHours.schedule&&pr.workHours.schedule[dn]);
+    const isR=s?!s.on:(dn==='Sun');
+    if(isR) return {type:'rest',label:'Rest: '+dn,bg:'#eef4fa'};
+    return {type:'work',label:'Working',bg:'#fff'};
+  }
+
+  // Build full calendar (same logic as worker report)
+  const recordSet = new Set();
+  Object.keys(att).forEach(k => {
+    const rec = att[k];
+    if(rec && (rec.clockIn||rec.clockOut||rec.overtimeStatus)){
+      const p = k.split('_'); p.shift(); recordSet.add(p.join('_'));
+    }
+  });
+  if(pr.flexAttendance){
+    Object.keys(pr.flexAttendance).forEach(k => {
+      const sessions = pr.flexAttendance[k];
+      if(sessions && sessions.length > 0){
+        const p = k.split('_'); p.shift(); recordSet.add(p.join('_'));
+      }
+    });
+  }
+  const recordDates = [...recordSet].sort();
+  let startDate, endDate;
+  if(recordDates.length > 0){
+    const first = new Date(recordDates[0]);
+    startDate = new Date(first.getFullYear(), first.getMonth(), 1);
+    endDate = new Date(TODAY);
+  } else {
+    const t = new Date(TODAY);
+    startDate = new Date(t.getFullYear(), t.getMonth(), 1);
+    endDate = new Date(TODAY);
+  }
+  const dates = [];
+  const cursor = new Date(startDate);
+  while(cursor <= endDate){
+    const y=cursor.getFullYear(), m=String(cursor.getMonth()+1).padStart(2,'0'), d=String(cursor.getDate()).padStart(2,'0');
+    dates.push(y+'-'+m+'-'+d);
+    cursor.setDate(cursor.getDate()+1);
+  }
+
+  // Stats
+  let present=0, late=0, absent=0, ot=0, totalRows=0;
+  const rows = [];
+  dates.forEach(date => {
+    const di = getDayType(date);
+    const dayName = DAY_NAMES[new Date(date).getDay()];
+    workers.forEach(name => {
+      totalRows++;
+      const rec = att[name+'_'+date]||{};
+      const reasonText = rec.reason || rec.overtimeReason || '';
+      const attStat = calcAttendanceStatus(name, rec.clockIn, reasonText, pr);
+      const hrs = rec.clockIn&&rec.clockOut ? calcHours(rec.clockIn,rec.clockOut).toFixed(1)+'h' : '—';
+      let status, statusBg, statusColor;
+      if(di.type !== 'work'){
+        if(!rec.clockIn){ status='—'; statusBg='#f3f4f6'; statusColor='#5a5a5a'; }
+        else if(rec.overtimeStatus==='approved'){ ot++; status='OT Approved'; statusBg='#dcfce7'; statusColor='#15803d'; }
+        else { status='OT'; statusBg='#faf3e0'; statusColor='#d4a017'; }
+      } else if(!rec.clockIn){ absent++; status='Absent'; statusBg='#fee2e2'; statusColor='#c1311e'; }
+      else if(attStat.status==='travel'){ present++; status='Off-site (Travel)'; statusBg='#dbeafe'; statusColor='#1e40af'; }
+      else if(attStat.status==='flex'){ present++; status='Flex'; statusBg='#dbeafe'; statusColor='#1e40af'; }
+      else if(attStat.lateMin>0){ late++; status='Late +'+fmtLateDuration(attStat.lateMin); statusBg='#fef3c7'; statusColor='#d4a017'; }
+      else { present++; status='On Time'; statusBg='#dcfce7'; statusColor='#15803d'; }
+      rows.push(`<tr style="background:${di.bg}">
+        <td class="nw num">${date.slice(8,10)}/${date.slice(5,7)}</td>
+        <td class="nw" style="font-size:9px;color:#5a5a5a">${dayName}</td>
+        <td>${escH(name)}</td>
+        <td class="nw" style="font-size:9px">${escH(attStat.shiftLabel||'—')}</td>
+        <td class="nw" style="font-size:9px">${di.type==='holiday'?escH(di.label):(di.type==='rest'?'Rest':'Working')}</td>
+        <td class="nw num">${rec.clockIn||'—'}</td>
+        <td class="nw num">${rec.clockOut||'—'}</td>
+        <td class="nw num">${hrs}</td>
+        <td><span class="badge" style="background:${statusBg};color:${statusColor}">${status}</span></td>
+        <td style="font-size:9px;color:#5a5a5a">${escH(reasonText||'—')}</td>
+      </tr>`);
+    });
+  });
+
+  const attendRate = (present+absent+late) > 0 ? Math.round((present+late)/(present+absent+late)*100) : 0;
+
+  const html = `<!DOCTYPE html><html><head><title>Attendance Report — ${escH(pr.name)}</title><style>${_PDF_CSS}
+    table{font-size:9px}
+    th{font-size:8px;padding:4px 5px}
+    td{padding:3px 5px;font-size:9px}
+  </style></head><body>
+    <div class="hdr">
+      <h1>📋 ATTENDANCE LIST — ${escH(pr.name)}</h1>
+      <div class="meta">Generated: ${today}<br>By: ${escH(SESSION&&SESSION.name||'Admin')}<br>Range: ${dates[0]} to ${dates[dates.length-1]}</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="k">Workers</div><div class="v">${workers.length}</div></div>
+      <div class="stat"><div class="k">Days</div><div class="v">${dates.length}</div></div>
+      <div class="stat"><div class="k">Present</div><div class="v" style="color:#15803d">${present+late}</div></div>
+      <div class="stat"><div class="k">Absent</div><div class="v" style="color:#c1311e">${absent}</div></div>
+    </div>
+    <div class="sec">Daily Attendance — ${attendRate}% attendance rate · ${late} late · ${ot} OT</div>
+    <table>
+      <thead><tr>
+        <th>Date</th><th>Day</th><th>Worker</th><th>Shift</th><th>Type</th><th>In</th><th>Out</th><th>Hrs</th><th>Status</th><th>Reason</th>
+      </tr></thead>
+      <tbody>${rows.join('')||'<tr><td colspan="10" style="text-align:center;color:#5a5a5a;padding:20px">No attendance records</td></tr>'}</tbody>
+    </table>
+    <div class="ftr">
+      <span>CTS Production · Generated ${today}</span>
+      <span>${escH(pr.name)} · ${totalRows} entries</span>
+    </div>
+  </body></html>`;
+
+  await _generatePDFFromHTML(html, 'CTS_'+pr.name+'_attendance_'+TODAY.replace(/-/g,''), Math.min(2500, 800 + dates.length*5));
+  logActivity('PDF_ATTENDANCE', 'Generated attendance list PDF for '+pr.name);
+}
+
+// ─── CHARTS PDF (all-project production progress) ─────────────────
+async function generateChartsPDF(){
+  showToast('⏳ Generating progress PDF…');
+  const today = new Date().toLocaleDateString('en-MY');
+  const allParts = S.projects.flatMap(p => p.parts);
+  const totalUpdated = allParts.reduce((a,x) => a+x.updated, 0);
+  const totalTarget = allParts.reduce((a,x) => a+x.total, 0);
+  const overall = totalTarget > 0 ? Math.round(totalUpdated/totalTarget*100) : 0;
+
+  const projectBlocks = S.projects.map(pr => {
+    const parts = pr.parts||[];
+    const pUpd = parts.reduce((a,p)=>a+p.updated,0);
+    const pTgt = parts.reduce((a,p)=>a+p.total,0);
+    const pPct = pTgt>0 ? Math.round(pUpd/pTgt*100) : 0;
+    const rows = parts.map((p,i)=>{
+      const pct = p.total>0 ? Math.round(p.updated/p.total*100) : 0;
+      return `<tr>
+        <td class="num">#${i+1}</td>
+        <td>${escH(p.name)}</td>
+        <td class="num">${p.total}</td>
+        <td class="num">${p.updated}</td>
+        <td class="num">${pct}%</td>
+        <td><span class="bar"><i style="width:${pct}%"></i></span></td>
+      </tr>`;
+    }).join('');
+    return `<div class="proj-header"><h2>📦 ${escH(pr.name)}</h2><span class="pct">${pPct}%</span></div>
+      <div style="padding:0 20px 4px;font-size:10px;color:#5a5a5a">${pUpd.toLocaleString()} / ${pTgt.toLocaleString()} units</div>
+      <table style="margin-top:6px">
+        <thead><tr><th>#</th><th>Part</th><th>Target</th><th>Updated</th><th>%</th><th>Progress</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="6" style="text-align:center;color:#5a5a5a">No parts</td></tr>'}</tbody>
+      </table>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html><head><title>Production Progress — All Projects</title><style>${_PDF_CSS}</style></head><body>
+    <div class="hdr">
+      <h1>📈 PRODUCTION PROGRESS — ALL PROJECTS</h1>
+      <div class="meta">Generated: ${today}<br>By: ${escH(SESSION&&SESSION.name||'Admin')}</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="k">Overall</div><div class="v">${overall}%</div></div>
+      <div class="stat"><div class="k">Updated</div><div class="v">${totalUpdated.toLocaleString()}</div></div>
+      <div class="stat"><div class="k">Target</div><div class="v">${totalTarget.toLocaleString()}</div></div>
+      <div class="stat"><div class="k">Projects</div><div class="v">${S.projects.length}</div></div>
+    </div>
+    ${projectBlocks}
+    <div class="ftr">
+      <span>CTS Production · Generated ${today}</span>
+      <span>${S.projects.length} project(s) · ${allParts.length} parts total</span>
+    </div>
+  </body></html>`;
+
+  await _generatePDFFromHTML(html, 'CTS_production_progress_'+TODAY.replace(/-/g,''), 1000);
+  logActivity('PDF_CHARTS', 'Generated production progress PDF');
 }
 
 // Combined CSV export — chains existing CSV exporters in sequence
