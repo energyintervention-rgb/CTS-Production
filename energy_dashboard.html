@@ -4105,42 +4105,59 @@ function renderLdc(rawRows) {
   const xc = pct => padL + (pct / 100) * innerW;
   const yc = kw  => padT + (1 - kw / yMax) * innerH;
 
+  // ── Theme-aware colors ───
+  // Hardcoded RGB doesn't read CSS vars at runtime reliably for SVG attributes,
+  // so build a palette based on current data-theme attribute. Re-renders happen
+  // automatically when applyTheme() is called (line ~2050).
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const C = isDark ? {
+    peak: '#ff6b5a',  active: '#f0c75e',  idle: '#6fb5ff',  base: '#5ce0a0',
+    curve: '#ff7a4d', curveAlpha: 0.40,
+    grid: '#2a2f3c',  label: '#9aa0aa',
+    refOpacity: 0.55, zoneFillOpacity: 0.05, zoneLabelOpacity: 0.75
+  } : {
+    peak: '#c1311e',  active: '#a36b0c',  idle: '#1e5fa3',  base: '#1f5238',
+    curve: '#d84a1d', curveAlpha: 0.18,
+    grid: '#d8d2c4',  label: '#5a5a5a',
+    refOpacity: 0.85, zoneFillOpacity: 0.10, zoneLabelOpacity: 1.0
+  };
+
   // Background zone bands (vertical strips behind the curve)
   const zones = [
-    { from: 0,  to: 5,   col: '#ff6b5a', label: 'PEAK' },
-    { from: 5,  to: 50,  col: '#f0c75e', label: 'ACTIVE' },
-    { from: 50, to: 95,  col: '#6fb5ff', label: 'IDLE' },
-    { from: 95, to: 100, col: '#5ce0a0', label: 'BASE' }
+    { from: 0,  to: 5,   col: C.peak,   label: 'PEAK' },
+    { from: 5,  to: 50,  col: C.active, label: 'ACTIVE' },
+    { from: 50, to: 95,  col: C.idle,   label: 'IDLE' },
+    { from: 95, to: 100, col: C.base,   label: 'BASE' }
   ];
   let zoneSvg = '';
   for (const z of zones) {
     const zx1 = xc(z.from), zx2 = xc(z.to);
-    zoneSvg += `<rect x="${zx1}" y="${padT}" width="${(zx2 - zx1).toFixed(1)}" height="${innerH}" fill="${z.col}" opacity="0.05"/>`;
+    zoneSvg += `<rect x="${zx1}" y="${padT}" width="${(zx2 - zx1).toFixed(1)}" height="${innerH}" fill="${z.col}" opacity="${C.zoneFillOpacity}"/>`;
     const mid = (zx1 + zx2) / 2;
-    zoneSvg += `<text x="${mid}" y="${padT - 8}" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="${z.col}" letter-spacing="1.2" opacity="0.75">${z.label}</text>`;
+    zoneSvg += `<text x="${mid}" y="${padT - 8}" text-anchor="middle" font-family="JetBrains Mono" font-size="13" fill="${z.col}" letter-spacing="1.5" opacity="${C.zoneLabelOpacity}" font-weight="700">${z.label}</text>`;
   }
 
   // Y grid + labels
   const yStops = 5;
-  let gridSvg = '<g stroke="#2a2f3c" stroke-width="0.5">';
+  let gridSvg = `<g stroke="${C.grid}" stroke-width="1">`;
   for (let i = 0; i <= yStops; i++) {
     const yp = padT + (innerH * i / yStops);
     gridSvg += `<line x1="${padL}" y1="${yp}" x2="${vbW - padR}" y2="${yp}"/>`;
   }
-  gridSvg += '</g><g font-family="JetBrains Mono" font-size="10" fill="#9aa0aa">';
+  gridSvg += `</g><g font-family="JetBrains Mono" font-size="14" font-weight="600" fill="${C.label}">`;
   for (let i = 0; i <= yStops; i++) {
     const v = yMax * (1 - i / yStops);
     const yp = padT + (innerH * i / yStops);
-    gridSvg += `<text x="${padL - 10}" y="${yp + 4}" text-anchor="end">${v.toFixed(1)}</text>`;
+    gridSvg += `<text x="${padL - 10}" y="${yp + 5}" text-anchor="end">${v.toFixed(1)}</text>`;
   }
-  gridSvg += `<text x="${padL - 45}" y="${padT + innerH / 2}" text-anchor="middle" transform="rotate(-90 ${padL - 45} ${padT + innerH / 2})" font-size="9" letter-spacing="1">kW</text></g>`;
+  gridSvg += `<text x="${padL - 45}" y="${padT + innerH / 2}" text-anchor="middle" transform="rotate(-90 ${padL - 45} ${padT + innerH / 2})" font-size="12" letter-spacing="1.5" font-weight="700">kW</text></g>`;
 
   // X axis labels
-  let xLabelsSvg = '<g font-family="JetBrains Mono" font-size="10" fill="#9aa0aa">';
+  let xLabelsSvg = `<g font-family="JetBrains Mono" font-size="14" font-weight="600" fill="${C.label}">`;
   for (const pct of [0, 10, 25, 50, 75, 90, 100]) {
     xLabelsSvg += `<text x="${xc(pct)}" y="${vbH - 18}" text-anchor="middle">${pct}%</text>`;
   }
-  xLabelsSvg += `<text x="${padL + innerW / 2}" y="${vbH - 4}" text-anchor="middle" font-size="9" letter-spacing="0.8">% of time at or above this kW</text></g>`;
+  xLabelsSvg += `<text x="${padL + innerW / 2}" y="${vbH - 4}" text-anchor="middle" font-size="11" letter-spacing="1" font-weight="500">% of time at or above this kW</text></g>`;
 
   // Sample the curve at most 600 points for SVG performance
   const SAMPLE = Math.min(n, 600);
@@ -4156,29 +4173,29 @@ function renderLdc(rawRows) {
   const curveDefs = `
     <defs>
       <linearGradient id="ldcGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#ff7a4d" stop-opacity="0.4"/>
-        <stop offset="100%" stop-color="#ff7a4d" stop-opacity="0"/>
+        <stop offset="0%" stop-color="${C.curve}" stop-opacity="${C.curveAlpha}"/>
+        <stop offset="100%" stop-color="${C.curve}" stop-opacity="0"/>
       </linearGradient>
     </defs>`;
   const curveSvg = `${curveDefs}
     <path d="${filledPath}" fill="url(#ldcGrad)"/>
-    <polyline points="${polyPath}" fill="none" stroke="#ff7a4d" stroke-width="2"/>`;
+    <polyline points="${polyPath}" fill="none" stroke="${C.curve}" stroke-width="3"/>`;
 
   // Reference lines + labels for the 4 key levels
-  let refSvg = '<g font-family="JetBrains Mono" font-size="9" letter-spacing="0.5">';
+  let refSvg = '<g font-family="JetBrains Mono" font-size="13" font-weight="700" letter-spacing="0.5">';
   const refs = [
-    { kw: peak,     col: '#ff6b5a', label: 'PEAK',     pct: 0 },
-    { kw: p95,      col: '#f0c75e', label: 'P95',      pct: 5 },
-    { kw: median,   col: '#6fb5ff', label: 'MED',      pct: 50 },
-    { kw: baseline, col: '#5ce0a0', label: 'BASELINE', pct: 95 }
+    { kw: peak,     col: C.peak,   label: 'PEAK',     pct: 0 },
+    { kw: p95,      col: C.active, label: 'P95',      pct: 5 },
+    { kw: median,   col: C.idle,   label: 'MED',      pct: 50 },
+    { kw: baseline, col: C.base,   label: 'BASELINE', pct: 95 }
   ];
   for (const r of refs) {
     if (r.kw == null) continue;
     const yp = yc(r.kw);
-    refSvg += `<line x1="${padL}" y1="${yp}" x2="${vbW - padR}" y2="${yp}" stroke="${r.col}" stroke-width="1" stroke-dasharray="3 4" opacity="0.55"/>`;
-    refSvg += `<text x="${vbW - padR - 4}" y="${yp - 4}" text-anchor="end" fill="${r.col}">${r.label} · ${r.kw.toFixed(2)} kW</text>`;
+    refSvg += `<line x1="${padL}" y1="${yp}" x2="${vbW - padR}" y2="${yp}" stroke="${r.col}" stroke-width="1.5" stroke-dasharray="4 5" opacity="${C.refOpacity}"/>`;
+    refSvg += `<text x="${vbW - padR - 4}" y="${yp - 5}" text-anchor="end" fill="${r.col}">${r.label} · ${r.kw.toFixed(2)} kW</text>`;
     // Dot where the ref line meets the curve at the corresponding percentile
-    refSvg += `<circle cx="${xc(r.pct)}" cy="${yp}" r="3" fill="${r.col}"/>`;
+    refSvg += `<circle cx="${xc(r.pct)}" cy="${yp}" r="4" fill="${r.col}"/>`;
   }
   refSvg += '</g>';
 
