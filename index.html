@@ -1034,19 +1034,17 @@ let _prodFadeTimer = null;
 const PROD_ROTATE_MS = 7000; // 7s per project
 
 function buildProjectHTML(proj) {
-  // Use the SAME data model as dashboard.html (proven working):
-  //   parts[].total     ← target qty per part
-  //   parts[].updated   ← done qty per part
-  //   plan.startDate    ← date strings live in proj.plan sub-object
-  //   plan.endDate
-  //   plan.targetUnits  ← project-level total (overrides parts sum if present)
+  // Use the SAME formula as dashboard.html (line 2057-2059):
+  //   tu = sum(parts[].updated)
+  //   tb = sum(parts[].total)
+  //   pct = round(tu/tb*100)
+  // plan.targetUnits is used by dashboard's TIMELINE planning, NOT for % complete.
   const parts = proj.parts || [];
-  const partsTarget = parts.reduce((s, p) => s + (Number(p.total) || 0), 0);
+  const totalTarget = parts.reduce((s, p) => s + (Number(p.total) || 0), 0);
   const totalDone   = parts.reduce((s, p) => s + (Number(p.updated) || 0), 0);
-  const plan = proj.plan || {};
-  const totalTarget = Number(plan.targetUnits) > 0 ? Number(plan.targetUnits) : partsTarget;
-  const pct = totalTarget > 0 ? Math.min(100, Math.round((totalDone / totalTarget) * 100)) : 0;
+  const pct = totalTarget > 0 ? Math.round(totalDone / totalTarget * 100) : 0;
 
+  const plan = proj.plan || {};
   const startDate = plan.startDate || proj.startDate || null;
   const endDate   = plan.endDate   || proj.endDate   || proj.targetDate || null;
   const day = startDate ? daysSince(startDate) + 1 : null;
@@ -1063,11 +1061,11 @@ function buildProjectHTML(proj) {
         '<div class="sp-prod-meta">' + meta + '</div>' +
       '</div>' +
       '<div style="text-align:right">' +
-        '<div class="sp-prod-pct">' + pct + '<span class="pct-sign">%</span></div>' +
+        '<div class="sp-prod-pct">' + Math.min(100, pct) + '<span class="pct-sign">%</span></div>' +
         '<div class="sp-prod-units">' + totalDone.toLocaleString() + ' / ' + totalTarget.toLocaleString() + ' units</div>' +
       '</div>' +
     '</div>' +
-    '<div class="sp-bar"><div class="sp-bar-fill" style="width:' + pct + '%"></div></div>' +
+    '<div class="sp-bar"><div class="sp-bar-fill" style="width:' + Math.min(100, pct) + '%"></div></div>' +
     (startTxt || targetTxt ? '<div class="sp-prod-foot"><div>' + startTxt + '</div><div>' + targetTxt + '</div></div>' : '');
 }
 
@@ -1123,8 +1121,7 @@ function renderProductionCard(state) {
     const parts = p.parts || [];
     if(!parts.length) return false;
     const partsTotal = parts.reduce((s, x) => s + (Number(x.total) || 0), 0);
-    const planTarget = Number(p.plan && p.plan.targetUnits) || 0;
-    return partsTotal > 0 || planTarget > 0;
+    return partsTotal > 0;
   });
 
   // Featured project (state.activeProjectId) goes first; rest follow in original order
