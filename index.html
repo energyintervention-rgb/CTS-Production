@@ -639,6 +639,7 @@ body[data-theme="dark"] .sp-card { box-shadow: none; background: color-mix(in sr
 .sp-act-row { display: flex; gap: 10px; }
 .sp-act-time { color: var(--good); font-weight: 600; flex: 0 0 50px; }
 .sp-act-time.info { color: var(--info); }
+.sp-act-time.warn { color: var(--warn); }
 .sp-act-time.muted { color: var(--ink-soft); font-weight: 500; }
 .sp-act-text { color: var(--ink-soft); }
 .sp-activity-empty { font-size: 10px; color: var(--ink-soft); font-family: 'JetBrains Mono', monospace; text-align: center; padding: 6px 0; }
@@ -1180,37 +1181,99 @@ function renderTeamCard(state) {
   const ctrEl = document.getElementById('team-counter');
   if(!rowsEl) return;
 
-  const today = todayMY();
-  const att = (state && state.attendance && state.attendance[today]) || {};
-  const workers = (state && state.workers) || [];
+  // Today in MYT (matches dashboard.html attKey format): YYYY-MM-DD
+  const _now = new Date();
+  const _myt = new Date(_now.getTime() + 8*60*60*1000);
+  const TODAY = _myt.toISOString().split('T')[0];
 
-  // Build the list: Zizi (always shown), then each worker (contractor), then Stuart
-  const rows = [];
-  const zIn = !!(att['Zizi'] && att['Zizi'].clockedIn !== false);
-  rows.push({ name: 'Zizi', role: 'Engineering · MY', on: true, time: '' });
+  // ─── BUILD TEAM ROSTER FROM FIRESTORE (no hardcoding) ───
+  const roster = [];
+  const seen = new Set();
 
-  // Show all workers from workers list, mark clocked-in
-  workers.forEach(w => {
-    if(!w || !w.name) return;
-    if(w.name === 'Zizi' || w.name === 'Stuart') return;
-    const wAtt = att[w.name];
-    const on = !!(wAtt && (wAtt.clockedIn === true || wAtt.in));
-    const tStr = (wAtt && (wAtt.in || wAtt.clockInTime)) || '';
-    const roleLbl = (w.role || 'Assembly') + ' · remote' + (on && tStr ? ' · ' + escH(tStr) + ' in' : '');
-    rows.push({ name: w.name, role: roleLbl, on });
+  // 1. Admin (always one — name comes from authConfig if set, else "Admin")
+  const adminName = (state && state.authConfig && state.authConfig.adminName) || 'Admin';
+  roster.push({ name: adminName, role: 'Admin', type: 'admin' });
+  seen.add(adminName);
+
+  // 2. Supervisors from state.supervisors[]
+  ((state && state.supervisors) || []).forEach(sup => {
+    if(sup && sup.name && !seen.has(sup.name)) {
+      seen.add(sup.name);
+      roster.push({ name: sup.name, role: 'Supervisor', type: 'supervisor' });
+    }
   });
 
-  // Stuart row — usually off-duty (AU)
-  rows.push({ name: 'Stuart', role: 'Tech Director · AU', on: false });
+  // 3. Workers from each project's workers[] (deduped)
+  ((state && state.projects) || []).forEach(pr => {
+    ((pr && pr.workers) || []).forEach(w => {
+      const wname = (typeof w === 'string') ? w : (w && w.name);
+      if(wname && !seen.has(wname)) {
+        seen.add(wname);
+        roster.push({ name: wname, role: 'Worker', type: 'worker' });
+      }
+    });
+  });
 
+  // ─── ACTIVE ACTORS IN LAST 30 MIN (from activity log) ───
+  const ACTIVE_WINDOW_MIN = 30;
+  const log = (state && state.activityLog) || [];
+  const cutoffMs = Date.now() - ACTIVE_WINDOW_MIN * 60 * 1000;
+  const activeActors = new Set();
+  log.forEach(ev => {
+    if(!ev || !ev.actor || !ev.ts) return;
+    const t = new Date(ev.ts).getTime();
+    if(!isNaN(t) && t >= cutoffMs) activeActors.add(ev.actor);
+  });
+
+  // ─── DETERMINE STATUS PER PERSON (HYBRID) ───
+  //   Worker → clocked-in status from attendance
+  //   Admin/Supervisor → recent activity from log
+  const rows = roster.map(p => {
+    let on = false, sub = p.role;
+
+    if(p.type === 'worker') {
+      // Check attendance across all projects (workers can be in multiple)
+      let clockedIn = false, clockTime = '';
+      ((state && state.projects) || []).forEach(pr => {
+        const rec = ((pr && pr.attendance) || {})[p.name + '_' + TODAY];
+        if(rec && rec.clockIn && !rec.clockOut) {
+          clockedIn = true;
+          clockTime = rec.clockIn;
+        }
+      });
+      if(clockedIn) {
+        on = true;
+        sub = p.role + (clockTime ? ' · ' + escH(clockTime) + ' in' : ' · clocked in');
+      } else {
+        sub = p.role + ' · off-duty';
+      }
+    } else {
+      // Admin or Supervisor: active if any recent activity log entry by this actor
+      if(activeActors.has(p.name)) {
+        on = true;
+        sub = p.role + ' · active now';
+      } else {
+        sub = p.role + ' · offline';
+      }
+    }
+
+    return { name: p.name, sub, on };
+  });
+
+  // Header counter
   const activeCount = rows.filter(r => r.on).length;
   if(ctrEl) ctrEl.textContent = '● ' + activeCount + ' ACTIVE';
+
+  if(rows.length === 0) {
+    rowsEl.innerHTML = '<div class="sp-loading">No team configured yet.</div>';
+    return;
+  }
 
   rowsEl.innerHTML = rows.map(r =>
     '<div class="sp-row' + (r.on ? '' : ' dim') + '">' +
       '<div>' +
         '<div class="sp-row-name">' + escH(r.name) + '</div>' +
-        '<div class="sp-row-sub">' + r.role + '</div>' +
+        '<div class="sp-row-sub">' + r.sub + '</div>' +
       '</div>' +
       '<div class="sp-dot ' + (r.on ? 'on' : 'off') + '"></div>' +
     '</div>'
@@ -1243,8 +1306,13 @@ function renderActivityCard(state) {
           timeLabel = 'yest.'; timeCls = 'muted';
         } else {
           timeLabel = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
-          // Colour-code by actor
-          if(ev.actor === 'Stuart' || (ev.actor && String(ev.actor).indexOf('Stuart') !== -1)) timeCls = 'info';
+          // Colour by event TYPE (semantic, no hardcoded names):
+          //   LOGIN/LOGOUT/AUTH    → info (blue)  — session events
+          //   DELETE/REMOVE/RESET  → warn (amber) — destructive events
+          //   else                 → good (green) — operational events
+          const t = String(ev.type || '').toUpperCase();
+          if(/^(LOGIN|LOGOUT|AUTH|SIGN)/.test(t))               timeCls = 'info';
+          else if(/(DELETE|REMOVE|RESET|CLEAR|WIPE)/.test(t))   timeCls = 'warn';
         }
       } else {
         timeLabel = '—'; timeCls = 'muted';
