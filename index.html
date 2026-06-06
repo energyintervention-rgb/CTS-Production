@@ -1277,8 +1277,21 @@ function renderTeamCard(state) {
     return Math.floor(diffHr / 24) + 'd ago';
   }
 
-  const ACTIVE_WINDOW_MIN = 60; // 60-min window for "active now"
+  const ACTIVE_WINDOW_MIN = 90; // 90-min window for "active now" (forgiving)
   const activeCutoff = Date.now() - ACTIVE_WINDOW_MIN * 60 * 1000;
+
+  // ─── DEBUG LOG (open DevTools console to see) ───
+  console.log('[TeamCard] === DEBUG ===');
+  console.log('[TeamCard] Now:', new Date().toISOString());
+  console.log('[TeamCard] Active cutoff (90 min ago):', new Date(activeCutoff).toISOString());
+  console.log('[TeamCard] Roster:', roster.map(p => `${p.name} (${p.type})`).join(', '));
+  console.log('[TeamCard] LastSeen map:');
+  Array.from(lastSeen.entries()).forEach(([k,v]) => {
+    const ago = Math.floor((Date.now() - v) / 60000);
+    console.log(`  ${k} → ${ago} min ago (${new Date(v).toISOString()})`);
+  });
+  console.log('[TeamCard] state.sessions:', sessions);
+  console.log('[TeamCard] activityLog length:', log.length);
 
   // ─── DETERMINE STATUS PER PERSON (HYBRID) ───
   const rows = roster.map(p => {
