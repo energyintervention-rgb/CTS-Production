@@ -823,49 +823,37 @@ body[data-theme="dark"] .sp-card { box-shadow: none; background: color-mix(in sr
     <div class="sp-loading">Loading production status…</div>
   </section>
 
-  <!-- Fleet + Team grid -->
-  <div class="sp-grid-2">
-    <section class="sp-card sp-card-fleet" id="card-fleet">
-      <div class="sp-card-head-row">
-        <div class="sp-card-head" style="margin-bottom:0">▼ FLEET HEALTH</div>
-        <div class="sp-card-counter good">● 6 / 6 ONLINE</div>
+  <!-- Fleet Health (full width) -->
+  <section class="sp-card sp-card-fleet" id="card-fleet">
+    <div class="sp-card-head-row">
+      <div class="sp-card-head" style="margin-bottom:0">▼ FLEET HEALTH</div>
+      <div class="sp-card-counter good">● 6 / 6 ONLINE</div>
+    </div>
+    <div class="sp-row">
+      <div>
+        <div class="sp-row-name">Energy Eye GSM</div>
+        <div class="sp-row-sub">4 sites · v3.32</div>
       </div>
-      <div class="sp-row">
-        <div>
-          <div class="sp-row-name">Energy Eye GSM</div>
-          <div class="sp-row-sub">4 sites · v3.32</div>
-        </div>
-        <div class="sp-row-tail">
-          <div class="sp-row-count">6 / 6</div>
-          <div class="sp-dot on sp-dot-sm"></div>
-        </div>
+      <div class="sp-row-tail">
+        <div class="sp-row-count">6 / 6</div>
+        <div class="sp-dot on sp-dot-sm"></div>
       </div>
-      <div class="sp-row dim">
-        <div>
-          <div class="sp-row-name">Defrost on Demand</div>
-          <div class="sp-row-sub">not deployed</div>
-        </div>
-        <div class="sp-row-tail"><div class="sp-row-count" style="color:var(--ink-soft)">—</div></div>
+    </div>
+    <div class="sp-row dim">
+      <div>
+        <div class="sp-row-name">Defrost on Demand</div>
+        <div class="sp-row-sub">not deployed</div>
       </div>
-      <div class="sp-row dim">
-        <div>
-          <div class="sp-row-name">Fridge Eye</div>
-          <div class="sp-row-sub">coming soon</div>
-        </div>
-        <div class="sp-row-tail"><div class="sp-row-count" style="color:var(--ink-soft)">—</div></div>
+      <div class="sp-row-tail"><div class="sp-row-count" style="color:var(--ink-soft)">—</div></div>
+    </div>
+    <div class="sp-row dim">
+      <div>
+        <div class="sp-row-name">Fridge Eye</div>
+        <div class="sp-row-sub">coming soon</div>
       </div>
-    </section>
-
-    <section class="sp-card sp-card-team" id="card-team">
-      <div class="sp-card-head-row">
-        <div class="sp-card-head" style="margin-bottom:0">▼ TEAM TODAY</div>
-        <div class="sp-card-counter good" id="team-counter">● — ACTIVE</div>
-      </div>
-      <div id="team-rows">
-        <div class="sp-loading">Loading team…</div>
-      </div>
-    </section>
-  </div>
+      <div class="sp-row-tail"><div class="sp-row-count" style="color:var(--ink-soft)">—</div></div>
+    </div>
+  </section>
 
   <!-- Customer banner — primary path to manuals -->
   <a href="manual.html" class="sp-banner">
@@ -974,22 +962,6 @@ function hashPIN(pin) {
   return String(h);
 }
 function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-// ══════════════════════════════════════════
-// SESSION TRACKING — writes login event to Firestore
-// so renderTeamCard can show who's active in real-time
-// ══════════════════════════════════════════
-function markLoginActive(role, name) {
-  if(!DOC_REF || !name) return;
-  try {
-    const update = {};
-    update['sessions.' + name] = {
-      role: role || 'user',
-      loginAt: new Date().toISOString()
-    };
-    DOC_REF.update(update).catch(e => console.warn('session write:', e));
-  } catch(e) { console.warn('session write failed:', e); }
-}
 
 // ══════════════════════════════════════════
 // CLOCK (compact, in topbar)
@@ -1192,169 +1164,6 @@ function renderProductionCard(state) {
   startProdRotate();
 }
 
-function renderTeamCard(state) {
-  const rowsEl = document.getElementById('team-rows');
-  const ctrEl = document.getElementById('team-counter');
-  if(!rowsEl) return;
-
-  // Today in MYT (matches dashboard.html attKey format): YYYY-MM-DD
-  const _now = new Date();
-  const _myt = new Date(_now.getTime() + 8*60*60*1000);
-  const TODAY = _myt.toISOString().split('T')[0];
-
-  // ─── BUILD TEAM ROSTER FROM FIRESTORE (no hardcoding) ───
-  const roster = [];
-  const seen = new Set();
-
-  const adminName = (state && state.authConfig && state.authConfig.adminName) || 'Admin';
-  roster.push({ name: adminName, role: 'Admin', type: 'admin' });
-  seen.add(adminName);
-
-  ((state && state.supervisors) || []).forEach(sup => {
-    if(sup && sup.name && !seen.has(sup.name)) {
-      seen.add(sup.name);
-      roster.push({ name: sup.name, role: 'Supervisor', type: 'supervisor' });
-    }
-  });
-
-  ((state && state.projects) || []).forEach(pr => {
-    ((pr && pr.workers) || []).forEach(w => {
-      const wname = (typeof w === 'string') ? w : (w && w.name);
-      if(wname && !seen.has(wname)) {
-        seen.add(wname);
-        roster.push({ name: wname, role: 'Worker', type: 'worker' });
-      }
-    });
-  });
-
-  // ─── BUILD LAST-SEEN MAP ───
-  //   Primary source: state.sessions (written by markLoginActive on every login)
-  //   Fallback: activity log entries (older first-time logins)
-  const lastSeen = new Map();
-
-  // 1. Read state.sessions — the new reliable source
-  const sessions = (state && state.sessions) || {};
-  Object.keys(sessions).forEach(name => {
-    const s = sessions[name];
-    if(!s || !s.loginAt) return;
-    const t = new Date(s.loginAt).getTime();
-    if(!isNaN(t)) lastSeen.set(name, t);
-  });
-
-  // 2. Activity log fallback (in case sessions is empty or older logins)
-  const log = (state && state.activityLog) || [];
-  log.forEach(ev => {
-    if(!ev || !ev.actor || !ev.ts) return;
-    const t = new Date(ev.ts).getTime();
-    if(isNaN(t)) return;
-    const cur = lastSeen.get(ev.actor) || 0;
-    if(t > cur) lastSeen.set(ev.actor, t);
-  });
-
-  // Look up last-seen for a person — check their own name, then role name fallback
-  // (Because supervisors share the role login on landing page: sessionStorage.cts_name = "Supervisor")
-  function lookupLastSeen(person) {
-    let best = lastSeen.get(person.name) || 0;
-    const roleFallbacks = {
-      admin: ['Admin'],
-      supervisor: ['Supervisor'],
-      worker: ['Worker']
-    };
-    (roleFallbacks[person.type] || []).forEach(rn => {
-      const v = lastSeen.get(rn) || 0;
-      if(v > best) best = v;
-    });
-    return best;
-  }
-
-  function fmtAgo(ms) {
-    if(!ms) return '';
-    const diffMin = Math.floor((Date.now() - ms) / 60000);
-    if(diffMin < 1) return 'just now';
-    if(diffMin < 60) return diffMin + ' min ago';
-    const diffHr = Math.floor(diffMin / 60);
-    if(diffHr < 24) return diffHr + 'h ago';
-    return Math.floor(diffHr / 24) + 'd ago';
-  }
-
-  const ACTIVE_WINDOW_MIN = 90; // 90-min window for "active now" (forgiving)
-  const activeCutoff = Date.now() - ACTIVE_WINDOW_MIN * 60 * 1000;
-
-  // ─── DEBUG LOG (open DevTools console to see) ───
-  console.log('[TeamCard] === DEBUG ===');
-  console.log('[TeamCard] Now:', new Date().toISOString());
-  console.log('[TeamCard] Active cutoff (90 min ago):', new Date(activeCutoff).toISOString());
-  console.log('[TeamCard] Roster:', roster.map(p => `${p.name} (${p.type})`).join(', '));
-  console.log('[TeamCard] LastSeen map:');
-  Array.from(lastSeen.entries()).forEach(([k,v]) => {
-    const ago = Math.floor((Date.now() - v) / 60000);
-    console.log(`  ${k} → ${ago} min ago (${new Date(v).toISOString()})`);
-  });
-  console.log('[TeamCard] state.sessions:', sessions);
-  console.log('[TeamCard] activityLog length:', log.length);
-
-  // ─── DETERMINE STATUS PER PERSON (HYBRID) ───
-  const rows = roster.map(p => {
-    let on = false, sub = p.role;
-
-    if(p.type === 'worker') {
-      // Workers can be online two ways: (a) clocked-in for shift, (b) recently active in app
-      let clockedIn = false, clockTime = '';
-      ((state && state.projects) || []).forEach(pr => {
-        const rec = ((pr && pr.attendance) || {})[p.name + '_' + TODAY];
-        if(rec && rec.clockIn && !rec.clockOut) {
-          clockedIn = true;
-          clockTime = rec.clockIn;
-        }
-      });
-      if(clockedIn) {
-        on = true;
-        sub = p.role + (clockTime ? ' · ' + escH(clockTime) + ' in' : ' · clocked in');
-      } else {
-        const ls = lookupLastSeen(p);
-        if(ls && ls >= activeCutoff) {
-          on = true;
-          sub = p.role + ' · active now';
-        } else if(ls) {
-          sub = p.role + ' · ' + fmtAgo(ls);
-        } else {
-          sub = p.role + ' · off-duty';
-        }
-      }
-    } else {
-      // Admin or Supervisor — based on activity log only
-      const ls = lookupLastSeen(p);
-      if(ls && ls >= activeCutoff) {
-        on = true;
-        sub = p.role + ' · active now';
-      } else if(ls) {
-        sub = p.role + ' · ' + fmtAgo(ls);
-      } else {
-        sub = p.role + ' · offline';
-      }
-    }
-
-    return { name: p.name, sub, on };
-  });
-
-  const activeCount = rows.filter(r => r.on).length;
-  if(ctrEl) ctrEl.textContent = '● ' + activeCount + ' ACTIVE';
-
-  if(rows.length === 0) {
-    rowsEl.innerHTML = '<div class="sp-loading">No team configured yet.</div>';
-    return;
-  }
-
-  rowsEl.innerHTML = rows.map(r =>
-    '<div class="sp-row' + (r.on ? '' : ' dim') + '">' +
-      '<div>' +
-        '<div class="sp-row-name">' + escH(r.name) + '</div>' +
-        '<div class="sp-row-sub">' + r.sub + '</div>' +
-      '</div>' +
-      '<div class="sp-dot ' + (r.on ? 'on' : 'off') + '"></div>' +
-    '</div>'
-  ).join('');
-}
 
 function renderActivityCard(state) {
   const el = document.getElementById('activity-rows');
@@ -1406,7 +1215,6 @@ function renderActivityCard(state) {
 
 function renderStatus(state) {
   try { renderProductionCard(state); } catch(e) { console.warn('prod card', e); }
-  try { renderTeamCard(state);       } catch(e) { console.warn('team card', e); }
   try { renderActivityCard(state);   } catch(e) { console.warn('activity card', e); }
 }
 
@@ -1592,10 +1400,8 @@ function checkPin() {
     } else {
       saveRememberMe();
       sessionStorage.setItem('cts_role', _role);
-      const sessionName = _workerName || (_role.charAt(0).toUpperCase() + _role.slice(1));
-      sessionStorage.setItem('cts_name', sessionName);
+      sessionStorage.setItem('cts_name', _workerName || (_role.charAt(0).toUpperCase() + _role.slice(1)));
       if(_workerProject) sessionStorage.setItem('cts_project', _workerProject);
-      markLoginActive(_role, sessionName);
       for(let i = 0; i < 4; i++) document.getElementById('pd'+i).style.background = 'var(--good)';
       toast('✓ Welcome! Redirecting…');
       setTimeout(() => { window.location.href = 'dashboard.html'; }, 700);
@@ -1626,7 +1432,6 @@ function checkAdminPwd() {
     _pwdAttempts = 0; saveRememberMe();
     sessionStorage.setItem('cts_role', 'admin');
     sessionStorage.setItem('cts_name', 'Admin');
-    markLoginActive('admin', 'Admin');
     document.getElementById('pwd-input').style.borderColor = 'var(--good)';
     toast('✓ Admin access granted! Redirecting…');
     setTimeout(() => { window.location.href = 'dashboard.html'; }, 700);
