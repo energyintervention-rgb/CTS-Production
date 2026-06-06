@@ -823,38 +823,6 @@ body[data-theme="dark"] .sp-card { box-shadow: none; background: color-mix(in sr
     <div class="sp-loading">Loading production status…</div>
   </section>
 
-  <!-- Fleet Health (full width) -->
-  <section class="sp-card sp-card-fleet" id="card-fleet">
-    <div class="sp-card-head-row">
-      <div class="sp-card-head" style="margin-bottom:0">▼ FLEET HEALTH</div>
-      <div class="sp-card-counter good">● 6 / 6 ONLINE</div>
-    </div>
-    <div class="sp-row">
-      <div>
-        <div class="sp-row-name">Energy Eye GSM</div>
-        <div class="sp-row-sub">4 sites · v3.32</div>
-      </div>
-      <div class="sp-row-tail">
-        <div class="sp-row-count">6 / 6</div>
-        <div class="sp-dot on sp-dot-sm"></div>
-      </div>
-    </div>
-    <div class="sp-row dim">
-      <div>
-        <div class="sp-row-name">Defrost on Demand</div>
-        <div class="sp-row-sub">not deployed</div>
-      </div>
-      <div class="sp-row-tail"><div class="sp-row-count" style="color:var(--ink-soft)">—</div></div>
-    </div>
-    <div class="sp-row dim">
-      <div>
-        <div class="sp-row-name">Fridge Eye</div>
-        <div class="sp-row-sub">coming soon</div>
-      </div>
-      <div class="sp-row-tail"><div class="sp-row-count" style="color:var(--ink-soft)">—</div></div>
-    </div>
-  </section>
-
   <!-- Customer banner — primary path to manuals -->
   <a href="manual.html" class="sp-banner">
     <div class="sp-banner-icon">
@@ -866,14 +834,6 @@ body[data-theme="dark"] .sp-card { box-shadow: none; background: color-mix(in sr
     </div>
     <div class="sp-banner-cta">View Manuals <span class="arrow">→</span></div>
   </a>
-
-  <!-- Recent activity -->
-  <section class="sp-card sp-card-activity" id="card-activity">
-    <div class="sp-card-head">▼ RECENT ACTIVITY</div>
-    <div class="sp-activity" id="activity-rows">
-      <div class="sp-activity-empty">Loading activity…</div>
-    </div>
-  </section>
 
   <!-- Quick access tiles -->
   <div class="sp-tiles">
@@ -1165,57 +1125,9 @@ function renderProductionCard(state) {
 }
 
 
-function renderActivityCard(state) {
-  const el = document.getElementById('activity-rows');
-  if(!el) return;
-  const log = (state && state.activityLog) || [];
-  if(!log.length) {
-    el.innerHTML = '<div class="sp-activity-empty">No activity logged yet.</div>';
-    return;
-  }
-  // Sort by timestamp descending, take 4
-  const sorted = log.slice().sort((a,b) => {
-    const ta = (a && a.ts) ? new Date(a.ts).getTime() : 0;
-    const tb = (b && b.ts) ? new Date(b.ts).getTime() : 0;
-    return tb - ta;
-  }).slice(0, 4);
-
-  const today = new Date(); today.setHours(0,0,0,0);
-  const html = sorted.map(ev => {
-    if(!ev) return '';
-    let timeLabel = '', timeCls = '';
-    try {
-      const dt = ev.ts ? new Date(ev.ts) : null;
-      if(dt && !isNaN(dt.getTime())) {
-        if(dt < today) {
-          timeLabel = 'yest.'; timeCls = 'muted';
-        } else {
-          timeLabel = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
-          // Colour by event TYPE (semantic, no hardcoded names):
-          //   LOGIN/LOGOUT/AUTH    → info (blue)  — session events
-          //   DELETE/REMOVE/RESET  → warn (amber) — destructive events
-          //   else                 → good (green) — operational events
-          const t = String(ev.type || '').toUpperCase();
-          if(/^(LOGIN|LOGOUT|AUTH|SIGN)/.test(t))               timeCls = 'info';
-          else if(/(DELETE|REMOVE|RESET|CLEAR|WIPE)/.test(t))   timeCls = 'warn';
-        }
-      } else {
-        timeLabel = '—'; timeCls = 'muted';
-      }
-    } catch(e) { timeLabel = '—'; timeCls = 'muted'; }
-    const actor = ev.actor ? escH(ev.actor) + ' · ' : '';
-    const detail = ev.detail || ev.type || '';
-    return '<div class="sp-act-row">' +
-      '<span class="sp-act-time' + (timeCls ? ' ' + timeCls : '') + '">' + timeLabel + '</span>' +
-      '<span class="sp-act-text">' + actor + escH(detail) + '</span>' +
-    '</div>';
-  }).join('');
-  el.innerHTML = html || '<div class="sp-activity-empty">No activity logged yet.</div>';
-}
 
 function renderStatus(state) {
   try { renderProductionCard(state); } catch(e) { console.warn('prod card', e); }
-  try { renderActivityCard(state);   } catch(e) { console.warn('activity card', e); }
 }
 
 // ══════════════════════════════════════════
