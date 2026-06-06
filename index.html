@@ -976,6 +976,22 @@ function hashPIN(pin) {
 function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ══════════════════════════════════════════
+// SESSION TRACKING — writes login event to Firestore
+// so renderTeamCard can show who's active in real-time
+// ══════════════════════════════════════════
+function markLoginActive(role, name) {
+  if(!DOC_REF || !name) return;
+  try {
+    const update = {};
+    update['sessions.' + name] = {
+      role: role || 'user',
+      loginAt: new Date().toISOString()
+    };
+    DOC_REF.update(update).catch(e => console.warn('session write:', e));
+  } catch(e) { console.warn('session write failed:', e); }
+}
+
+// ══════════════════════════════════════════
 // CLOCK (compact, in topbar)
 // ══════════════════════════════════════════
 function tickClock() {
@@ -1211,10 +1227,22 @@ function renderTeamCard(state) {
     });
   });
 
-  // ─── BUILD LAST-SEEN MAP FROM ACTIVITY LOG ───
-  //   actor → most recent timestamp (ms)
-  const log = (state && state.activityLog) || [];
+  // ─── BUILD LAST-SEEN MAP ───
+  //   Primary source: state.sessions (written by markLoginActive on every login)
+  //   Fallback: activity log entries (older first-time logins)
   const lastSeen = new Map();
+
+  // 1. Read state.sessions — the new reliable source
+  const sessions = (state && state.sessions) || {};
+  Object.keys(sessions).forEach(name => {
+    const s = sessions[name];
+    if(!s || !s.loginAt) return;
+    const t = new Date(s.loginAt).getTime();
+    if(!isNaN(t)) lastSeen.set(name, t);
+  });
+
+  // 2. Activity log fallback (in case sessions is empty or older logins)
+  const log = (state && state.activityLog) || [];
   log.forEach(ev => {
     if(!ev || !ev.actor || !ev.ts) return;
     const t = new Date(ev.ts).getTime();
@@ -1551,8 +1579,10 @@ function checkPin() {
     } else {
       saveRememberMe();
       sessionStorage.setItem('cts_role', _role);
-      sessionStorage.setItem('cts_name', _workerName || (_role.charAt(0).toUpperCase() + _role.slice(1)));
+      const sessionName = _workerName || (_role.charAt(0).toUpperCase() + _role.slice(1));
+      sessionStorage.setItem('cts_name', sessionName);
       if(_workerProject) sessionStorage.setItem('cts_project', _workerProject);
+      markLoginActive(_role, sessionName);
       for(let i = 0; i < 4; i++) document.getElementById('pd'+i).style.background = 'var(--good)';
       toast('✓ Welcome! Redirecting…');
       setTimeout(() => { window.location.href = 'dashboard.html'; }, 700);
@@ -1583,6 +1613,7 @@ function checkAdminPwd() {
     _pwdAttempts = 0; saveRememberMe();
     sessionStorage.setItem('cts_role', 'admin');
     sessionStorage.setItem('cts_name', 'Admin');
+    markLoginActive('admin', 'Admin');
     document.getElementById('pwd-input').style.borderColor = 'var(--good)';
     toast('✓ Admin access granted! Redirecting…');
     setTimeout(() => { window.location.href = 'dashboard.html'; }, 700);
