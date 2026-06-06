@@ -549,6 +549,37 @@ body[data-theme="dark"] .sp-card { box-shadow: none; background: color-mix(in sr
 .sp-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.8s ease-out; }
 .sp-prod-foot { display: flex; justify-content: space-between; margin-top: 8px; font-size: 9px; color: var(--ink-soft); }
 
+/* Production carousel — auto-rotates between active projects */
+.sp-prod-slot {
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  opacity: 1;
+  will-change: opacity, transform;
+}
+.sp-prod-slot.sp-fade-out {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.sp-prod-dots {
+  display: flex; gap: 6px; margin-top: 14px; justify-content: center; align-items: center;
+}
+.sp-prod-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: color-mix(in srgb, var(--ink-soft) 35%, transparent);
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.25s ease, width 0.25s ease;
+  border: none; padding: 0;
+}
+.sp-prod-dot:hover { background: color-mix(in srgb, var(--accent) 70%, transparent); transform: scale(1.25); }
+.sp-prod-dot.active {
+  background: var(--accent);
+  width: 18px; border-radius: 3px;
+}
+.sp-prod-count {
+  font-family: 'JetBrains Mono', monospace; font-size: 8.5px;
+  color: var(--ink-soft); margin-left: 8px; letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
 .sp-grid-2 {
   display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px;
   margin-bottom: 14px;
@@ -995,36 +1026,27 @@ function todayMY() {
   return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
 }
 
-function renderProductionCard(state) {
-  const el = document.getElementById('card-production');
-  if(!el) return;
-  const projects = (state && state.projects) || [];
-  // Pick active project: prefer status==='active', else first non-archived, else first
-  let proj = projects.find(p => p && (p.status === 'active' || p.active === true));
-  if(!proj) proj = projects.find(p => p && !p.archived && !p.completed);
-  if(!proj) proj = projects[0];
+// Production carousel state — rotates through all active runs
+let _prodProjects = [];
+let _prodIdx = 0;
+let _prodTimer = null;
+let _prodFadeTimer = null;
+const PROD_ROTATE_MS = 7000; // 7s per project
 
-  if(!proj) {
-    el.innerHTML = '<div class="sp-card-head">▼ ACTIVE PRODUCTION</div><div class="sp-loading">No active production run.</div>';
-    return;
-  }
-
+function buildProjectHTML(proj) {
   const parts = proj.parts || [];
   const totalTarget = parts.reduce((s, p) => s + (Number(p.target) || 0), 0);
   const totalDone   = parts.reduce((s, p) => s + (Number(p.actual) || Number(p.updated) || Number(p.done) || 0), 0);
   const pct = totalTarget > 0 ? Math.min(100, Math.round((totalDone / totalTarget) * 100)) : 0;
   const day = proj.startDate ? daysSince(proj.startDate) + 1 : null;
-
   const name = escH(proj.name || proj.title || 'Production Run');
   const dayLabel = day ? ' · Day ' + day : '';
-  const meta = 'Energy Eye GSM v5 · for City FM · Singapore &amp; AU deployment';
-  const startTxt = proj.startDate ? 'Started ' + fmtDate(proj.startDate) : '';
-  const targetTxt = proj.targetDate || proj.endDate ? 'Target completion: ' + fmtDate(proj.targetDate || proj.endDate) : '';
+  const meta = escH(proj.tagline || proj.description || 'Energy Eye GSM v5 · for City FM · Singapore & AU deployment');
+  const startTxt  = proj.startDate ? 'Started ' + fmtDate(proj.startDate) : '';
+  const targetTxt = (proj.targetDate || proj.endDate) ? 'Target completion: ' + fmtDate(proj.targetDate || proj.endDate) : '';
 
-  el.innerHTML =
-    '<div class="sp-prod-top">' +
+  return '<div class="sp-prod-top">' +
       '<div>' +
-        '<div class="sp-card-head" style="margin-bottom:4px">▼ ACTIVE PRODUCTION</div>' +
         '<div class="sp-prod-name">' + name + dayLabel + '</div>' +
         '<div class="sp-prod-meta">' + meta + '</div>' +
       '</div>' +
@@ -1035,6 +1057,100 @@ function renderProductionCard(state) {
     '</div>' +
     '<div class="sp-bar"><div class="sp-bar-fill" style="width:' + pct + '%"></div></div>' +
     (startTxt || targetTxt ? '<div class="sp-prod-foot"><div>' + startTxt + '</div><div>' + targetTxt + '</div></div>' : '');
+}
+
+function showProject(idx) {
+  if(idx < 0 || idx >= _prodProjects.length) return;
+  const slot = document.getElementById('prod-slot');
+  if(!slot) return;
+  _prodIdx = idx;
+  const newHTML = buildProjectHTML(_prodProjects[idx]);
+
+  // Fade out → swap → fade in
+  slot.classList.add('sp-fade-out');
+  if(_prodFadeTimer) clearTimeout(_prodFadeTimer);
+  _prodFadeTimer = setTimeout(() => {
+    slot.innerHTML = newHTML;
+    // Force reflow so the bar's width transition kicks in from 0% if desired
+    void slot.offsetWidth;
+    slot.classList.remove('sp-fade-out');
+  }, 400);
+
+  // Update dots
+  document.querySelectorAll('.sp-prod-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === idx);
+  });
+}
+
+function startProdRotate() {
+  if(_prodTimer) clearInterval(_prodTimer);
+  if(_prodProjects.length <= 1) return;
+  _prodTimer = setInterval(() => {
+    showProject((_prodIdx + 1) % _prodProjects.length);
+  }, PROD_ROTATE_MS);
+}
+function stopProdRotate() {
+  if(_prodTimer) { clearInterval(_prodTimer); _prodTimer = null; }
+}
+
+function renderProductionCard(state) {
+  const el = document.getElementById('card-production');
+  if(!el) return;
+
+  // Stop any prior rotation before re-render
+  stopProdRotate();
+
+  const projects = (state && state.projects) || [];
+  // Only show projects with real production data — must have parts AND a non-zero target
+  _prodProjects = projects.filter(p => {
+    if(!p) return false;
+    if(p.archived || p.completed) return false;
+    const parts = p.parts || [];
+    if(!parts.length) return false;
+    const target = parts.reduce((s, x) => s + (Number(x.target) || 0), 0);
+    return target > 0;
+  });
+
+  if(_prodProjects.length === 0) {
+    el.innerHTML = '<div class="sp-card-head">▼ ACTIVE PRODUCTION</div><div class="sp-loading">No active production runs.</div>';
+    return;
+  }
+
+  // Build the card scaffold: head + animated slot + (dots if >1)
+  const countLabel = _prodProjects.length > 1
+    ? '<span class="sp-prod-count">· ' + _prodProjects.length + ' RUNS</span>'
+    : '';
+  const dotsHTML = _prodProjects.length > 1
+    ? '<div class="sp-prod-dots" id="prod-dots">' +
+        _prodProjects.map((_, i) =>
+          '<button class="sp-prod-dot' + (i === 0 ? ' active' : '') + '" data-idx="' + i + '" aria-label="Show project ' + (i+1) + '"></button>'
+        ).join('') +
+      '</div>'
+    : '';
+  el.innerHTML =
+    '<div class="sp-card-head">▼ ACTIVE PRODUCTION' + countLabel + '</div>' +
+    '<div class="sp-prod-slot" id="prod-slot">' + buildProjectHTML(_prodProjects[0]) + '</div>' +
+    dotsHTML;
+
+  _prodIdx = 0;
+
+  // Wire dot clicks
+  document.querySelectorAll('.sp-prod-dot').forEach(d => {
+    d.addEventListener('click', e => {
+      const i = Number(e.currentTarget.getAttribute('data-idx'));
+      stopProdRotate();
+      showProject(i);
+      // Resume rotation after user click
+      setTimeout(startProdRotate, PROD_ROTATE_MS);
+    });
+  });
+
+  // Pause auto-rotation on hover (so you can read it)
+  el.onmouseenter = stopProdRotate;
+  el.onmouseleave = startProdRotate;
+
+  // Start auto-rotation
+  startProdRotate();
 }
 
 function renderTeamCard(state) {
