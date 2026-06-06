@@ -1034,16 +1034,28 @@ let _prodFadeTimer = null;
 const PROD_ROTATE_MS = 7000; // 7s per project
 
 function buildProjectHTML(proj) {
+  // Use the SAME data model as dashboard.html (proven working):
+  //   parts[].total     ← target qty per part
+  //   parts[].updated   ← done qty per part
+  //   plan.startDate    ← date strings live in proj.plan sub-object
+  //   plan.endDate
+  //   plan.targetUnits  ← project-level total (overrides parts sum if present)
   const parts = proj.parts || [];
-  const totalTarget = parts.reduce((s, p) => s + (Number(p.target) || 0), 0);
-  const totalDone   = parts.reduce((s, p) => s + (Number(p.actual) || Number(p.updated) || Number(p.done) || 0), 0);
+  const partsTarget = parts.reduce((s, p) => s + (Number(p.total) || 0), 0);
+  const totalDone   = parts.reduce((s, p) => s + (Number(p.updated) || 0), 0);
+  const plan = proj.plan || {};
+  const totalTarget = Number(plan.targetUnits) > 0 ? Number(plan.targetUnits) : partsTarget;
   const pct = totalTarget > 0 ? Math.min(100, Math.round((totalDone / totalTarget) * 100)) : 0;
-  const day = proj.startDate ? daysSince(proj.startDate) + 1 : null;
+
+  const startDate = plan.startDate || proj.startDate || null;
+  const endDate   = plan.endDate   || proj.endDate   || proj.targetDate || null;
+  const day = startDate ? daysSince(startDate) + 1 : null;
+
   const name = escH(proj.name || proj.title || 'Production Run');
   const dayLabel = day ? ' · Day ' + day : '';
   const meta = escH(proj.tagline || proj.description || 'Energy Eye GSM v5 · for City FM · Singapore & AU deployment');
-  const startTxt  = proj.startDate ? 'Started ' + fmtDate(proj.startDate) : '';
-  const targetTxt = (proj.targetDate || proj.endDate) ? 'Target completion: ' + fmtDate(proj.targetDate || proj.endDate) : '';
+  const startTxt  = startDate ? 'Started ' + fmtDate(startDate) : '';
+  const targetTxt = endDate   ? 'Target completion: ' + fmtDate(endDate) : '';
 
   return '<div class="sp-prod-top">' +
       '<div>' +
@@ -1101,15 +1113,28 @@ function renderProductionCard(state) {
   stopProdRotate();
 
   const projects = (state && state.projects) || [];
-  // Only show projects with real production data — must have parts AND a non-zero target
-  _prodProjects = projects.filter(p => {
+  const activeId = state && state.activeProjectId;
+
+  // Show projects that have real production data (parts with non-zero total)
+  // Use SAME field names as dashboard.html: parts[].total
+  let candidates = projects.filter(p => {
     if(!p) return false;
     if(p.archived || p.completed) return false;
     const parts = p.parts || [];
     if(!parts.length) return false;
-    const target = parts.reduce((s, x) => s + (Number(x.target) || 0), 0);
-    return target > 0;
+    const partsTotal = parts.reduce((s, x) => s + (Number(x.total) || 0), 0);
+    const planTarget = Number(p.plan && p.plan.targetUnits) || 0;
+    return partsTotal > 0 || planTarget > 0;
   });
+
+  // Featured project (state.activeProjectId) goes first; rest follow in original order
+  if(activeId) {
+    const featured = candidates.find(p => p.id === activeId);
+    if(featured) {
+      candidates = [featured].concat(candidates.filter(p => p.id !== activeId));
+    }
+  }
+  _prodProjects = candidates;
 
   if(_prodProjects.length === 0) {
     el.innerHTML = '<div class="sp-card-head">▼ ACTIVE PRODUCTION</div><div class="sp-loading">No active production runs.</div>';
