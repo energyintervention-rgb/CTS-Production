@@ -3503,7 +3503,7 @@ function renderCharts(rows) {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(20, 20, 20, 0.92)', titleColor: '#fff', bodyColor: '#fff',
+        backgroundColor: (document.documentElement.getAttribute('data-theme')==='dark' ? 'rgba(23,26,33,0.96)' : 'rgba(255,255,255,0.98)'), titleColor: (document.documentElement.getAttribute('data-theme')==='dark' ? '#f0ece3' : '#1a1a1a'), bodyColor: (document.documentElement.getAttribute('data-theme')==='dark' ? '#f0ece3' : '#1a1a1a'),
         borderColor: c.accent, borderWidth: 1
       }
     },
@@ -4284,7 +4284,7 @@ function renderAnalyst(rawRows) {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(20,20,20,0.92)', titleColor: '#fff', bodyColor: '#fff',
+        backgroundColor: (document.documentElement.getAttribute('data-theme')==='dark' ? 'rgba(23,26,33,0.96)' : 'rgba(255,255,255,0.98)'), titleColor: (document.documentElement.getAttribute('data-theme')==='dark' ? '#f0ece3' : '#1a1a1a'), bodyColor: (document.documentElement.getAttribute('data-theme')==='dark' ? '#f0ece3' : '#1a1a1a'),
         borderColor: c.line, borderWidth: 1,
         titleFont: { family: 'Space Grotesk', size: 11 },
         bodyFont: { family: 'JetBrains Mono', size: 11 }
@@ -4574,7 +4574,7 @@ function renderMdByDay(rawRows) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: 'rgba(20,20,20,0.92)', titleColor: '#fff', bodyColor: '#fff',
+          backgroundColor: (document.documentElement.getAttribute('data-theme')==='dark' ? 'rgba(23,26,33,0.96)' : 'rgba(255,255,255,0.98)'), titleColor: (document.documentElement.getAttribute('data-theme')==='dark' ? '#f0ece3' : '#1a1a1a'), bodyColor: (document.documentElement.getAttribute('data-theme')==='dark' ? '#f0ece3' : '#1a1a1a'),
           borderColor: c.line, borderWidth: 1,
           titleFont: { family: 'Space Grotesk', size: 11 },
           bodyFont: { family: 'JetBrains Mono', size: 11 },
@@ -5717,14 +5717,20 @@ async function tvyRender() {
 // exists earlier in the script — we reuse it here instead of redefining.
 function analystBaseOpts() {
   const c = themeColors();
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  // Tooltip needs theme-aware bg + clear contrast text
+  const ttBg     = isDark ? 'rgba(23,26,33,0.96)' : 'rgba(255,255,255,0.98)';
+  const ttText   = isDark ? '#f0ece3' : '#1a1a1a';
+  const ttBorder = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)';
   return {
     responsive: true, maintainAspectRatio: false,
     interaction: { mode: 'nearest', axis: 'x', intersect: false },
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(20,22,28,0.95)', borderColor: c.line, borderWidth: 1,
-        titleColor: c.ink, bodyColor: c.ink, padding: 10
+        backgroundColor: ttBg, borderColor: ttBorder, borderWidth: 1,
+        titleColor: ttText, bodyColor: ttText, padding: 10,
+        boxPadding: 4, cornerRadius: 4
       }
     },
     scales: {
