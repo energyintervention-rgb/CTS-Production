@@ -3125,17 +3125,20 @@ function exportAttCSV(){
   }
   // Build full calendar from project start to today (so every day shows,
   // including ones without attendance — those appear as 'Absent' or rest/holiday).
+  // Use UTC date math to avoid timezone shifts (MYT +8 was causing dates to
+  // appear one day earlier than expected).
   const projStart = (pr.plan && pr.plan.startDate) || TODAY;
   const projEnd   = (pr.plan && pr.plan.endDate)   || TODAY;
-  // Cap end at the EARLIER of project end OR today (no future rows)
-  const todayD = new Date(TODAY + 'T00:00:00');
-  const endD   = new Date(projEnd + 'T00:00:00');
-  const stopD  = (endD < todayD) ? endD : todayD;
-  const dates  = [];
-  let d = new Date(projStart + 'T00:00:00');
-  while(d <= stopD) {
-    dates.push(d.toISOString().split('T')[0]);
-    d.setDate(d.getDate() + 1);
+  function parseDateUTC(s){ const [y,m,d]=s.split('-').map(Number); return Date.UTC(y,m-1,d); }
+  function fmtDateUTC(ms){ const d=new Date(ms); return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0'); }
+  // Stop at earlier of project end or today (no future rows)
+  const startMs = parseDateUTC(projStart);
+  const endMs   = parseDateUTC(projEnd);
+  const todayMs = parseDateUTC(TODAY);
+  const stopMs  = Math.min(endMs, todayMs);
+  const dates   = [];
+  for(let ms = startMs; ms <= stopMs; ms += 86400000) {
+    dates.push(fmtDateUTC(ms));
   }
   let csv='\uFEFF'+'Worker,Shift,Date,Day,Day Type,Clock In,Location In,Clock Out,Location Out,Hours,Status,Late Duration,Today Units,Target,Cumulative,Hit Target,Reason,OT Reason\n';
   const expW=workers.filter(n=>!isWorkerHidden(n));
@@ -3168,9 +3171,10 @@ function exportAttCSV(){
         const sh=pr.shifts.day;
         shiftLbl=(sh.label||'Day')+' '+(sh.start||'')+'-'+(sh.end||'');
       }
-      // Escape any embedded quotes/commas in GPS strings
-      const gpsIn=(rec.gps_in||'').replace(/"/g,'""');
-      const gpsOut=(rec.gps_out||'').replace(/"/g,'""');
+      // Escape any embedded quotes/commas in GPS strings.
+      // Show explicit "no GPS recorded" when worker clocked in/out without location.
+      const gpsIn  = rec.clockIn  ? ((rec.gps_in  || 'no GPS recorded').replace(/"/g,'""')) : '';
+      const gpsOut = rec.clockOut ? ((rec.gps_out || 'no GPS recorded').replace(/"/g,'""')) : '';
       if(di.type!=='work'){
         let otSt;
         if(!rec.clockIn) otSt=di.label;
