@@ -1382,22 +1382,24 @@ function makeProject(id, name){
       startDate:'2026-06-01',endDate:'2026-07-31',
       targetUnits:850,dailyTarget:20,workDaysPerWeek:5,
       holidays:[
-        {name:'Awal Muharram',date:'2026-07-17',enabled:true},
-        {name:'Nuzul Al-Quran (KL)',date:'2026-06-05',enabled:true},
+        {name:'New Year',date:'2026-01-01',enabled:false},
+        {name:'Federal Territory Day',date:'2026-02-01',enabled:true},
+        {name:'Thaipusam (KL)',date:'2026-02-03',enabled:false},
+        {name:'Chinese New Year',date:'2026-02-17',enabled:false},
+        {name:'Chinese New Year 2',date:'2026-02-18',enabled:false},
+        {name:'Nuzul Al-Quran (KL)',date:'2026-03-20',enabled:true},
+        {name:'Hari Raya Aidilfitri',date:'2026-03-21',enabled:false},
+        {name:'Hari Raya Aidilfitri 2',date:'2026-03-22',enabled:false},
         {name:'Labour Day',date:'2026-05-01',enabled:false},
-        {name:'Wesak Day',date:'2026-05-23',enabled:false},
+        {name:'Hari Raya Aidiladha',date:'2026-05-27',enabled:true},
+        {name:'Wesak Day',date:'2026-05-31',enabled:false},
         {name:'Agong Birthday',date:'2026-06-01',enabled:true},
+        {name:'Awal Muharram',date:'2026-06-17',enabled:true},
+        {name:'Prophet Muhammad Birthday',date:'2026-08-25',enabled:false},
         {name:'National Day',date:'2026-08-31',enabled:false},
         {name:'Malaysia Day',date:'2026-09-16',enabled:false},
-        {name:'Deepavali',date:'2026-10-20',enabled:false},
-        {name:'Christmas',date:'2026-12-25',enabled:false},
-        {name:'New Year',date:'2026-01-01',enabled:false},
-        {name:'Thaipusam (KL)',date:'2026-02-03',enabled:false},
-        {name:'Federal Territory Day',date:'2026-02-01',enabled:true},
-        {name:'Hari Raya Aidilfitri',date:'2026-03-31',enabled:false},
-        {name:'Hari Raya Aidilfitri 2',date:'2026-04-01',enabled:false},
-        {name:'Hari Raya Aidiladha',date:'2026-06-07',enabled:true},
-        {name:'Prophet Muhammad Birthday',date:'2026-09-15',enabled:false}
+        {name:'Deepavali',date:'2026-11-08',enabled:false},
+        {name:'Christmas',date:'2026-12-25',enabled:false}
       ]
     }
   };
@@ -1980,6 +1982,28 @@ function startRealtimeSync(){
         }
       }
       pr.shiftsMigratedV1 = true;
+    });
+
+    // ── One-time migration: fix MY 2026 holiday dates ──
+    // Several Islamic/Hindu holidays had incorrect dates in earlier defaults.
+    // Only corrects known holiday names; leaves user-added holidays untouched.
+    const HOLIDAY_FIX_2026 = {
+      'Nuzul Al-Quran (KL)': '2026-03-20',
+      'Hari Raya Aidilfitri': '2026-03-21',
+      'Hari Raya Aidilfitri 2': '2026-03-22',
+      'Wesak Day': '2026-05-31',
+      'Hari Raya Aidiladha': '2026-05-27',
+      'Awal Muharram': '2026-06-17',
+      'Prophet Muhammad Birthday': '2026-08-25',
+      'Deepavali': '2026-11-08'
+    };
+    (S.projects||[]).forEach(pr => {
+      if(pr.holidaysMigratedV2) return;
+      const list = (pr.plan && pr.plan.holidays) || [];
+      list.forEach(h => {
+        if(h && HOLIDAY_FIX_2026[h.name]) h.date = HOLIDAY_FIX_2026[h.name];
+      });
+      pr.holidaysMigratedV2 = true;
     });
 
     localStorage.setItem('cts_state_v3',JSON.stringify(S));
@@ -3102,13 +3126,14 @@ function exportAttCSV(){
   const dateSet=new Set(Object.keys(att).map(k=>{const p=k.split('_');p.shift();return p.join('_');}));
   dateSet.add(TODAY);
   const dates=[...dateSet].sort();
-  let csv='\uFEFF'+'Worker,Date,Day Type,Clock In,Clock Out,Hours,Status,Late Duration,Today Units,Target,Cumulative,Hit Target,Reason,OT Reason\n';
+  let csv='\uFEFF'+'Worker,Shift,Date,Day,Day Type,Clock In,Location In,Clock Out,Location Out,Hours,Status,Late Duration,Today Units,Target,Cumulative,Hit Target,Reason,OT Reason\n';
   const expW=workers.filter(n=>!isWorkerHidden(n));
   dates.forEach(date=>{
     const di=getDayType(date);
+    const dn=DAY_NAMES[new Date(date).getDay()];
     expW.forEach(name=>{
       const key=name+'_'+date;
-      const rec=att[key]||{clockIn:'',clockOut:'',status:'',lateMin:0,reason:''};
+      const rec=att[key]||{clockIn:'',clockOut:'',status:'',lateMin:0,reason:'',gps_in:'',gps_out:''};
       const hrs=calcHours(rec.clockIn,rec.clockOut).toFixed(1);
       const outStr=rec.clockOut?(rec.clockOut+((rec.overnight||isOvernightClockout(rec.clockIn,rec.clockOut))?' (+1d)':'')):'';
       if(!pr.workerUpdates) pr.workerUpdates={};
@@ -3120,6 +3145,21 @@ function exportAttCSV(){
       const cumT=aP.reduce((a,p)=>a+p.total,0);
       const tgt=getWorkerDailyTarget(pr,name);
       const hit=tU>=tgt?'Yes':'No';
+      // Shift assignment (Day / Flex / —)
+      const wsh=(pr.workerShifts&&pr.workerShifts[name])||'';
+      let shiftLbl='—';
+      if(wsh==='flex') shiftLbl='Flex';
+      else if(wsh && pr.shifts && pr.shifts[wsh]) {
+        const sh=pr.shifts[wsh];
+        shiftLbl=(sh.label||wsh)+' '+(sh.start||'')+'-'+(sh.end||'');
+      } else if(rec.clockIn && pr.shifts && pr.shifts.day) {
+        // Fallback: if worker clocked in but no explicit shift, assume Day
+        const sh=pr.shifts.day;
+        shiftLbl=(sh.label||'Day')+' '+(sh.start||'')+'-'+(sh.end||'');
+      }
+      // Escape any embedded quotes/commas in GPS strings
+      const gpsIn=(rec.gps_in||'').replace(/"/g,'""');
+      const gpsOut=(rec.gps_out||'').replace(/"/g,'""');
       if(di.type!=='work'){
         let otSt;
         if(!rec.clockIn) otSt=di.label;
@@ -3127,12 +3167,12 @@ function exportAttCSV(){
         else if(rec.overtimeStatus==='pending') otSt='OT Pending';
         else if(rec.overtimeStatus==='rejected') otSt='OT Rejected';
         else otSt='OT (no approval)';
-        csv+=`"${name}","${date}","${di.label}","${rec.clockIn||''}","${outStr}","${rec.clockIn?hrs+'h':''}","${otSt}","","${tU}","${tgt}","${cum}/${cumT}","${hit}","${rec.reason||''}","${rec.overtimeReason||''}"\n`;
+        csv+=`"${name}","${shiftLbl}","${date}","${dn}","${di.label}","${rec.clockIn||''}","${gpsIn}","${outStr}","${gpsOut}","${rec.clockIn?hrs+'h':''}","${otSt}","","${tU}","${tgt}","${cum}/${cumT}","${hit}","${rec.reason||''}","${rec.overtimeReason||''}"\n`;
       } else {
         const lm=rec.lateMin||0;
         const ls=lm>0?Math.floor(lm/60)+'h '+String(lm%60).padStart(2,'0')+'m':'';
         const status=rec.clockIn?(lm>0?'Late':'On Time'):'Absent';
-        csv+=`"${name}","${date}","Working Day","${rec.clockIn||''}","${outStr}","${rec.clockIn?hrs+'h':''}","${status}","${ls}","${tU}","${tgt}","${cum}/${cumT}","${hit}","${rec.reason||''}","${rec.overtimeReason||''}"\n`;
+        csv+=`"${name}","${shiftLbl}","${date}","${dn}","Working Day","${rec.clockIn||''}","${gpsIn}","${outStr}","${gpsOut}","${rec.clockIn?hrs+'h':''}","${status}","${ls}","${tU}","${tgt}","${cum}/${cumT}","${hit}","${rec.reason||''}","${rec.overtimeReason||''}"\n`;
       }
     });
   });
