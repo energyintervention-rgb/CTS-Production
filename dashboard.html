@@ -3123,9 +3123,20 @@ function exportAttCSV(){
     if(isR) return {type:'rest',label:'Rest Day — '+dn};
     return {type:'work',label:''};
   }
-  const dateSet=new Set(Object.keys(att).map(k=>{const p=k.split('_');p.shift();return p.join('_');}));
-  dateSet.add(TODAY);
-  const dates=[...dateSet].sort();
+  // Build full calendar from project start to today (so every day shows,
+  // including ones without attendance — those appear as 'Absent' or rest/holiday).
+  const projStart = (pr.plan && pr.plan.startDate) || TODAY;
+  const projEnd   = (pr.plan && pr.plan.endDate)   || TODAY;
+  // Cap end at the EARLIER of project end OR today (no future rows)
+  const todayD = new Date(TODAY + 'T00:00:00');
+  const endD   = new Date(projEnd + 'T00:00:00');
+  const stopD  = (endD < todayD) ? endD : todayD;
+  const dates  = [];
+  let d = new Date(projStart + 'T00:00:00');
+  while(d <= stopD) {
+    dates.push(d.toISOString().split('T')[0]);
+    d.setDate(d.getDate() + 1);
+  }
   let csv='\uFEFF'+'Worker,Shift,Date,Day,Day Type,Clock In,Location In,Clock Out,Location Out,Hours,Status,Late Duration,Today Units,Target,Cumulative,Hit Target,Reason,OT Reason\n';
   const expW=workers.filter(n=>!isWorkerHidden(n));
   dates.forEach(date=>{
@@ -3207,7 +3218,7 @@ function saveEditRecord(name){
   const isOT3=!s3.on||!!h3.find(h=>h.enabled&&h.date===TODAY)||!!recCur.overtimeStatus;
   const lm=isOT3?0:calcLate(ci);
   const st=isOT3?'ot':getClockStatus(ci);
-  setAttRecord(name,{clockIn:ci,clockOut:co,gps_in:'',gps_out:'',status:st,lateMin:lm,reason:recCur.reason||''});
+  setAttRecord(name,{clockIn:ci,clockOut:co,gps_in:recCur.gps_in||'',gps_out:recCur.gps_out||'',status:st,lateMin:lm,reason:recCur.reason||''});
   renderAttendance();
   showToast('✓ Record updated for '+name);
 }
