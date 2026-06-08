@@ -474,7 +474,6 @@ body::before {
   background: var(--bg); border: 1px solid var(--line); color: var(--ink);
   border-radius: 2px; font-family: 'JetBrains Mono', monospace; font-size: 14px;
   outline: none; margin-bottom: 10px; transition: border-color 0.15s;
-  color-scheme: dark;
 }
 .modal-input:focus { border-color: var(--accent); }
 .modal-actions { display: flex; gap: 8px; }
@@ -832,6 +831,7 @@ body::before {
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
         <button class="btn-sm btn-cyan" onclick="saveAssemblyConfig()">Save Changes</button>
         <button class="btn-sm btn-red" onclick="exportCSV()">Export CSV</button>
+        <button class="btn-sm btn-amber" onclick="printReport()">Print PDF</button>
       </div>
 
       <div class="admin-section" style="margin-top:14px;">
@@ -907,6 +907,11 @@ body::before {
         <span>Status</span>
       </div>
       <div id="partsBody"></div>
+    </div>
+
+    <div class="report-btns" id="reportBtns" style="display:none;margin-top:14px;gap:8px;">
+      <button class="btn-sm btn-red" onclick="exportCSV()">📊 Export CSV</button>
+      <button class="btn-sm btn-amber" onclick="printReport()">🖨 Print PDF</button>
     </div>
   </div>
 
@@ -1119,7 +1124,6 @@ body::before {
       <optgroup label="On Time">
         <option>Normal shift start</option>
         <option>Early shift</option>
-        <option>Night shift</option>
       </optgroup>
       <optgroup label="Late — Personal">
         <option>Traffic</option>
@@ -1361,12 +1365,11 @@ function makeProject(id, name){
       }
     },
     // ──── Attendance v2 (added 2026-06-03) ────
-    // Multiple named shifts. Workers can be assigned to a shift; absent assignment falls back to 'day'.
+    // Two shifts: 'day' (regular 09:00-18:00) + 'flex' (no fixed schedule, handled as special case).
     shifts: {
-      day:    { start: '08:00', end: '17:00', label: 'Day' },
-      night:  { start: '20:00', end: '04:00', label: 'Night' }     // overnight: end < start = wraps to next day
+      day:    { start: '09:00', end: '18:00', label: 'Day' }
     },
-    // workerName → 'day' | 'night' | 'flex' (flex = no late penalty, sessions tracked separately)
+    // workerName → 'day' | 'flex' (flex = no late penalty, sessions tracked separately)
     workerShifts: {},
     // Clock-in reasons that auto-mark as Approved Off-site (lowercased substring match)
     travelKeywords: ['airport','flight','travel','trip','offsite','off-site','client visit','singapore','overseas','out of town','outstation'],
@@ -1960,6 +1963,25 @@ function startRealtimeSync(){
     const merged=mergeState(remote);
     merged.adminMode=(SESSION&&SESSION.role==='admin')?(S.adminMode||false):false;
     S=merged;
+
+    // ── One-time migration: enforce current shift standard ──
+    // Day 09:00-18:00 + Flex only. Remove legacy Night shift if present.
+    // Runs once per project (marked with shiftsMigratedV1).
+    (S.projects||[]).forEach(pr => {
+      if(pr.shiftsMigratedV1) return;
+      if(!pr.shifts) pr.shifts = {};
+      pr.shifts.day = { start: '09:00', end: '18:00', label: 'Day' };
+      if(pr.shifts.night) {
+        delete pr.shifts.night;
+        if(pr.workerShifts) {
+          Object.keys(pr.workerShifts).forEach(name => {
+            if(pr.workerShifts[name] === 'night') pr.workerShifts[name] = 'day';
+          });
+        }
+      }
+      pr.shiftsMigratedV1 = true;
+    });
+
     localStorage.setItem('cts_state_v3',JSON.stringify(S));
     if(_firstLoad){
       _firstLoad=false;
@@ -2299,500 +2321,9 @@ function sendWhatsApp(){
 }
 function sendToContact(idx){
   const c=activeProject().waContacts[idx];
-  const msg=(_waMsgBuilder||buildWAMessage)();
-  _waMsgBuilder = null;  // reset after use
+  const msg=buildWAMessage();
   closeModal('waPickerModal');
   window.open('https://wa.me/'+c.number+'?text='+encodeURIComponent(msg),'_blank');
-}
-
-// ════════════════════════════════════════════════════════════════════
-// SHARE-BAR HANDLERS — previously missing, causing onclick ReferenceErrors
-// ════════════════════════════════════════════════════════════════════
-
-let _waMsgBuilder = null;  // lets section-specific WA buttons inject their message builder
-
-// Shared PDF pipeline — renders HTML in a hidden popup, snapshots with html2canvas,
-// splits into A4 pages via jsPDF. Used by sharePDF dispatchers below.
-async function _generatePDFFromHTML(html, filename, waitMs, title){
-  const win = window.open('','_blank','width=900,height=700');
-  if(!win){ showToast('⚠ Allow popups to download PDF','warn'); return; }
-  win.document.write(html); win.document.close(); win.focus();
-  await new Promise(r=>setTimeout(r, waitMs || 900));
-  try{
-    const canvas = await html2canvas(win.document.body, {
-      scale: 2, useCORS: true, backgroundColor: '#ffffff',
-      windowWidth: 794, windowHeight: win.document.body.scrollHeight
-    });
-    win.close();
-    const {jsPDF} = window.jspdf;
-    const A4_W = 210, A4_H = 297;
-    const HEADER_H = 13;            // mm reserved on pages 2+ for repeating header band
-    const FOOTER_H = 12;
-    const visibleH = A4_H - FOOTER_H;
-    const contentH_subsequent = A4_H - HEADER_H - FOOTER_H;  // usable area per non-first page
-    const imgW = A4_W, imgH = (canvas.height * imgW) / canvas.width;
-    const pdf = new jsPDF({orientation:'p', unit:'mm', format:'a4'});
-    const imgData = canvas.toDataURL('image/jpeg', 0.97);
-
-    // ─── Smart page-break detection (darkness-min) ───
-    const ctx = canvas.getContext('2d');
-    const mmToPx = canvas.height / imgH;
-    function rowDarkness(yPx){
-      if(yPx < 0 || yPx >= canvas.height) return Infinity;
-      try {
-        const data = ctx.getImageData(0, yPx, canvas.width, 1).data;
-        let darkness = 0;
-        for(let i = 0; i < canvas.width; i++){
-          const idx = i * 4;
-          const brightness = (data[idx] + data[idx+1] + data[idx+2]) / 3;
-          if(brightness < 220) darkness += (220 - brightness);
-        }
-        return darkness;
-      } catch(_) { return Infinity; }
-    }
-    function findCleanBreakMm(targetMm, searchRangeMm){
-      const targetPx = Math.floor(targetMm * mmToPx);
-      const rangePx = Math.floor(searchRangeMm * mmToPx);
-      // Find the LONGEST contiguous zero-darkness stretch in the search range.
-      // True between-row gaps (padding+border+padding ≈ 7px) are wider than within-row
-      // padding (3px), so the longest stretch reliably identifies the actual gap.
-      let bestLen = 0, bestEnd = targetPx;  // bestEnd = top of best stretch (lowest y in walk-back)
-      let currentLen = 0;
-      for(let dy = 0; dy < rangePx; dy++){
-        const px = targetPx - dy;
-        if(rowDarkness(px) === 0){
-          currentLen++;
-          if(currentLen > bestLen){
-            bestLen = currentLen;
-            bestEnd = px;  // the topmost pixel of the current best stretch
-          }
-        } else {
-          currentLen = 0;
-        }
-      }
-      // Break at the MIDDLE of the longest stretch so we're well inside the gap
-      const middlePx = bestEnd + Math.floor(bestLen / 2);
-      return middlePx / mmToPx;
-    }
-
-    // Build page-start positions — page 1 uses visibleH (no top header reserved,
-    // since the HTML already has the big header). Pages 2+ use less because of
-    // the repeating header band on top.
-    const pageStarts = [0];
-    let cursor = visibleH;  // first page break target
-    while(cursor < imgH){
-      const cleanY = findCleanBreakMm(cursor, 30);
-      if(cleanY <= pageStarts[pageStarts.length - 1] + 10) break;
-      pageStarts.push(cleanY);
-      cursor = cleanY + contentH_subsequent;  // subsequent pages have less content space
-    }
-    const totalPages = pageStarts.length;
-
-    const safe = filename.replace(/[^a-zA-Z0-9_-]/g,'_').replace(/_+/g,'_');
-    const today = new Date().toLocaleDateString('en-MY');
-    // Sensible title: strip CTS_ prefix and date suffix, replace _ with space
-    const headerTitle = title || filename.replace(/^CTS_/,'').replace(/_\d{8}$/,'').replace(/_/g,' ');
-
-    for(let p = 0; p < totalPages; p++){
-      if(p > 0) pdf.addPage();
-      const yStart = pageStarts[p];
-      const yEnd = (p + 1 < totalPages) ? pageStarts[p + 1] : imgH;
-      const isFirst = (p === 0);
-      // On page 1: image starts at top (HTML's big header is visible)
-      // On pages 2+: image shifted down by HEADER_H to make room for repeating header band
-      const topOffset = isFirst ? 0 : HEADER_H;
-
-      pdf.addImage(imgData, 'JPEG', 0, topOffset - yStart, imgW, imgH);
-
-      // ── Top header band on pages 2+ (page 1's header is part of the HTML) ──
-      if(!isFirst){
-        // White cover hides image content that would peek above the band
-        pdf.setFillColor(255, 255, 255);
-        pdf.rect(0, 0, A4_W, HEADER_H, 'F');
-        // Orange repeating header band
-        pdf.setFillColor(255, 91, 46);
-        pdf.rect(0, 0, A4_W, HEADER_H - 2, 'F');
-        pdf.setTextColor(255, 255, 255);
-        pdf.setFontSize(8);
-        pdf.text(headerTitle + ' — continued', 5, HEADER_H - 5);
-        pdf.text('Page ' + (p + 1) + ' of ' + totalPages, A4_W - 30, HEADER_H - 5);
-      }
-
-      // Use actual clean-break point as the bottom of visible content
-      // (not just visibleH, otherwise rows between the break point and footer get chopped)
-      const contentHeight = yEnd - yStart;
-      const visibleBottom = isFirst
-        ? Math.min(contentHeight, visibleH)
-        : Math.min(HEADER_H + contentHeight, A4_H - FOOTER_H);
-      const coverStart = Math.min(visibleBottom, A4_H - FOOTER_H);
-      pdf.setFillColor(255, 255, 255);
-      pdf.rect(0, coverStart, A4_W, A4_H - coverStart, 'F');
-      pdf.setFillColor(255, 91, 46);
-      pdf.rect(0, A4_H - FOOTER_H + 2, A4_W, FOOTER_H - 2, 'F');
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(7);
-      pdf.text('CTS Production · ' + today + ' · ' + safe, 5, A4_H - FOOTER_H + 8);
-      pdf.text('Page ' + (p + 1) + ' of ' + totalPages, A4_W - 30, A4_H - FOOTER_H + 8);
-    }
-
-    pdf.save(safe + '.pdf');
-    showToast('✓ PDF downloaded ('+totalPages+' page'+(totalPages===1?'':'s')+')');
-  }catch(e){
-    try{ win.close(); }catch(_){}
-    showToast('⚠ PDF failed: '+e.message,'warn');
-  }
-}
-
-// Shared CSS for all PDF reports (light, A4-friendly, monospace for numbers)
-const _PDF_CSS = `
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a1a;padding:0;width:794px;line-height:1.4}
-  .hdr{background:#ff5b2e;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
-  .hdr h1{font-size:16px;letter-spacing:0.5px}
-  .hdr .meta{font-size:10px;color:rgba(255,255,255,0.85);text-align:right;line-height:1.6}
-  .sec{font-size:9px;letter-spacing:2px;color:#ff5b2e;font-weight:700;padding:10px 20px 6px;text-transform:uppercase;border-top:1px solid #ebe6dc;margin-top:8px}
-  .sec:first-of-type{border-top:none;margin-top:0}
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 20px;background:#fef7f3}
-  .stat{background:#fff;border:1px solid #ebe6dc;border-radius:2px;padding:8px 10px;text-align:center}
-  .stat .k{font-size:8px;letter-spacing:1px;color:#5a5a5a;text-transform:uppercase;font-weight:600}
-  .stat .v{font-size:18px;color:#ff5b2e;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:2px}
-  table{width:calc(100% - 40px);margin:0 20px;border-collapse:collapse;table-layout:auto}
-  th{background:#ff5b2e;color:#fff;padding:5px 7px;text-align:left;font-size:9px;font-weight:600;white-space:nowrap;letter-spacing:0.3px}
-  td{padding:5px 7px;border-bottom:1px solid #ebe6dc;font-size:10px;vertical-align:top}
-  td.nw{white-space:nowrap}
-  td.num{font-family:'JetBrains Mono',monospace;font-weight:600}
-  tr:nth-child(even) td{background:#f9f7f3}
-  .badge{display:inline-block;font-size:8px;padding:2px 5px;border-radius:2px;font-weight:600;letter-spacing:0.3px}
-  .bar{display:inline-block;width:80px;height:4px;background:#ebe6dc;border-radius:2px;vertical-align:middle;overflow:hidden;margin-right:6px}
-  .bar i{display:block;height:100%;background:#ff5b2e}
-  .ftr{background:#ff5b2e;padding:6px 20px;display:flex;justify-content:space-between;font-size:8.5px;color:rgba(255,255,255,0.85);margin-top:14px}
-  .pname{font-size:11px;font-weight:700;color:#1a1a1a;padding:8px 20px 2px}
-  .proj-header{display:flex;justify-content:space-between;align-items:baseline;padding:8px 20px 4px;border-top:2px solid #ff5b2e;margin-top:6px}
-  .proj-header h2{font-size:13px;font-weight:700;color:#1a1a1a}
-  .proj-header .pct{font-size:16px;font-weight:700;color:#ff5b2e;font-family:'JetBrains Mono',monospace}
-`;
-
-// ═══════════════════════════════════════════════════════════════
-// SHAREPDF DISPATCHER — routes to section-specific generator
-// ═══════════════════════════════════════════════════════════════
-function sharePDF(section){
-  if(section === 'assembly') return generateAssemblyPDF();
-  if(section === 'attendance') return generateAttendancePDF();
-  if(section === 'charts') return generateChartsPDF();
-  // fallback
-  window.print();
-}
-
-// ─── ASSEMBLY PDF ─────────────────────────────────────────────────
-async function generateAssemblyPDF(){
-  showToast('⏳ Generating assembly PDF…');
-  const pr = activeProject();
-  const parts = pr.parts || [];
-  const totalUpdated = parts.reduce((a,p) => a + p.updated, 0);
-  const totalTarget = parts.reduce((a,p) => a + p.total, 0);
-  const overall = totalTarget > 0 ? Math.round(totalUpdated/totalTarget*100) : 0;
-  const today = new Date().toLocaleDateString('en-MY');
-
-  const rows = parts.map((p,i) => {
-    const pct = p.total > 0 ? Math.round(p.updated/p.total*100) : 0;
-    const remaining = p.total - p.updated;
-    let statusBadge, statusBg, statusColor;
-    if(pct >= 100){ statusBadge='COMPLETE'; statusBg='#dcfce7'; statusColor='#15803d'; }
-    else if(pct === 0){ statusBadge='NOT STARTED'; statusBg='#f3f4f6'; statusColor='#5a5a5a'; }
-    else { statusBadge='IN PROGRESS'; statusBg='#faf3e0'; statusColor='#d4a017'; }
-    return `<tr>
-      <td class="num">#${i+1}</td>
-      <td>${escH(p.name)}</td>
-      <td class="num">${p.total}</td>
-      <td class="num">${p.updated}</td>
-      <td class="num">${remaining}</td>
-      <td class="num">${pct}%</td>
-      <td><span class="bar"><i style="width:${pct}%"></i></span></td>
-      <td><span class="badge" style="background:${statusBg};color:${statusColor}">${statusBadge}</span></td>
-    </tr>`;
-  }).join('');
-
-  const html = `<!DOCTYPE html><html><head><title>Assembly Report — ${escH(pr.name)}</title><style>${_PDF_CSS}</style></head><body>
-    <div class="hdr">
-      <h1>📦 ASSEMBLY REPORT — ${escH(pr.name)}</h1>
-      <div class="meta">Generated: ${today}<br>By: ${escH(SESSION&&SESSION.name||'Admin')}</div>
-    </div>
-    <div class="stats">
-      <div class="stat"><div class="k">Overall</div><div class="v">${overall}%</div></div>
-      <div class="stat"><div class="k">Updated</div><div class="v">${totalUpdated.toLocaleString()}</div></div>
-      <div class="stat"><div class="k">Target</div><div class="v">${totalTarget.toLocaleString()}</div></div>
-      <div class="stat"><div class="k">Parts</div><div class="v">${parts.length}</div></div>
-    </div>
-    <div class="sec">Parts Breakdown</div>
-    <table>
-      <thead><tr>
-        <th>#</th><th>Part Name</th><th>Target</th><th>Updated</th><th>Remaining</th><th>%</th><th>Progress</th><th>Status</th>
-      </tr></thead>
-      <tbody>${rows||'<tr><td colspan="8" style="text-align:center;color:#5a5a5a;padding:20px">No parts defined</td></tr>'}</tbody>
-    </table>
-    <div class="ftr">
-      <span>CTS Production · Generated ${today}</span>
-      <span>${escH(pr.name)} · ${parts.length} parts</span>
-    </div>
-  </body></html>`;
-
-  await _generatePDFFromHTML(html, 'CTS_'+pr.name+'_assembly_'+TODAY.replace(/-/g,''), 800);
-  logActivity('PDF_ASSEMBLY', 'Generated assembly PDF for '+pr.name);
-}
-
-// ─── ATTENDANCE PDF (all workers daily list, like CSV) ────────────
-async function generateAttendancePDF(){
-  showToast('⏳ Generating attendance PDF…');
-  const pr = attProject();
-  const workers = (pr.workers||[]).filter(n=>!isWorkerHidden(n));
-  const att = pr.attendance||{};
-  const holidays = (pr.plan&&pr.plan.holidays)||[];
-  const today = new Date().toLocaleDateString('en-MY');
-
-  function getDayType(ds){
-    const d=new Date(ds), dn=DAY_NAMES[d.getDay()];
-    const h=holidays.find(hh=>hh.enabled&&hh.date===ds);
-    if(h) return {type:'holiday',label:'Holiday: '+h.name,bg:'#f5f3fa'};
-    const s=(pr.workHours&&pr.workHours.schedule&&pr.workHours.schedule[dn]);
-    const isR=s?!s.on:(dn==='Sun');
-    if(isR) return {type:'rest',label:'Rest: '+dn,bg:'#eef4fa'};
-    return {type:'work',label:'Working',bg:'#fff'};
-  }
-
-  // Build full calendar (same logic as worker report)
-  const recordSet = new Set();
-  Object.keys(att).forEach(k => {
-    const rec = att[k];
-    if(rec && (rec.clockIn||rec.clockOut||rec.overtimeStatus)){
-      const p = k.split('_'); p.shift(); recordSet.add(p.join('_'));
-    }
-  });
-  if(pr.flexAttendance){
-    Object.keys(pr.flexAttendance).forEach(k => {
-      const sessions = pr.flexAttendance[k];
-      if(sessions && sessions.length > 0){
-        const p = k.split('_'); p.shift(); recordSet.add(p.join('_'));
-      }
-    });
-  }
-  const recordDates = [...recordSet].sort();
-  let startDate, endDate;
-  if(recordDates.length > 0){
-    const first = new Date(recordDates[0]);
-    startDate = new Date(first.getFullYear(), first.getMonth(), 1);
-    endDate = new Date(TODAY);
-  } else {
-    const t = new Date(TODAY);
-    startDate = new Date(t.getFullYear(), t.getMonth(), 1);
-    endDate = new Date(TODAY);
-  }
-  const dates = [];
-  const cursor = new Date(startDate);
-  while(cursor <= endDate){
-    const y=cursor.getFullYear(), m=String(cursor.getMonth()+1).padStart(2,'0'), d=String(cursor.getDate()).padStart(2,'0');
-    dates.push(y+'-'+m+'-'+d);
-    cursor.setDate(cursor.getDate()+1);
-  }
-
-  // Stats
-  let present=0, late=0, absent=0, ot=0, totalRows=0;
-  const rows = [];
-  dates.forEach(date => {
-    const di = getDayType(date);
-    const dayName = DAY_NAMES[new Date(date).getDay()];
-    workers.forEach(name => {
-      totalRows++;
-      const rec = att[name+'_'+date]||{};
-      const reasonText = rec.reason || rec.overtimeReason || '';
-      const attStat = calcAttendanceStatus(name, rec.clockIn, reasonText, pr);
-      const hrs = rec.clockIn&&rec.clockOut ? calcHours(rec.clockIn,rec.clockOut).toFixed(1)+'h' : '—';
-      let status, statusBg, statusColor;
-      if(di.type !== 'work'){
-        if(!rec.clockIn){ status='—'; statusBg='#f3f4f6'; statusColor='#5a5a5a'; }
-        else if(rec.overtimeStatus==='approved'){ ot++; status='OT Approved'; statusBg='#dcfce7'; statusColor='#15803d'; }
-        else { status='OT'; statusBg='#faf3e0'; statusColor='#d4a017'; }
-      } else if(!rec.clockIn){ absent++; status='Absent'; statusBg='#fee2e2'; statusColor='#c1311e'; }
-      else if(attStat.status==='travel'){ present++; status='Off-site (Travel)'; statusBg='#dbeafe'; statusColor='#1e40af'; }
-      else if(attStat.status==='flex'){ present++; status='Flex'; statusBg='#dbeafe'; statusColor='#1e40af'; }
-      else if(attStat.lateMin>0){ late++; status='Late +'+fmtLateDuration(attStat.lateMin); statusBg='#fef3c7'; statusColor='#d4a017'; }
-      else { present++; status='On Time'; statusBg='#dcfce7'; statusColor='#15803d'; }
-      rows.push(`<tr style="background:${di.bg}">
-        <td class="nw num">${date.slice(8,10)}/${date.slice(5,7)}</td>
-        <td class="nw" style="font-size:9px;color:#5a5a5a">${dayName}</td>
-        <td>${escH(name)}</td>
-        <td class="nw" style="font-size:9px">${escH(attStat.shiftLabel||'—')}</td>
-        <td class="nw" style="font-size:9px">${di.type==='holiday'?escH(di.label):(di.type==='rest'?'Rest':'Working')}</td>
-        <td class="nw num">${rec.clockIn||'—'}</td>
-        <td class="nw num">${rec.clockOut||'—'}</td>
-        <td class="nw num">${hrs}</td>
-        <td><span class="badge" style="background:${statusBg};color:${statusColor}">${status}</span></td>
-        <td style="font-size:9px;color:#5a5a5a">${escH(reasonText||'—')}</td>
-      </tr>`);
-    });
-  });
-
-  const attendRate = (present+absent+late) > 0 ? Math.round((present+late)/(present+absent+late)*100) : 0;
-
-  const html = `<!DOCTYPE html><html><head><title>Attendance Report — ${escH(pr.name)}</title><style>${_PDF_CSS}
-    table{font-size:9px}
-    th{font-size:8px;padding:4px 5px}
-    td{padding:3px 5px;font-size:9px}
-  </style></head><body>
-    <div class="hdr">
-      <h1>📋 ATTENDANCE LIST — ${escH(pr.name)}</h1>
-      <div class="meta">Generated: ${today}<br>By: ${escH(SESSION&&SESSION.name||'Admin')}<br>Range: ${dates[0]} to ${dates[dates.length-1]}</div>
-    </div>
-    <div class="stats">
-      <div class="stat"><div class="k">Workers</div><div class="v">${workers.length}</div></div>
-      <div class="stat"><div class="k">Days</div><div class="v">${dates.length}</div></div>
-      <div class="stat"><div class="k">Present</div><div class="v" style="color:#15803d">${present+late}</div></div>
-      <div class="stat"><div class="k">Absent</div><div class="v" style="color:#c1311e">${absent}</div></div>
-    </div>
-    <div class="sec">Daily Attendance — ${attendRate}% attendance rate · ${late} late · ${ot} OT</div>
-    <table>
-      <thead><tr>
-        <th>Date</th><th>Day</th><th>Worker</th><th>Shift</th><th>Type</th><th>In</th><th>Out</th><th>Hrs</th><th>Status</th><th>Reason</th>
-      </tr></thead>
-      <tbody>${rows.join('')||'<tr><td colspan="10" style="text-align:center;color:#5a5a5a;padding:20px">No attendance records</td></tr>'}</tbody>
-    </table>
-    <div class="ftr">
-      <span>CTS Production · Generated ${today}</span>
-      <span>${escH(pr.name)} · ${totalRows} entries</span>
-    </div>
-  </body></html>`;
-
-  await _generatePDFFromHTML(html, 'CTS_'+pr.name+'_attendance_'+TODAY.replace(/-/g,''), Math.min(2500, 800 + dates.length*5));
-  logActivity('PDF_ATTENDANCE', 'Generated attendance list PDF for '+pr.name);
-}
-
-// ─── CHARTS PDF (all-project production progress) ─────────────────
-async function generateChartsPDF(){
-  showToast('⏳ Generating progress PDF…');
-  const today = new Date().toLocaleDateString('en-MY');
-  const allParts = S.projects.flatMap(p => p.parts);
-  const totalUpdated = allParts.reduce((a,x) => a+x.updated, 0);
-  const totalTarget = allParts.reduce((a,x) => a+x.total, 0);
-  const overall = totalTarget > 0 ? Math.round(totalUpdated/totalTarget*100) : 0;
-
-  const projectBlocks = S.projects.map(pr => {
-    const parts = pr.parts||[];
-    const pUpd = parts.reduce((a,p)=>a+p.updated,0);
-    const pTgt = parts.reduce((a,p)=>a+p.total,0);
-    const pPct = pTgt>0 ? Math.round(pUpd/pTgt*100) : 0;
-    const rows = parts.map((p,i)=>{
-      const pct = p.total>0 ? Math.round(p.updated/p.total*100) : 0;
-      return `<tr>
-        <td class="num">#${i+1}</td>
-        <td>${escH(p.name)}</td>
-        <td class="num">${p.total}</td>
-        <td class="num">${p.updated}</td>
-        <td class="num">${pct}%</td>
-        <td><span class="bar"><i style="width:${pct}%"></i></span></td>
-      </tr>`;
-    }).join('');
-    return `<div class="proj-header"><h2>📦 ${escH(pr.name)}</h2><span class="pct">${pPct}%</span></div>
-      <div style="padding:0 20px 4px;font-size:10px;color:#5a5a5a">${pUpd.toLocaleString()} / ${pTgt.toLocaleString()} units</div>
-      <table style="margin-top:6px">
-        <thead><tr><th>#</th><th>Part</th><th>Target</th><th>Updated</th><th>%</th><th>Progress</th></tr></thead>
-        <tbody>${rows||'<tr><td colspan="6" style="text-align:center;color:#5a5a5a">No parts</td></tr>'}</tbody>
-      </table>`;
-  }).join('');
-
-  const html = `<!DOCTYPE html><html><head><title>Production Progress — All Projects</title><style>${_PDF_CSS}</style></head><body>
-    <div class="hdr">
-      <h1>📈 PRODUCTION PROGRESS — ALL PROJECTS</h1>
-      <div class="meta">Generated: ${today}<br>By: ${escH(SESSION&&SESSION.name||'Admin')}</div>
-    </div>
-    <div class="stats">
-      <div class="stat"><div class="k">Overall</div><div class="v">${overall}%</div></div>
-      <div class="stat"><div class="k">Updated</div><div class="v">${totalUpdated.toLocaleString()}</div></div>
-      <div class="stat"><div class="k">Target</div><div class="v">${totalTarget.toLocaleString()}</div></div>
-      <div class="stat"><div class="k">Projects</div><div class="v">${S.projects.length}</div></div>
-    </div>
-    ${projectBlocks}
-    <div class="ftr">
-      <span>CTS Production · Generated ${today}</span>
-      <span>${S.projects.length} project(s) · ${allParts.length} parts total</span>
-    </div>
-  </body></html>`;
-
-  await _generatePDFFromHTML(html, 'CTS_production_progress_'+TODAY.replace(/-/g,''), 1000);
-  logActivity('PDF_CHARTS', 'Generated production progress PDF');
-}
-
-// Combined CSV export — chains existing CSV exporters in sequence
-function exportAllCSV(){
-  // Run attendance CSV (existing)
-  try { exportAttCSV(); } catch(e) { console.error('Attendance CSV failed:', e); }
-  // Run assembly/parts CSV (existing)
-  setTimeout(() => {
-    try { exportCSV(); } catch(e) { console.error('Assembly CSV failed:', e); }
-  }, 500);
-  showToast('✓ Exported attendance + assembly CSVs');
-}
-
-// WhatsApp send for the attendance view — reuses the same contact picker but
-// injects an attendance-summary message builder
-function sendAttWhatsApp(){
-  _waMsgBuilder = buildAttendanceWAMessage;
-  sendWhatsApp();
-}
-
-// WhatsApp send for the charts view — same pattern
-function sendChartWhatsApp(){
-  _waMsgBuilder = buildChartsWAMessage;
-  sendWhatsApp();
-}
-
-// Build a WhatsApp-friendly attendance summary for today
-function buildAttendanceWAMessage(){
-  const pr = attProject();
-  const dispWorkers = (pr.workers || []).filter(w => !isWorkerHidden(w));
-  const lines = ['*Attendance — ' + pr.name + '*', 'Date: ' + TODAY, ''];
-  let present = 0, late = 0, absent = 0, ot = 0;
-  dispWorkers.forEach(name => {
-    const rec = getAttRecord(name);
-    const isFlex = isFlexWorker(name);
-    const flexSess = isFlex ? getFlexSessions(name) : [];
-    if(isFlex && flexSess.length > 0){
-      const totalMin = flexTotalMins(flexSess);
-      lines.push('🔵 ' + name + ' (Flex) — ' + flexSess.length + ' session(s) · ' + minsToHHMM(totalMin));
-      present++;
-    } else if(rec.clockIn){
-      const reasonText = rec.reason || rec.overtimeReason || '';
-      const status = calcAttendanceStatus(name, rec.clockIn, reasonText, pr);
-      if(rec.overtimeStatus){ ot++; lines.push('🟢 ' + name + ' (OT) — IN ' + rec.clockIn + ' → OUT ' + (rec.clockOut||'pending')); }
-      else if(status.status === 'late'){ late++; lines.push('🟡 ' + name + ' — IN ' + rec.clockIn + ' (Late ' + fmtLateDuration(status.lateMin) + ')'); }
-      else if(status.status === 'travel'){ present++; lines.push('🟦 ' + name + ' — Off-site: ' + reasonText); }
-      else { present++; lines.push('🟢 ' + name + ' — IN ' + rec.clockIn + ' → OUT ' + (rec.clockOut||'pending')); }
-    } else {
-      absent++;
-      lines.push('🔴 ' + name + ' — Absent');
-    }
-  });
-  lines.push('');
-  lines.push('Summary: ' + present + ' present · ' + late + ' late · ' + absent + ' absent · ' + ot + ' OT');
-  lines.push('— CTS Production');
-  return lines.join('\n');
-}
-
-// Build a WhatsApp-friendly charts summary
-function buildChartsWAMessage(){
-  const allParts = S.projects.flatMap(pr => pr.parts.map(p => ({proj: pr.name, ...p})));
-  const totalUpdated = allParts.reduce((a,x) => a + x.updated, 0);
-  const totalTarget = allParts.reduce((a,x) => a + x.total, 0);
-  const overall = totalTarget > 0 ? Math.round(totalUpdated/totalTarget*100) : 0;
-  const lines = ['*Production Progress*', 'Date: ' + TODAY, ''];
-  S.projects.forEach(pr => {
-    const u = pr.parts.reduce((a,x) => a+x.updated, 0);
-    const t = pr.parts.reduce((a,x) => a+x.total, 0);
-    const p = t > 0 ? Math.round(u/t*100) : 0;
-    lines.push('📦 ' + pr.name + ' — ' + u + '/' + t + ' (' + p + '%)');
-  });
-  lines.push('');
-  lines.push('Overall: ' + totalUpdated + '/' + totalTarget + ' (' + overall + '%)');
-  lines.push('— CTS Production');
-  return lines.join('\n');
 }
 
 function renderWAContactsConfig(){
@@ -3433,11 +2964,8 @@ function renderWorkersConfig(){
     const utcOpts=UTC_OPTIONS.map(o=>`<option value="${o.v}"${o.v===utc?' selected':''}>${o.s}</option>`).join('');
     // Attendance v2: shift assignment dropdown
     const curShift = getWorkerShift(w);
-    // Default shifts if project doesn't have them (legacy projects from before v2)
-    const shiftsObj = pr.shifts || { day:{start:'08:00',end:'17:00',label:'Day'}, night:{start:'20:00',end:'04:00',label:'Night'} };
-    const shiftOpts = Object.keys(shiftsObj).map(s=>{
-      const sh = shiftsObj[s] || {};
-      const lbl = (sh.label||s) + ' '+(sh.start||'')+'-'+(sh.end||'');
+    const shiftOpts = Object.keys(pr.shifts||{day:{}}).map(s=>{
+      const sh=pr.shifts[s]; const lbl = (sh.label||s) + ' '+(sh.start||'')+'-'+(sh.end||'');
       return `<option value="${escH(s)}"${s===curShift?' selected':''}>${escH(lbl)}</option>`;
     }).join('') + `<option value="flex"${curShift==='flex'?' selected':''}>Flex (no late penalty)</option>`;
     return `<div style="background:var(--bg);border:1px solid var(--line);border-radius:2px;padding:10px 12px;margin-bottom:8px;">
@@ -3558,144 +3086,70 @@ function exportCSV(){
 }
 
 function exportAttCSV(){
-  const pr = attProject();
-  const workers = pr.workers || [];
-  const att = pr.attendance || {};
-  const holidays = (pr.plan && pr.plan.holidays) || [];
-
-  // Get day type (work/rest/holiday) for a given date
+  const pr=attProject();
+  const workers=pr.workers||[];
+  const att=pr.attendance||{};
+  const holidays=pr.plan.holidays||[];
   function getDayType(ds){
-    const d = new Date(ds), dn = DAY_NAMES[d.getDay()];
-    const h = holidays.find(hh => hh.enabled && hh.date === ds);
-    if(h) return { type:'holiday', label:'Public Holiday — '+h.name };
-    const s = (pr.workHours && pr.workHours.schedule && pr.workHours.schedule[dn]);
-    const isR = s ? !s.on : (dn==='Sun');
-    if(isR) return { type:'rest', label:'Rest Day — '+dn };
-    return { type:'work', label:'Working Day' };
+    const d=new Date(ds), dn=DAY_NAMES[d.getDay()];
+    const h=holidays.find(hh=>hh.enabled&&hh.date===ds);
+    if(h) return {type:'holiday',label:'Public Holiday — '+h.name};
+    const s=(pr.workHours&&pr.workHours.schedule&&pr.workHours.schedule[dn]);
+    const isR=s?!s.on:(dn==='Sun');
+    if(isR) return {type:'rest',label:'Rest Day — '+dn};
+    return {type:'work',label:''};
   }
-
-  // Build full calendar — start of first record's month → today (matches PDF report)
-  const allRecordDates = new Set();
-  Object.keys(att).forEach(k => {
-    const parts = k.split('_'); parts.shift();
-    allRecordDates.add(parts.join('_'));
-  });
-  if(pr.flexAttendance){
-    Object.keys(pr.flexAttendance).forEach(k => {
-      const parts = k.split('_'); parts.shift();
-      allRecordDates.add(parts.join('_'));
-    });
-  }
-  const recordDates = [...allRecordDates].sort();
-
-  let startDate, endDate;
-  if(recordDates.length > 0){
-    const first = new Date(recordDates[0]);
-    startDate = new Date(first.getFullYear(), first.getMonth(), 1);
-    endDate = new Date(TODAY);
-  } else {
-    const t = new Date(TODAY);
-    startDate = new Date(t.getFullYear(), t.getMonth(), 1);
-    endDate = new Date(TODAY);
-  }
-  const dates = [];
-  const cursor = new Date(startDate);
-  while(cursor <= endDate){
-    const y = cursor.getFullYear();
-    const m = String(cursor.getMonth()+1).padStart(2,'0');
-    const d = String(cursor.getDate()).padStart(2,'0');
-    dates.push(y+'-'+m+'-'+d);
-    cursor.setDate(cursor.getDate()+1);
-  }
-
-  const otMinHours = (pr.otMinHours != null) ? pr.otMinHours : 4;
-
-  // CSV header (with BOM for Excel UTF-8)
-  let csv = '\uFEFF' + 'Worker,Shift,Date,Day,Day Type,Clock In,Clock Out,Hours,Status,Late Duration,Today Units,Target,Cumulative,Hit Target,Reason,OT Reason\n';
-
-  const expW = workers.filter(n => !isWorkerHidden(n));
-
-  dates.forEach(date => {
-    const di = getDayType(date);
-    const dayName = DAY_NAMES[new Date(date).getDay()];
-
-    expW.forEach(name => {
-      const key = name + '_' + date;
-      const rec = att[key] || { clockIn:'', clockOut:'', reason:'' };
-      const reasonText = rec.reason || rec.overtimeReason || '';
-      const isFlex = isFlexWorker(name);
-      const flexSess = (pr.flexAttendance && pr.flexAttendance[key]) || [];
-
-      // ── v2 status (shift + travel + tier aware) ──
-      const attStat = calcAttendanceStatus(name, rec.clockIn, reasonText, pr);
-      const shiftLabel = attStat.shiftLabel || 'Day';
-
-      // Production fields (carry from previous logic)
-      if(!pr.workerUpdates) pr.workerUpdates = {};
-      const asg = (pr.workerAssignments && pr.workerAssignments[name]) || [];
-      const aP = pr.parts.filter(p => asg.includes(p.name));
-      let tU = 0;
-      aP.forEach(p => {
-        const sk = 'workerDay_'+date+'_'+pr.id+'_'+p.name+'_'+name;
-        tU += parseInt(localStorage.getItem(sk) || '0');
-      });
-      const cum = aP.reduce((a,p) => a + ((pr.workerUpdates[p.name] && pr.workerUpdates[p.name][name]) || 0), 0);
-      const cumT = aP.reduce((a,p) => a + p.total, 0);
-      const tgt = getWorkerDailyTarget(pr, name);
-      const hit = tU >= tgt ? 'Yes' : 'No';
-
-      // ── For flex workers with sessions, emit one row per session ──
-      if(isFlex && flexSess.length > 0){
-        flexSess.forEach((s, idx) => {
-          const sHrs = (s.clockIn && s.clockOut) ? calcHours(s.clockIn, s.clockOut).toFixed(1) : '';
-          const sOut = s.clockOut ? (s.clockOut + (isOvernightClockout(s.clockIn, s.clockOut) ? ' (+1d)' : '')) : '';
-          csv += `"${name}","Flex #${idx+1}","${date}","${dayName}","${di.label}","${s.clockIn||''}","${sOut}","${sHrs?sHrs+'h':''}","Flex","","${tU}","${tgt}","${cum}/${cumT}","${hit}","${rec.reason||''}",""\n`;
-        });
-        return;
-      }
-
-      // ── Regular non-flex row ──
-      const hrs = calcHours(rec.clockIn, rec.clockOut).toFixed(1);
-      const outStr = rec.clockOut ? (rec.clockOut + ((rec.overnight || isOvernightClockout(rec.clockIn, rec.clockOut)) ? ' (+1d)' : '')) : '';
-      const lateDur = attStat.lateMin > 0 ? fmtLateDuration(attStat.lateMin) : '';
-
-      let status;
-      if(di.type !== 'work'){
-        // Rest / Holiday row
-        if(!rec.clockIn) status = di.label;  // no work on rest/holiday → just label
-        else if(rec.overtimeStatus === 'approved' && calcHours(rec.clockIn, rec.clockOut) >= otMinHours){
-          status = 'OT Approved' + (rec.overtimeApprovedBy ? ' by ' + rec.overtimeApprovedBy : '');
-        }
-        else if(rec.overtimeStatus === 'approved') status = 'OT Short (<' + otMinHours + 'h)';
-        else if(rec.overtimeStatus === 'pending') status = 'OT Pending';
-        else if(rec.overtimeStatus === 'rejected') status = 'OT Rejected';
-        else status = 'OT (no approval)';
+  const dateSet=new Set(Object.keys(att).map(k=>{const p=k.split('_');p.shift();return p.join('_');}));
+  dateSet.add(TODAY);
+  const dates=[...dateSet].sort();
+  let csv='\uFEFF'+'Worker,Date,Day Type,Clock In,Clock Out,Hours,Status,Late Duration,Today Units,Target,Cumulative,Hit Target,Reason,OT Reason\n';
+  const expW=workers.filter(n=>!isWorkerHidden(n));
+  dates.forEach(date=>{
+    const di=getDayType(date);
+    expW.forEach(name=>{
+      const key=name+'_'+date;
+      const rec=att[key]||{clockIn:'',clockOut:'',status:'',lateMin:0,reason:''};
+      const hrs=calcHours(rec.clockIn,rec.clockOut).toFixed(1);
+      const outStr=rec.clockOut?(rec.clockOut+((rec.overnight||isOvernightClockout(rec.clockIn,rec.clockOut))?' (+1d)':'')):'';
+      if(!pr.workerUpdates) pr.workerUpdates={};
+      const asg=(pr.workerAssignments&&pr.workerAssignments[name])||[];
+      const aP=pr.parts.filter(p=>asg.includes(p.name));
+      let tU=0;
+      aP.forEach(p=>{ const sk='workerDay_'+date+'_'+pr.id+'_'+p.name+'_'+name; tU+=parseInt(localStorage.getItem(sk)||'0'); });
+      const cum=aP.reduce((a,p)=>a+(pr.workerUpdates[p.name]&&pr.workerUpdates[p.name][name]||0),0);
+      const cumT=aP.reduce((a,p)=>a+p.total,0);
+      const tgt=getWorkerDailyTarget(pr,name);
+      const hit=tU>=tgt?'Yes':'No';
+      if(di.type!=='work'){
+        let otSt;
+        if(!rec.clockIn) otSt=di.label;
+        else if(rec.overtimeStatus==='approved') otSt='OT Approved'+(rec.overtimeApprovedBy?' by '+rec.overtimeApprovedBy:'');
+        else if(rec.overtimeStatus==='pending') otSt='OT Pending';
+        else if(rec.overtimeStatus==='rejected') otSt='OT Rejected';
+        else otSt='OT (no approval)';
+        csv+=`"${name}","${date}","${di.label}","${rec.clockIn||''}","${outStr}","${rec.clockIn?hrs+'h':''}","${otSt}","","${tU}","${tgt}","${cum}/${cumT}","${hit}","${rec.reason||''}","${rec.overtimeReason||''}"\n`;
       } else {
-        // Workday row — v2 status
-        if(!rec.clockIn) status = 'Absent';
-        else if(attStat.status === 'flex') status = 'Flex';
-        else if(attStat.status === 'travel') status = 'Off-site (Travel)';
-        else if(attStat.lateMin > 0){
-          status = attStat.severity.tier === 'mismatch'
-            ? 'Shift Mismatch'
-            : attStat.severity.label;
-        } else {
-          status = 'On Time';
-        }
+        const lm=rec.lateMin||0;
+        const ls=lm>0?Math.floor(lm/60)+'h '+String(lm%60).padStart(2,'0')+'m':'';
+        const status=rec.clockIn?(lm>0?'Late':'On Time'):'Absent';
+        csv+=`"${name}","${date}","Working Day","${rec.clockIn||''}","${outStr}","${rec.clockIn?hrs+'h':''}","${status}","${ls}","${tU}","${tgt}","${cum}/${cumT}","${hit}","${rec.reason||''}","${rec.overtimeReason||''}"\n`;
       }
-
-      csv += `"${name}","${shiftLabel}","${date}","${dayName}","${di.label}","${rec.clockIn||''}","${outStr}","${rec.clockIn?hrs+'h':''}","${status}","${lateDur}","${tU}","${tgt}","${cum}/${cumT}","${hit}","${rec.reason||''}","${rec.overtimeReason||''}"\n`;
     });
   });
-
-  downloadFile('CTS_' + pr.name.replace(/\s+/g,'_') + '_attendance_' + TODAY + '.csv', csv, 'text/csv');
-  showToast('✓ Attendance CSV exported (' + dates.length + ' days × ' + expW.length + ' workers)');
+  downloadFile('CTS_'+pr.name.replace(/\s+/g,'_')+'_attendance_'+TODAY+'.csv',csv,'text/csv');
+  showToast('✓ Attendance CSV exported');
 }
 
 function downloadFile(filename,content,type){
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([content],{type}));
   a.download=filename; a.click();
+}
+
+function printReport(){
+  document.getElementById('reportBtns').style.display='flex';
+  window.print();
+  setTimeout(()=>document.getElementById('reportBtns').style.display='none',1000);
 }
 
 function toggleEditPanel(name){
@@ -4357,7 +3811,7 @@ function confirmReportRange(){
 async function generateWorkerReport(name, fromOverride, toOverride){
   showToast('⏳ Generating report…');
   const pr = attProject();
-  const holidays = (pr.plan && pr.plan.holidays) || [];
+  const holidays = pr.plan.holidays||[];
   const att = pr.attendance||{};
 
   // Collect dates that have ACTUAL records — attendance with clock-in/out/OT data,
@@ -4428,7 +3882,6 @@ async function generateWorkerReport(name, fromOverride, toOverride){
       <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;margin-top:30px;">Generated ${new Date().toLocaleString('en-MY',{timeZone:'Asia/Kuala_Lumpur'})}</p>
     </body></html>`;
     const win = window.open('', '_blank');
-    if(!win){ showToast('⚠ Allow popups to view report','warn'); return; }
     win.document.write(html); win.document.close();
     showToast('Nothing to report');
     return;
@@ -4451,6 +3904,7 @@ async function generateWorkerReport(name, fromOverride, toOverride){
   const rows = dates.map((date,i)=>{
     const rec = att[name+'_'+date]||{};
     const dayInfo = getDayType(date);
+    const isOTRec = dayInfo.type!=='work' || !!rec.overtimeStatus;
     const rowBg = dayInfo.type!=='work'?(dayInfo.type==='holiday'?'#f5f3fa':'#eef4fa'):i%2===0?'#ffffff':'#f9f7f3';
     const dtColor = dayInfo.type==='holiday'?'#5b21b6':dayInfo.type==='rest'?'#2a5f9e':'#5a5a5a';
     const dtBg    = dayInfo.type==='holiday'?'#ede9fe':dayInfo.type==='rest'?'#e6f1fb':'#f9f7f3';
@@ -4641,104 +4095,17 @@ async function generateWorkerReport(name, fromOverride, toOverride){
   const win = window.open('','_blank','width=900,height=700');
   if(!win){ showToast('⚠ Allow popups to download PDF','warn'); return; }
   win.document.write(html); win.document.close(); win.focus();
-  const waitMs = Math.min(2500, 600 + dates.length * 10);
-  await new Promise(r=>setTimeout(r, waitMs));
+  await new Promise(r=>setTimeout(r,600));
   try{
     const canvas = await html2canvas(win.document.body,{scale:2,useCORS:true,backgroundColor:'#ffffff',windowWidth:794,windowHeight:win.document.body.scrollHeight});
     win.close();
     const {jsPDF}=window.jspdf;
-    const A4_W=210, A4_H=297;
-    const HEADER_H = 13;
-    const FOOTER_H = 12;
-    const visibleH = A4_H - FOOTER_H;
-    const contentH_subsequent = A4_H - HEADER_H - FOOTER_H;
-    const imgW = A4_W, imgH = (canvas.height*imgW)/canvas.width;
-    const pdf = new jsPDF({orientation:'p',unit:'mm',format:'a4'});
-    const imgData = canvas.toDataURL('image/jpeg',0.97);
-
-    const ctx = canvas.getContext('2d');
-    const mmToPx = canvas.height / imgH;
-    function rowDarkness(yPx){
-      if(yPx < 0 || yPx >= canvas.height) return Infinity;
-      try {
-        const data = ctx.getImageData(0, yPx, canvas.width, 1).data;
-        let darkness = 0;
-        for(let i = 0; i < canvas.width; i++){
-          const idx = i * 4;
-          const brightness = (data[idx] + data[idx+1] + data[idx+2]) / 3;
-          if(brightness < 220) darkness += (220 - brightness);
-        }
-        return darkness;
-      } catch(_) { return Infinity; }
-    }
-    function findCleanBreakMm(targetMm, searchRangeMm){
-      const targetPx = Math.floor(targetMm * mmToPx);
-      const rangePx = Math.floor(searchRangeMm * mmToPx);
-      let bestLen = 0, bestEnd = targetPx;
-      let currentLen = 0;
-      for(let dy = 0; dy < rangePx; dy++){
-        const px = targetPx - dy;
-        if(rowDarkness(px) === 0){
-          currentLen++;
-          if(currentLen > bestLen){ bestLen = currentLen; bestEnd = px; }
-        } else {
-          currentLen = 0;
-        }
-      }
-      const middlePx = bestEnd + Math.floor(bestLen / 2);
-      return middlePx / mmToPx;
-    }
-    const pageStarts = [0];
-    let cursor = visibleH;
-    while(cursor < imgH){
-      const cleanY = findCleanBreakMm(cursor, 30);
-      if(cleanY <= pageStarts[pageStarts.length - 1] + 10) break;
-      pageStarts.push(cleanY);
-      cursor = cleanY + contentH_subsequent;
-    }
-    const totalPages = pageStarts.length;
-
-    const safeName = name.replace(/[^a-zA-Z0-9_-]/g,'_').replace(/_+/g,'_');
-    const todayStr = new Date().toLocaleDateString('en-MY');
-    const headerTitle = 'Attendance Report — ' + name;
-
-    for(let p = 0; p < totalPages; p++){
-      if(p > 0) pdf.addPage();
-      const yStart = pageStarts[p];
-      const yEnd = (p + 1 < totalPages) ? pageStarts[p + 1] : imgH;
-      const isFirst = (p === 0);
-      const topOffset = isFirst ? 0 : HEADER_H;
-
-      pdf.addImage(imgData,'JPEG',0, topOffset - yStart, imgW, imgH);
-
-      if(!isFirst){
-        pdf.setFillColor(255,255,255);
-        pdf.rect(0, 0, A4_W, HEADER_H, 'F');
-        pdf.setFillColor(255,91,46);
-        pdf.rect(0, 0, A4_W, HEADER_H - 2, 'F');
-        pdf.setTextColor(255,255,255);
-        pdf.setFontSize(8);
-        pdf.text(headerTitle + ' — continued', 5, HEADER_H - 5);
-        pdf.text('Page '+(p+1)+' of '+totalPages, A4_W-30, HEADER_H - 5);
-      }
-
-      const contentHeight = yEnd - yStart;
-      const visibleBottom = isFirst
-        ? Math.min(contentHeight, visibleH)
-        : Math.min(HEADER_H + contentHeight, A4_H - FOOTER_H);
-      const coverStart = Math.min(visibleBottom, A4_H - FOOTER_H);
-      pdf.setFillColor(255,255,255);
-      pdf.rect(0, coverStart, A4_W, A4_H - coverStart, 'F');
-
-      pdf.setFillColor(255,91,46);
-      pdf.rect(0, A4_H - FOOTER_H + 2, A4_W, FOOTER_H - 2, 'F');
-      pdf.setTextColor(255,255,255);
-      pdf.setFontSize(7);
-      pdf.text('CTS Production · '+todayStr+' · '+safeName, 5, A4_H - FOOTER_H + 8);
-      pdf.text('Page '+(p+1)+' of '+totalPages, A4_W-30, A4_H - FOOTER_H + 8);
-    }
-    pdf.save(`CTS_${safeName}_report_${TODAY.replace(/-/g,'')}.pdf`);
-    showToast('✓ Report downloaded ('+totalPages+' page'+(totalPages===1?'':'s')+')');
+    const A4_W=210,A4_H=297,imgW=A4_W,imgH=(canvas.height*imgW)/canvas.width;
+    const pdf=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+    let y=0;
+    while(y<imgH){if(y>0)pdf.addPage();pdf.addImage(canvas.toDataURL('image/jpeg',0.97),'JPEG',0,-y,imgW,imgH);y+=A4_H;}
+    pdf.save(`CTS_${name.replace(/\s+/g,'_')}_report_${TODAY.replace(/-/g,'')}.pdf`);
+    showToast('✓ Report downloaded');
     logActivity('REPORT','Downloaded attendance report', name);
   }catch(e){ win.close(); showToast('⚠ Failed: '+e.message,'warn'); }
 }
