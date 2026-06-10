@@ -1365,11 +1365,12 @@ function makeProject(id, name){
       }
     },
     // ──── Attendance v2 (added 2026-06-03) ────
-    // Two shifts: 'day' (regular 09:00-18:00) + 'flex' (no fixed schedule, handled as special case).
+    // Two day shifts (8am-5pm and 9am-6pm) + Flex (handled as special case in code).
     shifts: {
-      day:    { start: '09:00', end: '18:00', label: 'Day' }
+      day1:   { start: '08:00', end: '17:00', label: 'Day' },
+      day2:   { start: '09:00', end: '18:00', label: 'Day' }
     },
-    // workerName → 'day' | 'flex' (flex = no late penalty, sessions tracked separately)
+    // workerName → 'day1' | 'day2' | 'flex' (flex = no late penalty, sessions tracked separately)
     workerShifts: {},
     // Clock-in reasons that auto-mark as Approved Off-site (lowercased substring match)
     travelKeywords: ['airport','flight','travel','trip','offsite','off-site','client visit','singapore','overseas','out of town','outstation'],
@@ -1966,22 +1967,24 @@ function startRealtimeSync(){
     merged.adminMode=(SESSION&&SESSION.role==='admin')?(S.adminMode||false):false;
     S=merged;
 
-    // ── One-time migration: enforce current shift standard ──
-    // Day 09:00-18:00 + Flex only. Remove legacy Night shift if present.
-    // Runs once per project (marked with shiftsMigratedV1).
+    // ── Shift standard migration ──
+    // V1: Day 09:00-18:00 only + remove legacy Night
+    // V2: Two day shifts — Day 08:00-17:00 (day1) + Day 09:00-18:00 (day2)
+    // Workers previously on 'day' or 'night' get reassigned to 'day2' (preserves last setting).
     (S.projects||[]).forEach(pr => {
-      if(pr.shiftsMigratedV1) return;
-      if(!pr.shifts) pr.shifts = {};
-      pr.shifts.day = { start: '09:00', end: '18:00', label: 'Day' };
-      if(pr.shifts.night) {
-        delete pr.shifts.night;
-        if(pr.workerShifts) {
-          Object.keys(pr.workerShifts).forEach(name => {
-            if(pr.workerShifts[name] === 'night') pr.workerShifts[name] = 'day';
-          });
-        }
+      if(pr.shiftsMigratedV2) return;
+      pr.shifts = {
+        day1: { start: '08:00', end: '17:00', label: 'Day' },
+        day2: { start: '09:00', end: '18:00', label: 'Day' }
+      };
+      if(pr.workerShifts) {
+        Object.keys(pr.workerShifts).forEach(name => {
+          const s = pr.workerShifts[name];
+          if(s === 'day' || s === 'night') pr.workerShifts[name] = 'day2';
+        });
       }
       pr.shiftsMigratedV1 = true;
+      pr.shiftsMigratedV2 = true;
     });
 
     // ── One-time migration: fix MY 2026 holiday dates ──
@@ -2988,7 +2991,7 @@ function renderWorkersConfig(){
     const utcOpts=UTC_OPTIONS.map(o=>`<option value="${o.v}"${o.v===utc?' selected':''}>${o.s}</option>`).join('');
     // Attendance v2: shift assignment dropdown
     const curShift = getWorkerShift(w);
-    const shiftOpts = Object.keys(pr.shifts||{day:{}}).map(s=>{
+    const shiftOpts = Object.keys(pr.shifts||{day1:{},day2:{}}).map(s=>{
       const sh=pr.shifts[s]; const lbl = (sh.label||s) + ' '+(sh.start||'')+'-'+(sh.end||'');
       return `<option value="${escH(s)}"${s===curShift?' selected':''}>${escH(lbl)}</option>`;
     }).join('') + `<option value="flex"${curShift==='flex'?' selected':''}>Flex (no late penalty)</option>`;
