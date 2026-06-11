@@ -4198,20 +4198,18 @@ function exportAllCSV(){
 }
 
 // ════════════════════════════════════════════════════════════════════
-// WHATSAPP SHARE — picks contact from configured Settings → WhatsApp
-// Contacts, generates PDF, then opens WhatsApp link for that contact.
-// User attaches the downloaded PDF manually (browser security limits).
+// WHATSAPP SEND — text-only summary update to configured contact.
+// (For PDFs, use the 📄 PDF button separately.)
 // ════════════════════════════════════════════════════════════════════
 let _waPDFCallback = null; // when set, sendToContact routes here instead of default
 
-function _openContactPicker(callback, modalTitle){
+function _openContactPicker(callback){
   const contacts = (activeProject() && activeProject().waContacts) || [];
   if(contacts.length === 0){
     showToast('⚠ No WhatsApp contacts configured. Add some in Settings → Assembly.','warn');
     return;
   }
   _waPDFCallback = callback;
-  // Reuse existing waPickerModal — rebuild list ourselves so titles match
   const list = document.getElementById('waPickerList');
   const nc = document.getElementById('waNoContacts');
   if(nc) nc.style.display = 'none';
@@ -4227,41 +4225,40 @@ function _openContactPicker(callback, modalTitle){
   if(modalEl) modalEl.classList.add('show');
 }
 
-async function sendAttWhatsApp(){
+function sendAttWhatsApp(){
   const pr = attProject();
   if(!pr){ showToast('⚠ No project','warn'); return; }
-  _openContactPicker(async (contact) => {
-    const projStart = (pr.plan && pr.plan.startDate) || TODAY;
-    // Default range: project start → today
-    await _buildTeamAttendancePDF(projStart, TODAY);
+  _openContactPicker((contact) => {
     const workers = pr.workers||[];
     const att = pr.attendance||{};
-    let present = 0;
+    let present=0, late=0;
     workers.forEach(w => {
       const name = (typeof w==='string') ? w : (w.name||'');
-      if(att[name+'_'+TODAY] && att[name+'_'+TODAY].clockIn) present++;
+      const rec = att[name+'_'+TODAY];
+      if(rec && rec.clockIn){ present++; if(rec.lateMin>0) late++; }
     });
-    const msg = `*CTS Team Attendance — ${TODAY}*\nProject: ${pr.name}\nWorkers: ${workers.length}\nPresent today: ${present}\nAttendance: ${workers.length>0?Math.round(present/workers.length*100):0}%\nRange: ${projStart} to ${TODAY}\n\n_(PDF attached separately)_`;
-    setTimeout(() => {
-      window.open('https://wa.me/'+contact.number+'?text='+encodeURIComponent(msg), '_blank');
-      showToast('📤 PDF saved · WhatsApp opened to '+contact.name);
-    }, 800);
+    const absent = workers.length - present;
+    const msg = `*CTS Team Attendance — ${TODAY}*\nProject: ${pr.name}\nWorkers: ${workers.length}\nPresent: ${present}\nLate: ${late}\nAbsent: ${absent}\nAttendance: ${workers.length>0?Math.round(present/workers.length*100):0}%`;
+    window.open('https://wa.me/'+contact.number+'?text='+encodeURIComponent(msg), '_blank');
+    showToast('📤 Update sent to '+contact.name);
   });
 }
 
-async function sendChartWhatsApp(){
-  _openContactPicker(async (contact) => {
-    await _buildChartsPDF();
+function sendChartWhatsApp(){
+  _openContactPicker((contact) => {
     const projects = (S.projects||[]).filter(p => !p.archived);
     let gT=0, gD=0;
-    projects.forEach(p => {
-      (p.parts||[]).forEach(x => { gT += (+x.total||0); gD += (+x.updated||0); });
+    const lines = projects.map(p => {
+      const t = (p.parts||[]).reduce((s,x)=>s+(+x.total||0),0);
+      const d = (p.parts||[]).reduce((s,x)=>s+(+x.updated||0),0);
+      gT+=t; gD+=d;
+      const pct = t>0 ? Math.round(d/t*100) : 0;
+      return `• ${p.name}: ${d.toLocaleString()}/${t.toLocaleString()} (${pct}%)`;
     });
-    const msg = `*CTS Production — ${TODAY}*\nProjects: ${projects.length}\nTarget: ${gT.toLocaleString()}\nCompleted: ${gD.toLocaleString()}\nOverall: ${gT>0?Math.round(gD/gT*100):0}%\n\n_(PDF attached separately)_`;
-    setTimeout(() => {
-      window.open('https://wa.me/'+contact.number+'?text='+encodeURIComponent(msg), '_blank');
-      showToast('📤 PDF saved · WhatsApp opened to '+contact.name);
-    }, 800);
+    const overallPct = gT>0 ? Math.round(gD/gT*100) : 0;
+    const msg = `*CTS Production — ${TODAY}*\nProjects: ${projects.length}\n${lines.join('\n')}\n\n*Overall: ${gD.toLocaleString()}/${gT.toLocaleString()} (${overallPct}%)*`;
+    window.open('https://wa.me/'+contact.number+'?text='+encodeURIComponent(msg), '_blank');
+    showToast('📤 Update sent to '+contact.name);
   });
 }
 
