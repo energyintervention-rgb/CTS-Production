@@ -2348,8 +2348,16 @@ function sendWhatsApp(){
 }
 function sendToContact(idx){
   const c=activeProject().waContacts[idx];
-  const msg=buildWAMessage();
   closeModal('waPickerModal');
+  if(_waPDFCallback){
+    // Custom flow (PDF share) — let the callback handle the WhatsApp open
+    const cb = _waPDFCallback;
+    _waPDFCallback = null;
+    cb(c, idx);
+    return;
+  }
+  // Default: existing "Send Update" message flow
+  const msg=buildWAMessage();
   window.open('https://wa.me/'+c.number+'?text='+encodeURIComponent(msg),'_blank');
 }
 
@@ -3814,6 +3822,7 @@ function confirmCleanup(){
 // REPORT DATE-RANGE PICKER (admin/supervisor only)
 // ────────────────────────────────────────────────────────────────
 let _reportRangeWorker = null;
+let _reportRangeMode = 'worker'; // 'worker' | 'team' — which builder to call on confirm
 
 function openReportRangeModal(name){
   // Role guard — only admin or supervisor
@@ -3821,6 +3830,7 @@ function openReportRangeModal(name){
     showToast('⚠ Admin or supervisor login required','warn');
     return;
   }
+  _reportRangeMode = 'worker';
   _reportRangeWorker = name;
   // Default range: this month so far
   const t = new Date();
@@ -3828,6 +3838,21 @@ function openReportRangeModal(name){
   document.getElementById('reportRangeFrom').value = isoDate(first);
   document.getElementById('reportRangeTo').value = isoDate(t);
   document.getElementById('reportRangeMsg').innerHTML = `Custom report for <strong>${escH(name)}</strong>`;
+  document.getElementById('reportRangeModal').classList.add('show');
+}
+
+function openTeamReportRangeModal(){
+  if(!SESSION || (SESSION.role !== 'admin' && SESSION.role !== 'supervisor')){
+    showToast('⚠ Admin or supervisor login required','warn'); return;
+  }
+  _reportRangeMode = 'team';
+  _reportRangeWorker = null;
+  // Default range: project start → today (whole campaign so far)
+  const pr = attProject();
+  const projStart = (pr && pr.plan && pr.plan.startDate) || TODAY;
+  document.getElementById('reportRangeFrom').value = projStart;
+  document.getElementById('reportRangeTo').value = TODAY;
+  document.getElementById('reportRangeMsg').innerHTML = `Team attendance report for <strong>${escH(pr.name||'project')}</strong>`;
   document.getElementById('reportRangeModal').classList.add('show');
 }
 
@@ -3860,9 +3885,13 @@ function confirmReportRange(){
   const to = document.getElementById('reportRangeTo').value;
   if(!from || !to){ showToast('⚠ Pick both dates','warn'); return; }
   if(from > to){ showToast('⚠ From-date must be earlier than To-date','warn'); return; }
-  if(!_reportRangeWorker){ closeModal('reportRangeModal'); return; }
   closeModal('reportRangeModal');
-  generateWorkerReport(_reportRangeWorker, from, to);
+  if(_reportRangeMode === 'team'){
+    _buildTeamAttendancePDF(from, to);
+  } else {
+    if(!_reportRangeWorker){ return; }
+    generateWorkerReport(_reportRangeWorker, from, to);
+  }
 }
 
 
@@ -3950,7 +3979,7 @@ function _pdfFooter(label){
 // ════════════════════════════════════════════════════════════════════
 async function sharePDF(type){
   if(type==='assembly')   return await _buildAssemblyPDF();
-  if(type==='attendance') return await _buildTeamAttendancePDF();
+  if(type==='attendance') { openTeamReportRangeModal(); return; }  // Picks range first
   if(type==='charts')     return await _buildChartsPDF();
   showToast('⚠ Unknown PDF type: '+type,'warn');
 }
@@ -3997,64 +4026,104 @@ async function _buildAssemblyPDF(){
   await _generatePDFFromHTML(html, filename, 'Downloaded assembly report');
 }
 
-async function _buildTeamAttendancePDF(){
+async function _buildTeamAttendancePDF(fromDate, toDate){
   showToast('⏳ Building Team Attendance PDF…');
   const pr = attProject();
   if(!pr){ showToast('⚠ No project','warn'); return; }
   const workers = pr.workers||[];
+  if(workers.length===0){ showToast('⚠ No workers in project','warn'); return; }
   const att = pr.attendance||{};
+  const holidays = (pr.plan && pr.plan.holidays) || [];
 
-  let rows = '', presentCnt=0, lateCnt=0, absentCnt=0;
+  // Default range: project start → today
+  const projStart = (pr.plan && pr.plan.startDate) || TODAY;
+  const from = fromDate || projStart;
+  const to   = toDate   || TODAY;
+
+  // Build calendar dates (UTC math — avoids MYT shift)
+  function parseDateUTC(s){ const [y,m,d]=s.split('-').map(Number); return Date.UTC(y,m-1,d); }
+  function fmtDateUTC(ms){ const d=new Date(ms); return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0'); }
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dates = [];
+  for(let ms = parseDateUTC(from); ms <= parseDateUTC(to); ms += 86400000) {
+    dates.push(fmtDateUTC(ms));
+  }
+
+  let rows = '';
+  let totalPresent=0, totalLate=0, totalAbsent=0, totalWorkday=0;
+
   workers.forEach(w => {
     const name = (typeof w==='string') ? w : (w.name||'');
     if(!name) return;
-    const rec = att[name+'_'+TODAY] || {};
     const shiftKey = (pr.workerShifts||{})[name] || 'day2';
     const isFlex = shiftKey==='flex';
     const shift = (pr.shifts||{})[shiftKey] || {};
     const shiftLabel = isFlex ? 'Flex' : (shift.label?shift.label+' '+(shift.start||'')+'-'+(shift.end||''):'—');
-    const ci = rec.clockIn||'';
-    const co = rec.clockOut||'';
-    const hrs = (ci&&co) ? calcHours(ci,co,false) : '';
-    let status = 'Absent';
-    if(ci){
-      if(rec.lateMin>0){ status='Late'; lateCnt++; }
-      else { status='On Time'; }
-      presentCnt++;
-    } else {
-      absentCnt++;
-    }
-    rows += `<tr>
-      <td style="font-weight:600">${escH(name)}${isFlex?' <span style="background:#faf3e0;color:#d4a017;border-radius:2px;padding:1px 5px;font-size:8px;font-weight:700">⚡</span>':''}</td>
-      <td style="font-size:9px;color:#5a5a5a">${escH(shiftLabel)}</td>
-      <td style="font-family:monospace">${escH(ci||'—')}</td>
-      <td style="font-family:monospace">${escH(co||'—')}</td>
-      <td style="font-family:monospace;text-align:right">${hrs?hrs+'h':'—'}</td>
-      <td><span style="font-size:9px;font-weight:700;letter-spacing:0.5px;color:${status==='On Time'?'#2d6a4f':status==='Late'?'#d4a017':'#c1311e'}">${status}</span></td>
-    </tr>`;
+
+    dates.forEach(d => {
+      const dt = new Date(d+'T00:00:00Z');
+      const dn = dayNames[dt.getUTCDay()];
+      const isWeekend = (dt.getUTCDay()===0 || dt.getUTCDay()===6);
+      const hol = holidays.find(h => h.date===d);
+      const rec = att[name+'_'+d] || {};
+
+      // Day type
+      let dayType, isWork=false;
+      if(hol){ dayType = 'Public Holiday — '+escH(hol.name||''); }
+      else if(isWeekend){ dayType = 'Rest Day — '+dn; }
+      else { dayType = 'Working Day'; isWork=true; totalWorkday++; }
+
+      // Status
+      const ci = rec.clockIn||'';
+      const co = rec.clockOut||'';
+      const hrs = (ci&&co) ? calcHours(ci,co,false) : '';
+      let status='', statusColor='#5a5a5a';
+      if(isWork){
+        if(ci){
+          if(rec.lateMin>0){ status='Late'; statusColor='#d4a017'; totalLate++; }
+          else { status='On Time'; statusColor='#2d6a4f'; }
+          totalPresent++;
+        } else {
+          status='Absent'; statusColor='#c1311e'; totalAbsent++;
+        }
+      } else {
+        status = dayType.split('—')[0].trim(); // "Rest Day" or "Public Holiday"
+      }
+
+      rows += `<tr>
+        <td style="font-weight:600">${escH(name)}${isFlex?' <span style="background:#faf3e0;color:#d4a017;border-radius:2px;padding:1px 5px;font-size:8px;font-weight:700">⚡</span>':''}</td>
+        <td style="font-family:monospace">${d}</td>
+        <td>${dn}</td>
+        <td style="font-size:9px">${dayType}</td>
+        <td style="font-family:monospace">${escH(ci||'')}</td>
+        <td style="font-family:monospace">${escH(co||'')}</td>
+        <td style="font-family:monospace;text-align:right">${hrs?hrs+'h':''}</td>
+        <td><span style="font-size:9px;font-weight:700;color:${statusColor}">${status}</span></td>
+      </tr>`;
+    });
   });
 
-  const attendRate = workers.length>0 ? Math.round(presentCnt/workers.length*100) : 0;
+  const attendRate = totalWorkday>0 ? Math.round(totalPresent/totalWorkday*100) : 0;
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">${_pdfHeadCSS()}</head><body>
-    ${_pdfHeader('Team Attendance — Today', escH(pr.name)+' · '+new Date().toLocaleDateString('en-MY'))}
+    ${_pdfHeader('Team Attendance Report', escH(pr.name)+' · '+from+' to '+to)}
     <div class="pdf-sum">
-      <div class="pdf-sc"><div class="k">Total Workers</div><div class="v">${workers.length}</div></div>
-      <div class="pdf-sc s4"><div class="k">Present</div><div class="v">${presentCnt}</div></div>
-      <div class="pdf-sc s3"><div class="k">Late</div><div class="v">${lateCnt}</div></div>
+      <div class="pdf-sc"><div class="k">Workers</div><div class="v">${workers.length}</div></div>
+      <div class="pdf-sc s4"><div class="k">Present</div><div class="v">${totalPresent}</div></div>
+      <div class="pdf-sc s3"><div class="k">Late / Absent</div><div class="v">${totalLate} / ${totalAbsent}</div></div>
       <div class="pdf-sc s2"><div class="k">Attendance</div><div class="v">${attendRate}%</div></div>
     </div>
-    <div class="pdf-sec">▼ Today (${TODAY})</div>
+    <div class="pdf-sec">▼ Daily Attendance — ${dates.length} day${dates.length===1?'':'s'} · ${totalWorkday} workdays</div>
     <table>
-      <colgroup><col style="width:22%"><col style="width:24%"><col style="width:14%"><col style="width:14%"><col style="width:12%"><col style="width:14%"></colgroup>
-      <thead><tr><th>Worker</th><th>Shift</th><th>Clock In</th><th>Clock Out</th><th style="text-align:right">Hours</th><th>Status</th></tr></thead>
-      <tbody>${rows||'<tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:14px">No workers in this project.</td></tr>'}</tbody>
+      <colgroup><col style="width:14%"><col style="width:10%"><col style="width:6%"><col style="width:20%"><col style="width:10%"><col style="width:10%"><col style="width:9%"><col style="width:11%"></colgroup>
+      <thead><tr><th>Worker</th><th>Date</th><th>Day</th><th>Day Type</th><th>Clock In</th><th>Clock Out</th><th style="text-align:right">Hours</th><th>Status</th></tr></thead>
+      <tbody>${rows}</tbody>
     </table>
-    ${_pdfFooter(escH(pr.name)+' · Team Attendance · Page 1 of 1')}
+    ${_pdfFooter(escH(pr.name)+' · Team · '+from+' to '+to)}
     </body></html>`;
 
-  const filename = `CTS_${(pr.name||'project').replace(/\s+/g,'_')}_team_attendance_${TODAY.replace(/-/g,'')}.pdf`;
-  await _generatePDFFromHTML(html, filename, 'Downloaded team attendance report');
+  const filename = `CTS_${(pr.name||'project').replace(/\s+/g,'_')}_team_attendance_${from.replace(/-/g,'')}_to_${to.replace(/-/g,'')}.pdf`;
+  await _generatePDFFromHTML(html, filename, 'Downloaded team attendance ('+from+' to '+to+')');
 }
 
 async function _buildChartsPDF(){
@@ -4129,41 +4198,71 @@ function exportAllCSV(){
 }
 
 // ════════════════════════════════════════════════════════════════════
-// WHATSAPP SHARE — generate PDF, then open WhatsApp with summary text
-// (User attaches the downloaded PDF manually — browsers can't auto-attach.)
+// WHATSAPP SHARE — picks contact from configured Settings → WhatsApp
+// Contacts, generates PDF, then opens WhatsApp link for that contact.
+// User attaches the downloaded PDF manually (browser security limits).
 // ════════════════════════════════════════════════════════════════════
-async function _shareViaWhatsApp(pdfBuilder, summaryText){
-  await pdfBuilder();
-  // Tiny delay so the PDF download is initiated before opening WA
-  setTimeout(() => {
-    const msg = encodeURIComponent(summaryText);
-    window.open('https://wa.me/?text='+msg, '_blank');
-    showToast('📤 PDF saved · WhatsApp opened — attach the file');
-  }, 800);
+let _waPDFCallback = null; // when set, sendToContact routes here instead of default
+
+function _openContactPicker(callback, modalTitle){
+  const contacts = (activeProject() && activeProject().waContacts) || [];
+  if(contacts.length === 0){
+    showToast('⚠ No WhatsApp contacts configured. Add some in Settings → Assembly.','warn');
+    return;
+  }
+  _waPDFCallback = callback;
+  // Reuse existing waPickerModal — rebuild list ourselves so titles match
+  const list = document.getElementById('waPickerList');
+  const nc = document.getElementById('waNoContacts');
+  if(nc) nc.style.display = 'none';
+  if(list){
+    list.innerHTML = contacts.map((c,i) =>
+      `<button onclick="sendToContact(${i})" style="width:100%;padding:10px 14px;border-radius:2px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);font-family:'Space Grotesk',sans-serif;font-size:13px;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;">
+        <span>👤 ${escH(c.name)}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-soft)">${c.number}</span>
+      </button>`
+    ).join('');
+  }
+  const modalEl = document.getElementById('waPickerModal');
+  if(modalEl) modalEl.classList.add('show');
 }
 
 async function sendAttWhatsApp(){
   const pr = attProject();
   if(!pr){ showToast('⚠ No project','warn'); return; }
-  const workers = pr.workers||[];
-  const att = pr.attendance||{};
-  let present=0;
-  workers.forEach(w => {
-    const name = (typeof w==='string') ? w : (w.name||'');
-    if(att[name+'_'+TODAY] && att[name+'_'+TODAY].clockIn) present++;
+  _openContactPicker(async (contact) => {
+    const projStart = (pr.plan && pr.plan.startDate) || TODAY;
+    // Default range: project start → today
+    await _buildTeamAttendancePDF(projStart, TODAY);
+    const workers = pr.workers||[];
+    const att = pr.attendance||{};
+    let present = 0;
+    workers.forEach(w => {
+      const name = (typeof w==='string') ? w : (w.name||'');
+      if(att[name+'_'+TODAY] && att[name+'_'+TODAY].clockIn) present++;
+    });
+    const msg = `*CTS Team Attendance — ${TODAY}*\nProject: ${pr.name}\nWorkers: ${workers.length}\nPresent today: ${present}\nAttendance: ${workers.length>0?Math.round(present/workers.length*100):0}%\nRange: ${projStart} to ${TODAY}\n\n_(PDF attached separately)_`;
+    setTimeout(() => {
+      window.open('https://wa.me/'+contact.number+'?text='+encodeURIComponent(msg), '_blank');
+      showToast('📤 PDF saved · WhatsApp opened to '+contact.name);
+    }, 800);
   });
-  const summary = `*CTS Team Attendance — ${TODAY}*\nProject: ${pr.name}\nWorkers: ${workers.length}\nPresent: ${present}\nAttendance: ${workers.length>0?Math.round(present/workers.length*100):0}%\n\n(PDF attached separately)`;
-  await _shareViaWhatsApp(_buildTeamAttendancePDF, summary);
 }
 
 async function sendChartWhatsApp(){
-  const projects = (S.projects||[]).filter(p => !p.archived);
-  let gT=0, gD=0;
-  projects.forEach(p => {
-    (p.parts||[]).forEach(x => { gT += (+x.total||0); gD += (+x.updated||0); });
+  _openContactPicker(async (contact) => {
+    await _buildChartsPDF();
+    const projects = (S.projects||[]).filter(p => !p.archived);
+    let gT=0, gD=0;
+    projects.forEach(p => {
+      (p.parts||[]).forEach(x => { gT += (+x.total||0); gD += (+x.updated||0); });
+    });
+    const msg = `*CTS Production — ${TODAY}*\nProjects: ${projects.length}\nTarget: ${gT.toLocaleString()}\nCompleted: ${gD.toLocaleString()}\nOverall: ${gT>0?Math.round(gD/gT*100):0}%\n\n_(PDF attached separately)_`;
+    setTimeout(() => {
+      window.open('https://wa.me/'+contact.number+'?text='+encodeURIComponent(msg), '_blank');
+      showToast('📤 PDF saved · WhatsApp opened to '+contact.name);
+    }, 800);
   });
-  const summary = `*CTS Production — ${TODAY}*\nProjects: ${projects.length}\nTarget: ${gT.toLocaleString()}\nCompleted: ${gD.toLocaleString()}\nOverall: ${gT>0?Math.round(gD/gT*100):0}%\n\n(PDF attached separately)`;
-  await _shareViaWhatsApp(_buildChartsPDF, summary);
 }
 
 
