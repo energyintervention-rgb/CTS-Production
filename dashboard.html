@@ -3563,7 +3563,10 @@ function toggleHolidayCountry(code){
   if(i >= 0) plan.countries.splice(i, 1);
   else plan.countries.push(code);
   if(plan.countries.length === 0) plan.countries = ['MY']; // Always at least one
+  saveState(); // Persist to Firestore so the toggle survives a refresh
   renderHolidayCountries();
+  // Auto-fetch holidays for the new country selection (instant feedback)
+  refreshHolidaysFromLibrary();
 }
 
 // Fetch holidays from library for the project's date-range years × countries
@@ -3626,6 +3629,7 @@ async function refreshHolidaysFromLibrary(){
   // Combine: library + user-added customs
   plan.holidays = [...fresh, ...customs];
   plan.holidaysLastRefresh = new Date().toISOString();
+  saveState(); // Persist new holidays to Firestore
   renderHolidaysConfig();
   showToast(`✓ Loaded ${total} holidays for ${plan.countries.join(', ')} (${yStart}${yStart!==yEnd?'-'+yEnd:''})`);
   logActivity('CONFIG', `Refreshed holidays from library: ${plan.countries.join(', ')}`, SESSION&&SESSION.name||'Admin');
