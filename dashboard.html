@@ -14,6 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/date-holidays@3/dist/date-holidays.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
@@ -859,6 +860,11 @@ body::before {
           <button id="btn6days" class="btn-sm btn-amber" onclick="setWorkDays(6)" style="flex:1">6 Days (Mon–Sat)</button>
         </div>
         <label style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink-soft);letter-spacing:1px;display:block;margin-bottom:6px;text-transform:uppercase;">
+          HOLIDAY COUNTRIES — auto-fetched from library
+        </label>
+        <div id="holidayCountries" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;"></div>
+        <button class="btn-sm btn-cyan" onclick="refreshHolidaysFromLibrary()" style="margin-bottom:10px;width:100%">🔄 Refresh holidays from library</button>
+        <label style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink-soft);letter-spacing:1px;display:block;margin-bottom:6px;text-transform:uppercase;">
           PUBLIC HOLIDAYS — tick to exclude from working days
         </label>
         <div id="holidaysConfig" style="max-height:180px;overflow-y:auto;border:1px solid var(--line);border-radius:2px;padding:8px;margin-bottom:6px;background:var(--bg);"></div>
@@ -1382,6 +1388,7 @@ function makeProject(id, name){
     plan:{
       startDate:'2026-06-01',endDate:'2026-07-31',
       targetUnits:850,dailyTarget:20,workDaysPerWeek:5,
+      countries:['MY'], // Holiday countries — affects which holidays auto-populate
       holidays:[
         {name:'New Year',date:'2026-01-01',enabled:false},
         {name:'Federal Territory Day',date:'2026-02-01',enabled:true},
@@ -2007,6 +2014,17 @@ function startRealtimeSync(){
         if(h && HOLIDAY_FIX_2026[h.name]) h.date = HOLIDAY_FIX_2026[h.name];
       });
       pr.holidaysMigratedV2 = true;
+    });
+
+    // Add countries field to existing projects (default MY).
+    // Also tag existing holidays as country='MY' so country chips render properly.
+    (S.projects||[]).forEach(pr => {
+      if(!pr.plan) return;
+      if(!pr.plan.countries) pr.plan.countries = ['MY'];
+      (pr.plan.holidays||[]).forEach(h => {
+        if(!h.country) h.country = 'MY';
+        if(!h.source)  h.source  = 'library';
+      });
     });
 
     localStorage.setItem('cts_state_v3',JSON.stringify(S));
@@ -3517,15 +3535,120 @@ function renderWeekly(tu,tb,plan){
 
 function activePlan(){ return activeProject().plan; }
 
+// ════════════════════════════════════════════════════════════════════
+// HOLIDAY COUNTRIES — uses date-holidays library (MY/SG/HK/AU)
+// ════════════════════════════════════════════════════════════════════
+const SUPPORTED_COUNTRIES = [
+  { code:'MY', name:'Malaysia',  flag:'🇲🇾' },
+  { code:'SG', name:'Singapore', flag:'🇸🇬' },
+  { code:'HK', name:'Hong Kong', flag:'🇭🇰' },
+  { code:'AU', name:'Australia', flag:'🇦🇺' }
+];
+
+function renderHolidayCountries(){
+  const plan = activePlan();
+  if(!plan.countries) plan.countries = ['MY'];
+  const el = document.getElementById('holidayCountries');
+  if(!el) return;
+  el.innerHTML = SUPPORTED_COUNTRIES.map(c => {
+    const on = plan.countries.includes(c.code);
+    return `<button onclick="toggleHolidayCountry('${c.code}')" style="padding:5px 10px;border-radius:2px;border:1px solid ${on?'var(--accent)':'var(--line)'};background:${on?'color-mix(in srgb,var(--accent) 18%,transparent)':'var(--bg)'};color:${on?'var(--accent)':'var(--ink-soft)'};font-family:'JetBrains Mono',monospace;font-size:11px;cursor:pointer;font-weight:${on?'700':'400'}">${c.flag} ${c.code}</button>`;
+  }).join('');
+}
+
+function toggleHolidayCountry(code){
+  const plan = activePlan();
+  if(!plan.countries) plan.countries = ['MY'];
+  const i = plan.countries.indexOf(code);
+  if(i >= 0) plan.countries.splice(i, 1);
+  else plan.countries.push(code);
+  if(plan.countries.length === 0) plan.countries = ['MY']; // Always at least one
+  renderHolidayCountries();
+}
+
+// Fetch holidays from library for the project's date-range years × countries
+// Preserves user-toggled enabled/disabled status for matching name+date.
+async function refreshHolidaysFromLibrary(){
+  if(typeof Holidays === 'undefined'){
+    showToast('⚠ Holiday library not loaded yet. Try again in a moment.','warn'); return;
+  }
+  const plan = activePlan();
+  if(!plan.countries || plan.countries.length === 0) plan.countries = ['MY'];
+
+  const start = new Date(plan.startDate||TODAY);
+  const end = new Date(plan.endDate||TODAY);
+  const yStart = start.getFullYear(), yEnd = end.getFullYear();
+
+  // Preserve user choices: existing holidays keyed by "country|date|name" — keep enabled flag
+  const existing = plan.holidays || [];
+  const userMap = {};
+  existing.forEach(h => {
+    const k = (h.country||'MY') + '|' + h.date + '|' + h.name;
+    userMap[k] = h.enabled;
+  });
+  // Also keep any user-added custom holidays (source='user')
+  const customs = existing.filter(h => h.source === 'user');
+
+  // Fetch fresh from library for each country × year
+  const fresh = [];
+  let total = 0;
+  plan.countries.forEach(code => {
+    try {
+      const hd = new Holidays(code);
+      for(let y = yStart; y <= yEnd; y++){
+        const list = hd.getHolidays(y) || [];
+        list.forEach(h => {
+          // h.date is "YYYY-MM-DD HH:mm:ss" — extract date only
+          const dateOnly = h.date.split(' ')[0];
+          if(!dateOnly) return;
+          const item = {
+            name: h.name,
+            date: dateOnly,
+            country: code,
+            type: h.type || 'public',
+            source: 'library',
+            enabled: false
+          };
+          // Restore prior user toggle if exact match exists
+          const k = code + '|' + dateOnly + '|' + h.name;
+          if(userMap[k] !== undefined) item.enabled = userMap[k];
+          // Default enable major public holidays
+          else if(h.type === 'public') item.enabled = true;
+          fresh.push(item);
+          total++;
+        });
+      }
+    } catch(e){
+      console.warn('Holiday fetch failed for '+code+':', e);
+    }
+  });
+
+  // Combine: library + user-added customs
+  plan.holidays = [...fresh, ...customs];
+  plan.holidaysLastRefresh = new Date().toISOString();
+  renderHolidaysConfig();
+  showToast(`✓ Loaded ${total} holidays for ${plan.countries.join(', ')} (${yStart}${yStart!==yEnd?'-'+yEnd:''})`);
+  logActivity('CONFIG', `Refreshed holidays from library: ${plan.countries.join(', ')}`, SESSION&&SESSION.name||'Admin');
+}
+
 function renderHolidaysConfig(){
   const plan=activePlan();
   const start=new Date(plan.startDate||'2026-01-01'), end=new Date(plan.endDate||'2026-12-31');
   const rel=(plan.holidays||[]).filter(h=>{ const d=new Date(h.date); return d>=start&&d<=end; });
-  document.getElementById('holidaysConfig').innerHTML=rel.map((h,i)=>`
+  // Sort by date
+  rel.sort((a,b) => (a.date||'').localeCompare(b.date||''));
+  const countryColors = { MY:'#ff5b2e', SG:'#c1311e', HK:'#1f6391', AU:'#2d6a4f' };
+  document.getElementById('holidaysConfig').innerHTML=rel.map((h,i)=>{
+    const c = h.country || 'MY';
+    const col = countryColors[c] || '#5a5a5a';
+    return `
     <label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink);">
       <input type="checkbox" ${h.enabled?'checked':''} onchange="toggleHoliday(${plan.holidays.indexOf(h)},this.checked)" style="accent-color:var(--accent);">
+      <span style="display:inline-block;min-width:24px;padding:1px 5px;border-radius:2px;background:${col}22;color:${col};font-size:9px;font-weight:700;text-align:center">${c}</span>
       <span>${h.date}</span><span style="color:var(--ink-soft)">${escH(h.name)}</span>
-    </label>`).join('')||'<div style="color:var(--ink-soft);font-size:11px;padding:8px">No holidays in selected date range.</div>';
+    </label>`;
+  }).join('')||'<div style="color:var(--ink-soft);font-size:11px;padding:8px">No holidays in selected date range. Click "🔄 Refresh holidays from library" above.</div>';
+  renderHolidayCountries();
   updatePlanPreview();
 }
 function toggleHoliday(i,val){ activePlan().holidays[i].enabled=val; updatePlanPreview(); }
