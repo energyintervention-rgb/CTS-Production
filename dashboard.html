@@ -4517,8 +4517,8 @@ async function generateWorkerReport(name, fromOverride, toOverride){
   </div>
   <div class="sum">
     <div class="sc s1"><div class="k">Attendance</div><div class="v">${attendRate}%</div></div>
-    <div class="sc s2"><div class="k">Total Hours</div><div class="v">${isFlex?minsToHHMM(Math.round(totalHours*60)):totalHours.toFixed(1)+'h'}</div></div>
-    <div class="sc s3"><div class="k">Late</div><div class="v">${lateCnt}</div>${totalLateMin>0?`<div style="font-size:8px;color:#5a5a5a;margin-top:2px;font-weight:600;font-family:monospace">${fmtLateDuration(totalLateMin)} total</div>`:''}</div>
+    <div class="sc s2"><div class="k">Total Hours</div><div class="v">${minsToHHMM(Math.round(totalHours*60))}</div></div>
+    <div class="sc s3"><div class="k">Late</div><div class="v">${lateCnt}</div>${totalLateMin>0?`<div style="font-size:8px;color:#5a5a5a;margin-top:2px;font-weight:600;font-family:monospace">${minsToHHMM(totalLateMin)} total</div>`:''}</div>
     <div class="sc s4"><div class="k">Absent</div><div class="v">${absentCnt}</div></div>
   </div>
   <div class="sec">Daily Attendance</div>
@@ -4534,8 +4534,8 @@ async function generateWorkerReport(name, fromOverride, toOverride){
     </tr></thead>
     <tbody>${rows}
     <tr class="tot">
-      <td colspan="4" style="font-size:10px">TOTAL — ${totalDays} workday${totalDays===1?'':'s'} · ${present} present · ${absentCnt} absent · ${lateCnt} late${totalLateMin>0?` (${fmtLateDuration(totalLateMin)})`:''} · ${otCnt} OT day${otCnt===1?'':'s'}</td>
-      <td class="hrs" style="font-size:11px">${isFlex?minsToHHMM(Math.round(totalHours*60)):totalHours.toFixed(1)+'h'}</td>
+      <td colspan="4" style="font-size:10px">TOTAL — ${totalDays} workday${totalDays===1?'':'s'} · ${present} present · ${absentCnt} absent · ${lateCnt} late${totalLateMin>0?` (${minsToHHMM(totalLateMin)})`:''} · ${otCnt} OT day${otCnt===1?'':'s'}</td>
+      <td class="hrs" style="font-size:11px">${minsToHHMM(Math.round(totalHours*60))}</td>
       <td></td>
     </tr>
     </tbody>
