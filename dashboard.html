@@ -3866,6 +3866,307 @@ function confirmReportRange(){
 }
 
 
+// ════════════════════════════════════════════════════════════════════
+// SHARED PDF HELPER — same standard as generateWorkerReport()
+// ════════════════════════════════════════════════════════════════════
+// Wraps html2canvas + jsPDF flow. All tab PDFs use this so the look
+// stays consistent: CTS orange header, A4 portrait, JPEG-compressed.
+async function _generatePDFFromHTML(bodyHTML, filename, activityDetail){
+  const win = window.open('','_blank','width=900,height=700');
+  if(!win){ showToast('⚠ Allow popups to download PDF','warn'); return false; }
+  win.document.write(bodyHTML); win.document.close(); win.focus();
+  await new Promise(r=>setTimeout(r,600));
+  try{
+    const canvas = await html2canvas(win.document.body,{scale:2,useCORS:true,backgroundColor:'#ffffff',windowWidth:794,windowHeight:win.document.body.scrollHeight});
+    win.close();
+    const {jsPDF}=window.jspdf;
+    const A4_W=210,A4_H=297,imgW=A4_W,imgH=(canvas.height*imgW)/canvas.width;
+    const pdf=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+    let y=0;
+    while(y<imgH){if(y>0)pdf.addPage();pdf.addImage(canvas.toDataURL('image/jpeg',0.97),'JPEG',0,-y,imgW,imgH);y+=A4_H;}
+    pdf.save(filename);
+    showToast('✓ PDF downloaded');
+    if(activityDetail) logActivity('REPORT', activityDetail, SESSION&&SESSION.name||'Admin');
+    return true;
+  }catch(e){
+    try{ win.close(); }catch(_){}
+    showToast('⚠ Failed: '+e.message,'warn');
+    return false;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// SHARED PDF HEADER / FOOTER — single source of truth for branding
+// ════════════════════════════════════════════════════════════════════
+function _pdfHeadCSS(){
+  return `<style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',Arial,sans-serif}
+    body{background:#fff;color:#1a1a1a;padding:24px;width:794px}
+    .pdf-hd{background:#ff5b2e;color:#fff;padding:18px 22px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+    .pdf-hd-left{display:flex;align-items:center;gap:12px}
+    .pdf-hd-logo{width:38px;height:38px;background:rgba(255,255,255,0.18);border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;letter-spacing:1px}
+    .pdf-hd-title{font-size:16px;font-weight:700;letter-spacing:0.3px}
+    .pdf-hd-sub{font-size:10px;color:rgba(255,255,255,0.85);margin-top:2px}
+    .pdf-hd-right{text-align:right;font-size:9px;color:rgba(255,255,255,0.85);line-height:1.7}
+    .pdf-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+    .pdf-sc{background:#fff;border-left:3px solid #ff5b2e;padding:10px 12px;border-radius:0 4px 4px 0;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+    .pdf-sc.s2{border-left-color:#2a5f9e}
+    .pdf-sc.s3{border-left-color:#d4a017}
+    .pdf-sc.s4{border-left-color:#2d6a4f}
+    .pdf-sc .k{font-size:9px;color:#5a5a5a;letter-spacing:0.5px;font-weight:600;text-transform:uppercase;margin-bottom:4px}
+    .pdf-sc .v{font-size:18px;font-weight:700;color:#1a1a1a;font-family:'JetBrains Mono',monospace}
+    .pdf-sec{font-size:11px;font-weight:700;letter-spacing:1.5px;color:#1a1a1a;border-bottom:2px solid #ff5b2e;padding-bottom:5px;margin:14px 0 10px}
+    table{width:100%;border-collapse:collapse;font-size:10px}
+    th{background:#1a1a1a;color:#fff;padding:8px 10px;text-align:left;font-size:9px;letter-spacing:0.5px;font-weight:600}
+    td{padding:6px 10px;border-bottom:1px solid #e8e3d5;color:#1a1a1a}
+    tr:nth-child(even) td{background:#faf7f0}
+    .pdf-ft{margin-top:14px;padding-top:10px;border-top:1px solid #d8d2c4;display:flex;justify-content:space-between;font-size:9px;color:#5a5a5a}
+    .progress-cell{position:relative;background:#ebe6dc;border-radius:2px;height:14px;overflow:hidden}
+    .progress-fill{position:absolute;left:0;top:0;bottom:0;background:#ff5b2e;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;color:#fff;font-size:9px;font-weight:600;font-family:'JetBrains Mono',monospace}
+    .progress-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#1a1a1a;font-family:'JetBrains Mono',monospace}
+  </style>`;
+}
+function _pdfHeader(title, subtitle){
+  return `<div class="pdf-hd">
+    <div class="pdf-hd-left">
+      <div class="pdf-hd-logo">CTS</div>
+      <div>
+        <div class="pdf-hd-title">${escH(title)}</div>
+        <div class="pdf-hd-sub">${escH(subtitle||'')}</div>
+      </div>
+    </div>
+    <div class="pdf-hd-right">Generated: ${new Date().toLocaleDateString('en-MY')}<br>By: ${escH(SESSION&&SESSION.name||'Admin')}</div>
+  </div>`;
+}
+function _pdfFooter(label){
+  return `<div class="pdf-ft">
+    <span>CTS Production · Generated ${new Date().toLocaleDateString('en-MY')}</span>
+    <span>${escH(label||'')}</span>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// PDF ROUTER + 3 CONTENT BUILDERS
+// ════════════════════════════════════════════════════════════════════
+async function sharePDF(type){
+  if(type==='assembly')   return await _buildAssemblyPDF();
+  if(type==='attendance') return await _buildTeamAttendancePDF();
+  if(type==='charts')     return await _buildChartsPDF();
+  showToast('⚠ Unknown PDF type: '+type,'warn');
+}
+
+async function _buildAssemblyPDF(){
+  showToast('⏳ Building Assembly PDF…');
+  const pr = activeProject();
+  if(!pr){ showToast('⚠ No active project','warn'); return; }
+  const parts = pr.parts||[];
+  const totalTarget = parts.reduce((s,p)=>s+(+p.total||0),0);
+  const totalDone   = parts.reduce((s,p)=>s+(+p.updated||0),0);
+  const overallPct  = totalTarget>0 ? Math.round(totalDone/totalTarget*100) : 0;
+
+  let rows = '';
+  parts.forEach(p => {
+    const pct = (+p.total>0) ? Math.round((+p.updated||0)/+p.total*100) : 0;
+    const cap = Math.min(100, pct);
+    rows += `<tr>
+      <td style="font-weight:600">${escH(p.name||'')}</td>
+      <td style="font-family:monospace;text-align:right">${(+p.updated||0).toLocaleString()}</td>
+      <td style="font-family:monospace;text-align:right">${(+p.total||0).toLocaleString()}</td>
+      <td><div class="progress-cell"><div class="progress-fill" style="width:${cap}%"></div><div class="progress-overlay">${pct}%</div></div></td>
+    </tr>`;
+  });
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">${_pdfHeadCSS()}</head><body>
+    ${_pdfHeader('Assembly Progress Report', escH(pr.name)+' · '+new Date().toLocaleDateString('en-MY'))}
+    <div class="pdf-sum">
+      <div class="pdf-sc"><div class="k">Total Target</div><div class="v">${totalTarget.toLocaleString()}</div></div>
+      <div class="pdf-sc s2"><div class="k">Completed</div><div class="v">${totalDone.toLocaleString()}</div></div>
+      <div class="pdf-sc s3"><div class="k">Remaining</div><div class="v">${Math.max(0,totalTarget-totalDone).toLocaleString()}</div></div>
+      <div class="pdf-sc s4"><div class="k">Overall</div><div class="v">${overallPct}%</div></div>
+    </div>
+    <div class="pdf-sec">▼ Parts Breakdown</div>
+    <table>
+      <colgroup><col style="width:36%"><col style="width:18%"><col style="width:18%"><col style="width:28%"></colgroup>
+      <thead><tr><th>Part</th><th style="text-align:right">Updated</th><th style="text-align:right">Target</th><th>Progress</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="4" style="text-align:center;color:#5a5a5a;padding:14px">No parts configured.</td></tr>'}</tbody>
+    </table>
+    ${_pdfFooter(escH(pr.name)+' · Assembly · Page 1 of 1')}
+    </body></html>`;
+
+  const filename = `CTS_${(pr.name||'project').replace(/\s+/g,'_')}_assembly_${TODAY.replace(/-/g,'')}.pdf`;
+  await _generatePDFFromHTML(html, filename, 'Downloaded assembly report');
+}
+
+async function _buildTeamAttendancePDF(){
+  showToast('⏳ Building Team Attendance PDF…');
+  const pr = attProject();
+  if(!pr){ showToast('⚠ No project','warn'); return; }
+  const workers = pr.workers||[];
+  const att = pr.attendance||{};
+
+  let rows = '', presentCnt=0, lateCnt=0, absentCnt=0;
+  workers.forEach(w => {
+    const name = (typeof w==='string') ? w : (w.name||'');
+    if(!name) return;
+    const rec = att[name+'_'+TODAY] || {};
+    const shiftKey = (pr.workerShifts||{})[name] || 'day2';
+    const isFlex = shiftKey==='flex';
+    const shift = (pr.shifts||{})[shiftKey] || {};
+    const shiftLabel = isFlex ? 'Flex' : (shift.label?shift.label+' '+(shift.start||'')+'-'+(shift.end||''):'—');
+    const ci = rec.clockIn||'';
+    const co = rec.clockOut||'';
+    const hrs = (ci&&co) ? calcHours(ci,co,false) : '';
+    let status = 'Absent';
+    if(ci){
+      if(rec.lateMin>0){ status='Late'; lateCnt++; }
+      else { status='On Time'; }
+      presentCnt++;
+    } else {
+      absentCnt++;
+    }
+    rows += `<tr>
+      <td style="font-weight:600">${escH(name)}${isFlex?' <span style="background:#faf3e0;color:#d4a017;border-radius:2px;padding:1px 5px;font-size:8px;font-weight:700">⚡</span>':''}</td>
+      <td style="font-size:9px;color:#5a5a5a">${escH(shiftLabel)}</td>
+      <td style="font-family:monospace">${escH(ci||'—')}</td>
+      <td style="font-family:monospace">${escH(co||'—')}</td>
+      <td style="font-family:monospace;text-align:right">${hrs?hrs+'h':'—'}</td>
+      <td><span style="font-size:9px;font-weight:700;letter-spacing:0.5px;color:${status==='On Time'?'#2d6a4f':status==='Late'?'#d4a017':'#c1311e'}">${status}</span></td>
+    </tr>`;
+  });
+
+  const attendRate = workers.length>0 ? Math.round(presentCnt/workers.length*100) : 0;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">${_pdfHeadCSS()}</head><body>
+    ${_pdfHeader('Team Attendance — Today', escH(pr.name)+' · '+new Date().toLocaleDateString('en-MY'))}
+    <div class="pdf-sum">
+      <div class="pdf-sc"><div class="k">Total Workers</div><div class="v">${workers.length}</div></div>
+      <div class="pdf-sc s4"><div class="k">Present</div><div class="v">${presentCnt}</div></div>
+      <div class="pdf-sc s3"><div class="k">Late</div><div class="v">${lateCnt}</div></div>
+      <div class="pdf-sc s2"><div class="k">Attendance</div><div class="v">${attendRate}%</div></div>
+    </div>
+    <div class="pdf-sec">▼ Today (${TODAY})</div>
+    <table>
+      <colgroup><col style="width:22%"><col style="width:24%"><col style="width:14%"><col style="width:14%"><col style="width:12%"><col style="width:14%"></colgroup>
+      <thead><tr><th>Worker</th><th>Shift</th><th>Clock In</th><th>Clock Out</th><th style="text-align:right">Hours</th><th>Status</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="6" style="text-align:center;color:#5a5a5a;padding:14px">No workers in this project.</td></tr>'}</tbody>
+    </table>
+    ${_pdfFooter(escH(pr.name)+' · Team Attendance · Page 1 of 1')}
+    </body></html>`;
+
+  const filename = `CTS_${(pr.name||'project').replace(/\s+/g,'_')}_team_attendance_${TODAY.replace(/-/g,'')}.pdf`;
+  await _generatePDFFromHTML(html, filename, 'Downloaded team attendance report');
+}
+
+async function _buildChartsPDF(){
+  showToast('⏳ Building Projects PDF…');
+  const projects = (S.projects||[]).filter(p => !p.archived);
+  if(projects.length===0){ showToast('⚠ No projects to report','warn'); return; }
+
+  let rows = '', grandTarget=0, grandDone=0;
+  projects.forEach(p => {
+    const parts = p.parts||[];
+    const t = parts.reduce((s,x)=>s+(+x.total||0),0);
+    const d = parts.reduce((s,x)=>s+(+x.updated||0),0);
+    const pct = t>0 ? Math.round(d/t*100) : 0;
+    grandTarget += t; grandDone += d;
+    const cap = Math.min(100, pct);
+    const workerCount = (p.workers||[]).length;
+    rows += `<tr>
+      <td style="font-weight:600">${escH(p.name||'(unnamed)')}</td>
+      <td style="font-family:monospace;text-align:right">${d.toLocaleString()}</td>
+      <td style="font-family:monospace;text-align:right">${t.toLocaleString()}</td>
+      <td style="text-align:center;font-family:monospace">${workerCount}</td>
+      <td><div class="progress-cell"><div class="progress-fill" style="width:${cap}%"></div><div class="progress-overlay">${pct}%</div></div></td>
+    </tr>`;
+  });
+
+  const overallPct = grandTarget>0 ? Math.round(grandDone/grandTarget*100) : 0;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">${_pdfHeadCSS()}</head><body>
+    ${_pdfHeader('All Projects Status', new Date().toLocaleDateString('en-MY'))}
+    <div class="pdf-sum">
+      <div class="pdf-sc"><div class="k">Projects</div><div class="v">${projects.length}</div></div>
+      <div class="pdf-sc s2"><div class="k">Total Target</div><div class="v">${grandTarget.toLocaleString()}</div></div>
+      <div class="pdf-sc s4"><div class="k">Completed</div><div class="v">${grandDone.toLocaleString()}</div></div>
+      <div class="pdf-sc s3"><div class="k">Overall</div><div class="v">${overallPct}%</div></div>
+    </div>
+    <div class="pdf-sec">▼ Per Project</div>
+    <table>
+      <colgroup><col style="width:30%"><col style="width:16%"><col style="width:16%"><col style="width:12%"><col style="width:26%"></colgroup>
+      <thead><tr><th>Project</th><th style="text-align:right">Updated</th><th style="text-align:right">Target</th><th style="text-align:center">Workers</th><th>Progress</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${_pdfFooter('All Projects · Page 1 of 1')}
+    </body></html>`;
+
+  const filename = `CTS_all_projects_${TODAY.replace(/-/g,'')}.pdf`;
+  await _generatePDFFromHTML(html, filename, 'Downloaded all-projects report');
+}
+
+// ════════════════════════════════════════════════════════════════════
+// EXPORT ALL CSV — all projects combined
+// ════════════════════════════════════════════════════════════════════
+function exportAllCSV(){
+  const projects = (S.projects||[]).filter(p => !p.archived);
+  if(projects.length===0){ showToast('⚠ No projects','warn'); return; }
+  let csv = '\uFEFF'+'Project,Part,Updated,Target,Percent,Workers,Start,End\n';
+  projects.forEach(p => {
+    const parts = p.parts||[];
+    const plan = p.plan||{};
+    const wc = (p.workers||[]).length;
+    if(parts.length===0){
+      csv += `"${(p.name||'').replace(/"/g,'""')}","(no parts)","0","0","0%","${wc}","${plan.startDate||''}","${plan.endDate||''}"\n`;
+    } else {
+      parts.forEach(part => {
+        const pct = (+part.total>0) ? Math.round((+part.updated||0)/+part.total*100) : 0;
+        csv += `"${(p.name||'').replace(/"/g,'""')}","${(part.name||'').replace(/"/g,'""')}","${+part.updated||0}","${+part.total||0}","${pct}%","${wc}","${plan.startDate||''}","${plan.endDate||''}"\n`;
+      });
+    }
+  });
+  downloadFile('CTS_all_projects_'+TODAY+'.csv', csv, 'text/csv');
+  showToast('✓ CSV downloaded');
+  logActivity('EXPORT', 'Exported all-projects CSV', SESSION&&SESSION.name||'Admin');
+}
+
+// ════════════════════════════════════════════════════════════════════
+// WHATSAPP SHARE — generate PDF, then open WhatsApp with summary text
+// (User attaches the downloaded PDF manually — browsers can't auto-attach.)
+// ════════════════════════════════════════════════════════════════════
+async function _shareViaWhatsApp(pdfBuilder, summaryText){
+  await pdfBuilder();
+  // Tiny delay so the PDF download is initiated before opening WA
+  setTimeout(() => {
+    const msg = encodeURIComponent(summaryText);
+    window.open('https://wa.me/?text='+msg, '_blank');
+    showToast('📤 PDF saved · WhatsApp opened — attach the file');
+  }, 800);
+}
+
+async function sendAttWhatsApp(){
+  const pr = attProject();
+  if(!pr){ showToast('⚠ No project','warn'); return; }
+  const workers = pr.workers||[];
+  const att = pr.attendance||{};
+  let present=0;
+  workers.forEach(w => {
+    const name = (typeof w==='string') ? w : (w.name||'');
+    if(att[name+'_'+TODAY] && att[name+'_'+TODAY].clockIn) present++;
+  });
+  const summary = `*CTS Team Attendance — ${TODAY}*\nProject: ${pr.name}\nWorkers: ${workers.length}\nPresent: ${present}\nAttendance: ${workers.length>0?Math.round(present/workers.length*100):0}%\n\n(PDF attached separately)`;
+  await _shareViaWhatsApp(_buildTeamAttendancePDF, summary);
+}
+
+async function sendChartWhatsApp(){
+  const projects = (S.projects||[]).filter(p => !p.archived);
+  let gT=0, gD=0;
+  projects.forEach(p => {
+    (p.parts||[]).forEach(x => { gT += (+x.total||0); gD += (+x.updated||0); });
+  });
+  const summary = `*CTS Production — ${TODAY}*\nProjects: ${projects.length}\nTarget: ${gT.toLocaleString()}\nCompleted: ${gD.toLocaleString()}\nOverall: ${gT>0?Math.round(gD/gT*100):0}%\n\n(PDF attached separately)`;
+  await _shareViaWhatsApp(_buildChartsPDF, summary);
+}
+
+
 async function generateWorkerReport(name, fromOverride, toOverride){
   showToast('⏳ Generating report…');
   const pr = attProject();
