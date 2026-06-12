@@ -1,0 +1,48 @@
+{
+  "country": "MY",
+  "name": "Malaysia",
+  "source": "Malaysian Federal Gazette (Federal + KL state holidays)",
+  "lastUpdated": "2026-06-12",
+  "instructions": "To add a new year: append to the 'years' object. Format: {\"date\": \"YYYY-MM-DD\", \"name\": \"Holiday Name\"}. Then commit + push. Dashboard auto-loads on next refresh.",
+  "years": {
+    "2026": [
+      { "date": "2026-01-01", "name": "New Year" },
+      { "date": "2026-02-01", "name": "Federal Territory Day" },
+      { "date": "2026-02-01", "name": "Thaipusam (KL)" },
+      { "date": "2026-02-17", "name": "Chinese New Year" },
+      { "date": "2026-02-18", "name": "Chinese New Year (2nd day)" },
+      { "date": "2026-03-20", "name": "Nuzul Al-Quran (KL)" },
+      { "date": "2026-03-21", "name": "Hari Raya Aidilfitri" },
+      { "date": "2026-03-22", "name": "Hari Raya Aidilfitri (2nd day)" },
+      { "date": "2026-05-01", "name": "Labour Day" },
+      { "date": "2026-05-27", "name": "Hari Raya Aidiladha" },
+      { "date": "2026-05-31", "name": "Wesak Day" },
+      { "date": "2026-06-01", "name": "Yang di-Pertuan Agong's Birthday" },
+      { "date": "2026-06-17", "name": "Awal Muharram" },
+      { "date": "2026-08-25", "name": "Prophet Muhammad's Birthday" },
+      { "date": "2026-08-31", "name": "National Day (Merdeka)" },
+      { "date": "2026-09-16", "name": "Malaysia Day" },
+      { "date": "2026-11-08", "name": "Deepavali" },
+      { "date": "2026-12-25", "name": "Christmas Day" }
+    ],
+    "2027": [
+      { "date": "2027-01-01", "name": "New Year" },
+      { "date": "2027-02-01", "name": "Federal Territory Day" },
+      { "date": "2027-02-06", "name": "Chinese New Year" },
+      { "date": "2027-02-07", "name": "Chinese New Year (2nd day)" },
+      { "date": "2027-03-10", "name": "Nuzul Al-Quran (KL)" },
+      { "date": "2027-03-11", "name": "Hari Raya Aidilfitri" },
+      { "date": "2027-03-12", "name": "Hari Raya Aidilfitri (2nd day)" },
+      { "date": "2027-05-01", "name": "Labour Day" },
+      { "date": "2027-05-17", "name": "Hari Raya Aidiladha" },
+      { "date": "2027-05-20", "name": "Wesak Day" },
+      { "date": "2027-06-07", "name": "Yang di-Pertuan Agong's Birthday" },
+      { "date": "2027-06-06", "name": "Awal Muharram" },
+      { "date": "2027-08-14", "name": "Prophet Muhammad's Birthday" },
+      { "date": "2027-08-31", "name": "National Day (Merdeka)" },
+      { "date": "2027-09-16", "name": "Malaysia Day" },
+      { "date": "2027-10-28", "name": "Deepavali" },
+      { "date": "2027-12-25", "name": "Christmas Day" }
+    ]
+  }
+}
