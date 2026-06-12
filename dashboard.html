@@ -3535,7 +3535,10 @@ function renderWeekly(tu,tb,plan){
 function activePlan(){ return activeProject().plan; }
 
 // ════════════════════════════════════════════════════════════════════
-// HOLIDAY COUNTRIES — uses date.nager.at REST API (MY/SG/HK/AU)
+// ════════════════════════════════════════════════════════════════════
+// HOLIDAY COUNTRIES — embedded data table for MY/SG/HK/AU
+// External APIs (date.nager.at, date-holidays CDN) proved unreliable.
+// To add a new year: append to the relevant country's year object below.
 // ════════════════════════════════════════════════════════════════════
 const SUPPORTED_COUNTRIES = [
   { code:'MY', name:'Malaysia',  flag:'🇲🇾' },
@@ -3543,6 +3546,148 @@ const SUPPORTED_COUNTRIES = [
   { code:'HK', name:'Hong Kong', flag:'🇭🇰' },
   { code:'AU', name:'Australia', flag:'🇦🇺' }
 ];
+
+// Format: [date, name]. Verify dates against official gazettes when adding years.
+const HOLIDAYS_DATA = {
+  MY: {
+    "2026": [
+      ["2026-01-01", "New Year"],
+      ["2026-02-01", "Federal Territory Day"],
+      ["2026-02-01", "Thaipusam (KL)"],
+      ["2026-02-17", "Chinese New Year"],
+      ["2026-02-18", "Chinese New Year (2nd day)"],
+      ["2026-03-20", "Nuzul Al-Quran (KL)"],
+      ["2026-03-21", "Hari Raya Aidilfitri"],
+      ["2026-03-22", "Hari Raya Aidilfitri (2nd day)"],
+      ["2026-05-01", "Labour Day"],
+      ["2026-05-27", "Hari Raya Aidiladha"],
+      ["2026-05-31", "Wesak Day"],
+      ["2026-06-01", "Yang di-Pertuan Agong's Birthday"],
+      ["2026-06-17", "Awal Muharram"],
+      ["2026-08-25", "Prophet Muhammad's Birthday"],
+      ["2026-08-31", "National Day (Merdeka)"],
+      ["2026-09-16", "Malaysia Day"],
+      ["2026-11-08", "Deepavali"],
+      ["2026-12-25", "Christmas Day"]
+    ],
+    "2027": [
+      ["2027-01-01", "New Year"],
+      ["2027-02-01", "Federal Territory Day"],
+      ["2027-02-06", "Chinese New Year"],
+      ["2027-02-07", "Chinese New Year (2nd day)"],
+      ["2027-03-10", "Nuzul Al-Quran (KL)"],
+      ["2027-03-11", "Hari Raya Aidilfitri"],
+      ["2027-03-12", "Hari Raya Aidilfitri (2nd day)"],
+      ["2027-05-01", "Labour Day"],
+      ["2027-05-17", "Hari Raya Aidiladha"],
+      ["2027-05-20", "Wesak Day"],
+      ["2027-06-07", "Yang di-Pertuan Agong's Birthday"],
+      ["2027-06-06", "Awal Muharram"],
+      ["2027-08-14", "Prophet Muhammad's Birthday"],
+      ["2027-08-31", "National Day (Merdeka)"],
+      ["2027-09-16", "Malaysia Day"],
+      ["2027-10-28", "Deepavali"],
+      ["2027-12-25", "Christmas Day"]
+    ]
+  },
+  SG: {
+    "2026": [
+      ["2026-01-01", "New Year's Day"],
+      ["2026-02-17", "Chinese New Year"],
+      ["2026-02-18", "Chinese New Year (2nd day)"],
+      ["2026-03-21", "Hari Raya Puasa"],
+      ["2026-04-03", "Good Friday"],
+      ["2026-05-01", "Labour Day"],
+      ["2026-05-27", "Hari Raya Haji"],
+      ["2026-05-31", "Vesak Day"],
+      ["2026-08-09", "National Day"],
+      ["2026-11-08", "Deepavali"],
+      ["2026-12-25", "Christmas Day"]
+    ],
+    "2027": [
+      ["2027-01-01", "New Year's Day"],
+      ["2027-02-06", "Chinese New Year"],
+      ["2027-02-07", "Chinese New Year (2nd day)"],
+      ["2027-03-11", "Hari Raya Puasa"],
+      ["2027-03-26", "Good Friday"],
+      ["2027-05-01", "Labour Day"],
+      ["2027-05-17", "Hari Raya Haji"],
+      ["2027-05-20", "Vesak Day"],
+      ["2027-08-09", "National Day"],
+      ["2027-10-28", "Deepavali"],
+      ["2027-12-25", "Christmas Day"]
+    ]
+  },
+  HK: {
+    "2026": [
+      ["2026-01-01", "New Year's Day"],
+      ["2026-02-17", "Lunar New Year"],
+      ["2026-02-18", "Lunar New Year (2nd day)"],
+      ["2026-02-19", "Lunar New Year (3rd day)"],
+      ["2026-04-03", "Good Friday"],
+      ["2026-04-04", "Day after Good Friday"],
+      ["2026-04-05", "Ching Ming Festival"],
+      ["2026-04-06", "Easter Monday"],
+      ["2026-05-01", "Labour Day"],
+      ["2026-05-24", "Buddha's Birthday"],
+      ["2026-06-19", "Tuen Ng Festival"],
+      ["2026-07-01", "HKSAR Establishment Day"],
+      ["2026-09-26", "Day after Mid-Autumn Festival"],
+      ["2026-10-01", "National Day"],
+      ["2026-10-17", "Chung Yeung Festival"],
+      ["2026-12-25", "Christmas Day"],
+      ["2026-12-26", "Boxing Day"]
+    ],
+    "2027": [
+      ["2027-01-01", "New Year's Day"],
+      ["2027-02-06", "Lunar New Year"],
+      ["2027-02-08", "Lunar New Year (3rd day)"],
+      ["2027-02-09", "Lunar New Year (4th day)"],
+      ["2027-03-26", "Good Friday"],
+      ["2027-03-27", "Day after Good Friday"],
+      ["2027-03-29", "Easter Monday"],
+      ["2027-04-06", "Ching Ming Festival"],
+      ["2027-05-01", "Labour Day"],
+      ["2027-05-13", "Buddha's Birthday"],
+      ["2027-06-08", "Tuen Ng Festival"],
+      ["2027-07-01", "HKSAR Establishment Day"],
+      ["2027-09-15", "Day after Mid-Autumn Festival"],
+      ["2027-10-01", "National Day"],
+      ["2027-10-07", "Chung Yeung Festival"],
+      ["2027-12-25", "Christmas Day"],
+      ["2027-12-27", "Christmas observed"]
+    ]
+  },
+  AU: {
+    "2026": [
+      ["2026-01-01", "New Year's Day"],
+      ["2026-01-26", "Australia Day"],
+      ["2026-04-03", "Good Friday"],
+      ["2026-04-04", "Easter Saturday"],
+      ["2026-04-05", "Easter Sunday"],
+      ["2026-04-06", "Easter Monday"],
+      ["2026-04-25", "ANZAC Day"],
+      ["2026-06-08", "King's Birthday"],
+      ["2026-12-25", "Christmas Day"],
+      ["2026-12-26", "Boxing Day"],
+      ["2026-12-28", "Boxing Day observed"]
+    ],
+    "2027": [
+      ["2027-01-01", "New Year's Day"],
+      ["2027-01-26", "Australia Day"],
+      ["2027-03-26", "Good Friday"],
+      ["2027-03-27", "Easter Saturday"],
+      ["2027-03-28", "Easter Sunday"],
+      ["2027-03-29", "Easter Monday"],
+      ["2027-04-25", "ANZAC Day"],
+      ["2027-04-26", "ANZAC Day observed"],
+      ["2027-06-14", "King's Birthday"],
+      ["2027-12-25", "Christmas Day"],
+      ["2027-12-27", "Christmas observed"],
+      ["2027-12-28", "Boxing Day observed"]
+    ]
+  }
+};
 
 function renderHolidayCountries(){
   const plan = activePlan();
@@ -3569,19 +3714,16 @@ function toggleHolidayCountry(code){
 }
 
 // Fetch holidays from library for the project's date-range years × countries
-// Fetch holidays from date.nager.at REST API (free, no auth, CORS-enabled).
-// Endpoint: https://date.nager.at/api/v3/PublicHolidays/{year}/{countryCode}
+// Read holidays from embedded HOLIDAYS_DATA table for project's years × countries.
 // Preserves user-toggled enabled/disabled status for matching name+date.
-async function refreshHolidaysFromLibrary(){
+function refreshHolidaysFromLibrary(){
   const plan = activePlan();
   if(!plan){ showToast('⚠ No active project','warn'); return; }
   if(!plan.countries || plan.countries.length === 0) plan.countries = ['MY'];
-  console.log('[Holidays] Refreshing for countries:', plan.countries);
 
   const start = new Date(plan.startDate||TODAY);
   const end = new Date(plan.endDate||TODAY);
   const yStart = start.getFullYear(), yEnd = end.getFullYear();
-  console.log('[Holidays] Year range:', yStart, '→', yEnd);
 
   // Preserve user choices: existing holidays keyed by "country|date|name"
   const existing = plan.holidays || [];
@@ -3592,67 +3734,51 @@ async function refreshHolidaysFromLibrary(){
   });
   const customs = existing.filter(h => h.source === 'user');
 
-  showToast('⏳ Fetching holidays from date.nager.at…');
-
-  // Fetch fresh from API for each country × year
+  // Pull from embedded table for each country × year
   const fresh = [];
-  const failures = [];
+  const missing = [];
   let total = 0;
   for(const code of plan.countries){
+    const countryData = HOLIDAYS_DATA[code];
+    if(!countryData){
+      missing.push(`${code} (no data)`);
+      continue;
+    }
     for(let y = yStart; y <= yEnd; y++){
-      const url = `https://date.nager.at/api/v3/PublicHolidays/${y}/${code}`;
-      try {
-        const resp = await fetch(url);
-        if(!resp.ok){
-          failures.push(`${code} ${y}: HTTP ${resp.status}`);
-          console.warn('[Holidays]', url, 'returned', resp.status);
-          continue;
-        }
-        const list = await resp.json();
-        console.log(`[Holidays] ${code} ${y}: ${list.length} entries`);
-        list.forEach(h => {
-          // API returns { date:'2026-03-20', name:'...', localName:'...', countryCode:'MY', ... }
-          if(!/^\d{4}-\d{2}-\d{2}$/.test(h.date||'')){
-            console.warn('[Holidays] skipping bad date:', h);
-            return;
-          }
-          // Prefer localName (e.g. "Hari Raya Aidiladha") over English name
-          const displayName = h.localName || h.name || '(unnamed)';
-          const item = {
-            name: displayName,
-            date: h.date,
-            country: code,
-            type: 'public',
-            source: 'library',
-            enabled: true  // default-enable public holidays
-          };
-          // Restore prior user toggle if exact match exists
-          const k = code + '|' + h.date + '|' + displayName;
-          if(userMap[k] !== undefined) item.enabled = userMap[k];
-          fresh.push(item);
-          total++;
-        });
-      } catch(e){
-        const msg = `${code} ${y}: ${e.message}`;
-        console.error('[Holidays]', msg, e);
-        failures.push(msg);
+      const yearList = countryData[String(y)];
+      if(!yearList){
+        missing.push(`${code} ${y}`);
+        continue;
       }
+      yearList.forEach(([date, name]) => {
+        const item = {
+          name: name,
+          date: date,
+          country: code,
+          type: 'public',
+          source: 'library',
+          enabled: true  // default-enable public holidays
+        };
+        const k = code + '|' + date + '|' + name;
+        if(userMap[k] !== undefined) item.enabled = userMap[k];
+        fresh.push(item);
+        total++;
+      });
     }
   }
 
-  // Combine: library + user-added customs
   plan.holidays = [...fresh, ...customs];
   plan.holidaysLastRefresh = new Date().toISOString();
-  saveState(); // Persist new holidays to Firestore
+  saveState();
   renderHolidaysConfig();
 
-  if(total === 0){
-    showToast(`⚠ API returned 0 holidays for ${plan.countries.join(', ')} ${yStart}. Check console.`, 'warn');
+  const yearLabel = (yStart===yEnd) ? String(yStart) : `${yStart}-${yEnd}`;
+  if(missing.length > 0){
+    showToast(`✓ Loaded ${total} holidays. Missing: ${missing.join(', ')} — add to HOLIDAYS_DATA in code.`, 'warn');
   } else {
-    showToast(`✓ Loaded ${total} holidays for ${plan.countries.join(', ')} (${yStart}${yStart!==yEnd?'-'+yEnd:''})`);
+    showToast(`✓ Loaded ${total} holidays for ${plan.countries.join(', ')} (${yearLabel})`);
   }
-  if(failures.length > 0) console.warn('[Holidays] Failures:', failures);
-  logActivity('CONFIG', `Refreshed holidays from API: ${plan.countries.join(', ')} (${total} loaded)`, SESSION&&SESSION.name||'Admin');
+  logActivity('CONFIG', `Refreshed holidays: ${plan.countries.join(', ')} (${total} loaded)`, SESSION&&SESSION.name||'Admin');
 }
 
 function renderHolidaysConfig(){
