@@ -3714,8 +3714,29 @@ async function toggleHolidayCountry(code){
 
 // Fetch holidays from library for the project's date-range years × countries
 // Hybrid: date.nager.at API for SG/HK/AU (auto-updates any year),
-// embedded HOLIDAYS_DATA for MY (API doesn't cover Malaysia).
+// holidays_my.json file for MY (editable via GitHub, embedded fallback if file missing).
 // Preserves user-toggled enabled/disabled status for matching name+date.
+
+// Cache the external MY JSON file once per page load
+let _externalHolidaysMY = undefined;  // undefined = not tried, null = tried failed, object = loaded
+async function loadExternalHolidaysMY(){
+  if(_externalHolidaysMY !== undefined) return _externalHolidaysMY;
+  try {
+    // Cache-bust so GitHub updates show immediately
+    const resp = await fetch('holidays_my.json?t=' + Date.now());
+    if(resp.ok){
+      const data = await resp.json();
+      _externalHolidaysMY = data.years || null;
+      console.log('[Holidays] Loaded MY from holidays_my.json. Years:', Object.keys(_externalHolidaysMY||{}).join(', '));
+      return _externalHolidaysMY;
+    }
+  } catch(e){
+    console.warn('[Holidays] holidays_my.json not found — using embedded MY data', e);
+  }
+  _externalHolidaysMY = null;
+  return null;
+}
+
 async function refreshHolidaysFromLibrary(){
   const plan = activePlan();
   if(!plan){ showToast('⚠ No active project','warn'); return; }
@@ -3736,9 +3757,12 @@ async function refreshHolidaysFromLibrary(){
 
   showToast('⏳ Fetching holidays…');
 
+  // Pre-load external MY file (if exists in repo)
+  const externalMY = await loadExternalHolidaysMY();
+
   const fresh = [];
-  const apiCountries = [];   // SG, HK, AU — use API
-  const localCountries = []; // MY — use embedded
+  const apiCountries = [];
+  const localCountries = [];
   plan.countries.forEach(c => {
     if(c === 'MY') localCountries.push(c);
     else apiCountries.push(c);
@@ -3746,14 +3770,22 @@ async function refreshHolidaysFromLibrary(){
 
   const failures = [];
   let total = 0;
+  let myFromFile = false;
 
-  // ── 1. Embedded data for MY (API doesn't have it) ──
+  // ── 1. MY: holidays_my.json file preferred, embedded HOLIDAYS_DATA fallback ──
   for(const code of localCountries){
-    const countryData = HOLIDAYS_DATA[code];
-    if(!countryData){ failures.push(`${code} (no embedded data)`); continue; }
     for(let y = yStart; y <= yEnd; y++){
-      const yearList = countryData[String(y)];
-      if(!yearList){ failures.push(`${code} ${y} (add to HOLIDAYS_DATA)`); continue; }
+      let yearList = null;
+      if(externalMY && externalMY[String(y)]){
+        yearList = externalMY[String(y)].map(h => [h.date, h.name]);
+        myFromFile = true;
+      } else if(HOLIDAYS_DATA[code] && HOLIDAYS_DATA[code][String(y)]){
+        yearList = HOLIDAYS_DATA[code][String(y)];
+      }
+      if(!yearList){
+        failures.push(`${code} ${y} (add to holidays_my.json)`);
+        continue;
+      }
       yearList.forEach(([date, name]) => {
         const item = { name, date, country: code, type: 'public', source: 'library', enabled: true };
         const k = code + '|' + date + '|' + name;
@@ -3774,7 +3806,7 @@ async function refreshHolidaysFromLibrary(){
         const text = await resp.text();
         if(!text || text.trim() === ''){ failures.push(`${code} ${y}: empty response`); continue; }
         const list = JSON.parse(text);
-        if(!Array.isArray(list) || list.length === 0){ failures.push(`${code} ${y}: no holidays returned`); continue; }
+        if(!Array.isArray(list) || list.length === 0){ failures.push(`${code} ${y}: no holidays`); continue; }
         list.forEach(h => {
           if(!/^\d{4}-\d{2}-\d{2}$/.test(h.date||'')) return;
           const displayName = h.localName || h.name || '(unnamed)';
@@ -3797,12 +3829,13 @@ async function refreshHolidaysFromLibrary(){
   renderHolidaysConfig();
 
   const yearLabel = (yStart===yEnd) ? String(yStart) : `${yStart}-${yEnd}`;
+  const sourceNote = (localCountries.length>0) ? (myFromFile ? ' · MY from file' : ' · MY embedded') : '';
   if(total === 0){
     showToast(`⚠ No holidays loaded — ${failures.join(', ')}`, 'warn');
   } else if(failures.length > 0){
-    showToast(`✓ Loaded ${total} holidays for ${plan.countries.join(', ')} (${yearLabel}). Issues: ${failures.join(', ')}`, 'warn');
+    showToast(`✓ Loaded ${total} holidays for ${plan.countries.join(', ')} (${yearLabel})${sourceNote}. Issues: ${failures.join(', ')}`, 'warn');
   } else {
-    showToast(`✓ Loaded ${total} holidays for ${plan.countries.join(', ')} (${yearLabel})`);
+    showToast(`✓ Loaded ${total} holidays for ${plan.countries.join(', ')} (${yearLabel})${sourceNote}`);
   }
   if(failures.length > 0) console.warn('[Holidays] Failures:', failures);
   logActivity('CONFIG', `Refreshed holidays: ${plan.countries.join(', ')} (${total} loaded)`, SESSION&&SESSION.name||'Admin');
@@ -4925,4 +4958,3 @@ if('serviceWorker' in navigator){
 </script>
 </body>
 </html>
-      
