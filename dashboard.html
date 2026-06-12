@@ -3700,23 +3700,23 @@ function renderHolidayCountries(){
   }).join('');
 }
 
-function toggleHolidayCountry(code){
+async function toggleHolidayCountry(code){
   const plan = activePlan();
   if(!plan.countries) plan.countries = ['MY'];
   const i = plan.countries.indexOf(code);
   if(i >= 0) plan.countries.splice(i, 1);
   else plan.countries.push(code);
   if(plan.countries.length === 0) plan.countries = ['MY']; // Always at least one
-  saveState(); // Persist to Firestore so the toggle survives a refresh
+  saveState();
   renderHolidayCountries();
-  // Auto-fetch holidays for the new country selection (instant feedback)
-  refreshHolidaysFromLibrary();
+  await refreshHolidaysFromLibrary();
 }
 
 // Fetch holidays from library for the project's date-range years × countries
-// Read holidays from embedded HOLIDAYS_DATA table for project's years × countries.
+// Hybrid: date.nager.at API for SG/HK/AU (auto-updates any year),
+// embedded HOLIDAYS_DATA for MY (API doesn't cover Malaysia).
 // Preserves user-toggled enabled/disabled status for matching name+date.
-function refreshHolidaysFromLibrary(){
+async function refreshHolidaysFromLibrary(){
   const plan = activePlan();
   if(!plan){ showToast('⚠ No active project','warn'); return; }
   if(!plan.countries || plan.countries.length === 0) plan.countries = ['MY'];
@@ -3725,7 +3725,7 @@ function refreshHolidaysFromLibrary(){
   const end = new Date(plan.endDate||TODAY);
   const yStart = start.getFullYear(), yEnd = end.getFullYear();
 
-  // Preserve user choices: existing holidays keyed by "country|date|name"
+  // Preserve user choices
   const existing = plan.holidays || [];
   const userMap = {};
   existing.forEach(h => {
@@ -3734,36 +3734,60 @@ function refreshHolidaysFromLibrary(){
   });
   const customs = existing.filter(h => h.source === 'user');
 
-  // Pull from embedded table for each country × year
+  showToast('⏳ Fetching holidays…');
+
   const fresh = [];
-  const missing = [];
+  const apiCountries = [];   // SG, HK, AU — use API
+  const localCountries = []; // MY — use embedded
+  plan.countries.forEach(c => {
+    if(c === 'MY') localCountries.push(c);
+    else apiCountries.push(c);
+  });
+
+  const failures = [];
   let total = 0;
-  for(const code of plan.countries){
+
+  // ── 1. Embedded data for MY (API doesn't have it) ──
+  for(const code of localCountries){
     const countryData = HOLIDAYS_DATA[code];
-    if(!countryData){
-      missing.push(`${code} (no data)`);
-      continue;
-    }
+    if(!countryData){ failures.push(`${code} (no embedded data)`); continue; }
     for(let y = yStart; y <= yEnd; y++){
       const yearList = countryData[String(y)];
-      if(!yearList){
-        missing.push(`${code} ${y}`);
-        continue;
-      }
+      if(!yearList){ failures.push(`${code} ${y} (add to HOLIDAYS_DATA)`); continue; }
       yearList.forEach(([date, name]) => {
-        const item = {
-          name: name,
-          date: date,
-          country: code,
-          type: 'public',
-          source: 'library',
-          enabled: true  // default-enable public holidays
-        };
+        const item = { name, date, country: code, type: 'public', source: 'library', enabled: true };
         const k = code + '|' + date + '|' + name;
         if(userMap[k] !== undefined) item.enabled = userMap[k];
         fresh.push(item);
         total++;
       });
+    }
+  }
+
+  // ── 2. API for SG/HK/AU (auto-updates any year) ──
+  for(const code of apiCountries){
+    for(let y = yStart; y <= yEnd; y++){
+      const url = `https://date.nager.at/api/v3/PublicHolidays/${y}/${code}`;
+      try {
+        const resp = await fetch(url);
+        if(!resp.ok){ failures.push(`${code} ${y}: HTTP ${resp.status}`); continue; }
+        const text = await resp.text();
+        if(!text || text.trim() === ''){ failures.push(`${code} ${y}: empty response`); continue; }
+        const list = JSON.parse(text);
+        if(!Array.isArray(list) || list.length === 0){ failures.push(`${code} ${y}: no holidays returned`); continue; }
+        list.forEach(h => {
+          if(!/^\d{4}-\d{2}-\d{2}$/.test(h.date||'')) return;
+          const displayName = h.localName || h.name || '(unnamed)';
+          const item = { name: displayName, date: h.date, country: code, type: 'public', source: 'library', enabled: true };
+          const k = code + '|' + h.date + '|' + displayName;
+          if(userMap[k] !== undefined) item.enabled = userMap[k];
+          fresh.push(item);
+          total++;
+        });
+      } catch(e){
+        failures.push(`${code} ${y}: ${e.message}`);
+        console.warn('[Holidays]', code, y, e);
+      }
     }
   }
 
@@ -3773,11 +3797,14 @@ function refreshHolidaysFromLibrary(){
   renderHolidaysConfig();
 
   const yearLabel = (yStart===yEnd) ? String(yStart) : `${yStart}-${yEnd}`;
-  if(missing.length > 0){
-    showToast(`✓ Loaded ${total} holidays. Missing: ${missing.join(', ')} — add to HOLIDAYS_DATA in code.`, 'warn');
+  if(total === 0){
+    showToast(`⚠ No holidays loaded — ${failures.join(', ')}`, 'warn');
+  } else if(failures.length > 0){
+    showToast(`✓ Loaded ${total} holidays for ${plan.countries.join(', ')} (${yearLabel}). Issues: ${failures.join(', ')}`, 'warn');
   } else {
     showToast(`✓ Loaded ${total} holidays for ${plan.countries.join(', ')} (${yearLabel})`);
   }
+  if(failures.length > 0) console.warn('[Holidays] Failures:', failures);
   logActivity('CONFIG', `Refreshed holidays: ${plan.countries.join(', ')} (${total} loaded)`, SESSION&&SESSION.name||'Admin');
 }
 
@@ -4898,3 +4925,4 @@ if('serviceWorker' in navigator){
 </script>
 </body>
 </html>
+      
