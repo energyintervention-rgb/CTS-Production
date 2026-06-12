@@ -14,9 +14,6 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<!-- date-holidays library (try unpkg first, jsdelivr fallback) -->
-<script src="https://unpkg.com/date-holidays@3/dist/date-holidays.min.js"></script>
-<script>if(typeof Holidays==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/date-holidays@3/dist/date-holidays.min.js"><\/script>')}</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
@@ -3538,7 +3535,7 @@ function renderWeekly(tu,tb,plan){
 function activePlan(){ return activeProject().plan; }
 
 // ════════════════════════════════════════════════════════════════════
-// HOLIDAY COUNTRIES — uses date-holidays library (MY/SG/HK/AU)
+// HOLIDAY COUNTRIES — uses date.nager.at REST API (MY/SG/HK/AU)
 // ════════════════════════════════════════════════════════════════════
 const SUPPORTED_COUNTRIES = [
   { code:'MY', name:'Malaysia',  flag:'🇲🇾' },
@@ -3572,16 +3569,10 @@ function toggleHolidayCountry(code){
 }
 
 // Fetch holidays from library for the project's date-range years × countries
+// Fetch holidays from date.nager.at REST API (free, no auth, CORS-enabled).
+// Endpoint: https://date.nager.at/api/v3/PublicHolidays/{year}/{countryCode}
 // Preserves user-toggled enabled/disabled status for matching name+date.
 async function refreshHolidaysFromLibrary(){
-  // 1. Library availability check
-  if(typeof Holidays === 'undefined'){
-    showToast('⚠ Holiday library NOT loaded (CDN blocked or slow). Check browser console.','warn');
-    console.error('[Holidays] window.Holidays is undefined. CDN script may have failed to load.');
-    return;
-  }
-  console.log('[Holidays] Library loaded, version:', (Holidays.version||'(no version)'));
-
   const plan = activePlan();
   if(!plan){ showToast('⚠ No active project','warn'); return; }
   if(!plan.countries || plan.countries.length === 0) plan.countries = ['MY'];
@@ -3601,47 +3592,51 @@ async function refreshHolidaysFromLibrary(){
   });
   const customs = existing.filter(h => h.source === 'user');
 
-  // Fetch fresh from library for each country × year
+  showToast('⏳ Fetching holidays from date.nager.at…');
+
+  // Fetch fresh from API for each country × year
   const fresh = [];
-  let total = 0;
   const failures = [];
+  let total = 0;
   for(const code of plan.countries){
-    try {
-      const hd = new Holidays(code);
-      for(let y = yStart; y <= yEnd; y++){
-        const list = hd.getHolidays(y) || [];
-        console.log(`[Holidays] ${code} ${y}: ${list.length} entries`);
-        if(list.length === 0){
-          failures.push(`${code} ${y}: library returned no holidays`);
+    for(let y = yStart; y <= yEnd; y++){
+      const url = `https://date.nager.at/api/v3/PublicHolidays/${y}/${code}`;
+      try {
+        const resp = await fetch(url);
+        if(!resp.ok){
+          failures.push(`${code} ${y}: HTTP ${resp.status}`);
+          console.warn('[Holidays]', url, 'returned', resp.status);
+          continue;
         }
+        const list = await resp.json();
+        console.log(`[Holidays] ${code} ${y}: ${list.length} entries`);
         list.forEach(h => {
-          const dateRaw = h.date || '';
-          // h.date typically "YYYY-MM-DD HH:mm:ss" or ISO; extract YYYY-MM-DD
-          let dateOnly = dateRaw.split(' ')[0];
-          if(dateOnly.includes('T')) dateOnly = dateOnly.split('T')[0];
-          if(!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)){
-            console.warn('[Holidays] skipping bad date:', dateRaw);
+          // API returns { date:'2026-03-20', name:'...', localName:'...', countryCode:'MY', ... }
+          if(!/^\d{4}-\d{2}-\d{2}$/.test(h.date||'')){
+            console.warn('[Holidays] skipping bad date:', h);
             return;
           }
+          // Prefer localName (e.g. "Hari Raya Aidiladha") over English name
+          const displayName = h.localName || h.name || '(unnamed)';
           const item = {
-            name: h.name,
-            date: dateOnly,
+            name: displayName,
+            date: h.date,
             country: code,
-            type: h.type || 'public',
+            type: 'public',
             source: 'library',
-            enabled: (h.type === 'public') // default-enable public holidays
+            enabled: true  // default-enable public holidays
           };
           // Restore prior user toggle if exact match exists
-          const k = code + '|' + dateOnly + '|' + h.name;
+          const k = code + '|' + h.date + '|' + displayName;
           if(userMap[k] !== undefined) item.enabled = userMap[k];
           fresh.push(item);
           total++;
         });
+      } catch(e){
+        const msg = `${code} ${y}: ${e.message}`;
+        console.error('[Holidays]', msg, e);
+        failures.push(msg);
       }
-    } catch(e){
-      const msg = `${code} fetch failed: ${e.message}`;
-      console.error('[Holidays]', msg, e);
-      failures.push(msg);
     }
   }
 
@@ -3652,12 +3647,12 @@ async function refreshHolidaysFromLibrary(){
   renderHolidaysConfig();
 
   if(total === 0){
-    showToast(`⚠ Library returned 0 holidays for ${plan.countries.join(', ')} ${yStart}. Console has details.`, 'warn');
+    showToast(`⚠ API returned 0 holidays for ${plan.countries.join(', ')} ${yStart}. Check console.`, 'warn');
   } else {
     showToast(`✓ Loaded ${total} holidays for ${plan.countries.join(', ')} (${yStart}${yStart!==yEnd?'-'+yEnd:''})`);
   }
   if(failures.length > 0) console.warn('[Holidays] Failures:', failures);
-  logActivity('CONFIG', `Refreshed holidays from library: ${plan.countries.join(', ')} (${total} loaded)`, SESSION&&SESSION.name||'Admin');
+  logActivity('CONFIG', `Refreshed holidays from API: ${plan.countries.join(', ')} (${total} loaded)`, SESSION&&SESSION.name||'Admin');
 }
 
 function renderHolidaysConfig(){
