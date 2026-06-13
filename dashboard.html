@@ -3727,7 +3727,6 @@ async function loadExternalHolidaysMY(){
     if(resp.ok){
       const data = await resp.json();
       _externalHolidaysMY = data.years || null;
-      console.log('[Holidays] Loaded MY from holidays_my.json. Years:', Object.keys(_externalHolidaysMY||{}).join(', '));
       return _externalHolidaysMY;
     }
   } catch(e){
@@ -3863,16 +3862,17 @@ function renderHolidaysConfig(){
 }
 function toggleHoliday(i,val){ activePlan().holidays[i].enabled=val; updatePlanPreview(); }
 
+// READ-ONLY preview — does NOT mutate plan. Persistence happens via "Save Plan"
+// (savePlanConfig). This prevents Firestore sync from wiping user input mid-edit.
 function updatePlanPreview(){
   const plan=activePlan();
-  plan.startDate=document.getElementById('planStart').value||plan.startDate;
-  plan.endDate=document.getElementById('planEnd').value||plan.endDate;
-  plan.targetUnits=parseInt(document.getElementById('planTarget').value)||plan.targetUnits;
-  const wT=getWorkingDays(plan.startDate,plan.endDate,plan.holidays,plan.workDaysPerWeek||5);
-  const daily=wT>0?Math.round(plan.targetUnits/wT):plan.dailyTarget;
-  plan.dailyTarget=daily;
-  document.getElementById('planDaily').value=daily;
-  document.getElementById('planCalcPreview').textContent=`Working days: ${wT}  |  Daily target: ${daily} units/day`;
+  const startDate   = document.getElementById('planStart').value  || plan.startDate;
+  const endDate     = document.getElementById('planEnd').value    || plan.endDate;
+  const targetUnits = parseInt(document.getElementById('planTarget').value) || plan.targetUnits;
+  const wT          = getWorkingDays(startDate, endDate, plan.holidays, plan.workDaysPerWeek||5);
+  const daily       = wT>0 ? Math.round(targetUnits/wT) : plan.dailyTarget;
+  document.getElementById('planDaily').value = daily;
+  document.getElementById('planCalcPreview').textContent = `Working days: ${wT}  |  Daily target: ${daily} units/day`;
 }
 
 function autoCalcDaily(){ updatePlanPreview(); }
