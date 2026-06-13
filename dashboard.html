@@ -4233,30 +4233,18 @@ function confirmReportRange(){
 // ════════════════════════════════════════════════════════════════════
 // Wraps html2canvas + jsPDF flow. All tab PDFs use this so the look
 // stays consistent: CTS orange header, A4 portrait, JPEG-compressed.
-async function _generatePDFFromHTML(bodyHTML, filename, activityDetail){
+async function _generatePDFFromHTML(bodyHTML, filename, activityDetail, footerLabel){
   const win = window.open('','_blank','width=900,height=700');
   if(!win){ showToast('⚠ Allow popups to download PDF','warn'); return false; }
   win.document.write(bodyHTML); win.document.close(); win.focus();
   await new Promise(r=>setTimeout(r,600));
   try{
     const canvas = await html2canvas(win.document.body,{scale:2,useCORS:true,backgroundColor:'#ffffff',windowWidth:794,windowHeight:win.document.body.scrollHeight});
-    win.close();
     const {jsPDF}=window.jspdf;
-    const A4_W=210,A4_H=297,imgW=A4_W,imgH=(canvas.height*imgW)/canvas.width;
     const pdf=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
-    const imgData=canvas.toDataURL('image/jpeg',0.97);
-    const totalPages=Math.max(1,Math.ceil(imgH/A4_H));
-    let y=0,page=1;
-    while(y<imgH){
-      if(y>0)pdf.addPage();
-      pdf.addImage(imgData,'JPEG',0,-y,imgW,imgH);
-      pdf.setFillColor(255,255,255);
-      pdf.rect(A4_W-22,A4_H-12,22,12,'F');
-      pdf.setFontSize(8);
-      pdf.setTextColor(120,120,120);
-      pdf.text(`${page}/${totalPages}`,A4_W-6,A4_H-6,{align:'right'});
-      y+=A4_H;page++;
-    }
+    _addPaginatedPages(pdf, canvas, win, footerLabel);
+    win.close();
+    pdf.save(filename);
     showToast('✓ PDF downloaded');
     if(activityDetail) logActivity('REPORT', activityDetail, SESSION&&SESSION.name||'Admin');
     return true;
@@ -4318,6 +4306,53 @@ function _pdfFooter(label){
 }
 
 // ════════════════════════════════════════════════════════════════════
+// PAGINATION HELPER — splits the rendered canvas across A4 pages
+// without cutting a table row in half, and stamps a footer + page
+// number ("1/2", "2/2"...) on every page.
+// ════════════════════════════════════════════════════════════════════
+function _addPaginatedPages(pdf, canvas, win, footerLabel){
+  const A4_W=210, A4_H=297, imgW=A4_W, imgH=(canvas.height*imgW)/canvas.width;
+  const cssW = (win.document.body.getBoundingClientRect().width)||794;
+  const mmPerCssPx = imgW/cssW;
+  const rowBottomsMM = Array.from(win.document.querySelectorAll('tbody tr'))
+    .map(tr=>tr.getBoundingClientRect().bottom*mmPerCssPx)
+    .sort((a,b)=>a-b);
+  const imgData = canvas.toDataURL('image/jpeg',0.97);
+  const footerH = 10; // mm reserved at bottom of each page
+  const usableH = A4_H-footerH;
+
+  const breaks=[]; let cursor=0;
+  while(cursor < imgH-0.5){
+    const limit = cursor+usableH;
+    if(limit >= imgH){ breaks.push(imgH); break; }
+    const candidates = rowBottomsMM.filter(b=>b>cursor+0.5 && b<=limit);
+    let bp = candidates.length ? Math.max(...candidates) : limit;
+    if(bp <= cursor+0.5) bp = limit;
+    breaks.push(bp); cursor = bp;
+  }
+  if(breaks.length===0) breaks.push(imgH);
+
+  const totalPages = breaks.length;
+  let y=0;
+  breaks.forEach((bp,i)=>{
+    if(i>0) pdf.addPage();
+    pdf.addImage(imgData,'JPEG',0,-y,imgW,imgH);
+    pdf.setFillColor(255,255,255);
+    pdf.rect(0,A4_H-footerH,A4_W,footerH,'F');
+    pdf.setDrawColor(216,210,196);
+    pdf.setLineWidth(0.2);
+    pdf.line(15,A4_H-footerH+1.5,A4_W-15,A4_H-footerH+1.5);
+    pdf.setFontSize(8);
+    pdf.setTextColor(90,90,90);
+    pdf.text(`CTS Production · Generated ${new Date().toLocaleDateString('en-MY')}`,15,A4_H-4);
+    if(footerLabel) pdf.text(String(footerLabel),A4_W-15,A4_H-4,{align:'right'});
+    pdf.setTextColor(120,120,120);
+    pdf.text(`${i+1}/${totalPages}`,A4_W/2,A4_H-4,{align:'center'});
+    y=bp;
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════
 // PDF ROUTER + 3 CONTENT BUILDERS
 // ════════════════════════════════════════════════════════════════════
 async function sharePDF(type){
@@ -4362,11 +4397,11 @@ async function _buildAssemblyPDF(){
       <thead><tr><th>Part</th><th style="text-align:right">Updated</th><th style="text-align:right">Target</th><th>Progress</th></tr></thead>
       <tbody>${rows||'<tr><td colspan="4" style="text-align:center;color:#5a5a5a;padding:14px">No parts configured.</td></tr>'}</tbody>
     </table>
-    ${_pdfFooter(escH(pr.name)+' · Assembly · Page 1 of 1')}
+    ${_pdfFooter(escH(pr.name)+' · Assembly')}
     </body></html>`;
 
   const filename = `CTS_${(pr.name||'project').replace(/\s+/g,'_')}_assembly_${TODAY.replace(/-/g,'')}.pdf`;
-  await _generatePDFFromHTML(html, filename, 'Downloaded assembly report');
+  await _generatePDFFromHTML(html, filename, 'Downloaded assembly report', escH(pr.name)+' · Assembly');
 }
 
 async function _buildTeamAttendancePDF(fromDate, toDate){
@@ -4468,7 +4503,7 @@ async function _buildTeamAttendancePDF(fromDate, toDate){
     </body></html>`;
 
   const filename = `CTS_${(pr.name||'project').replace(/\s+/g,'_')}_team_attendance_${from.replace(/-/g,'')}_to_${to.replace(/-/g,'')}.pdf`;
-  await _generatePDFFromHTML(html, filename, 'Downloaded team attendance ('+from+' to '+to+')');
+  await _generatePDFFromHTML(html, filename, 'Downloaded team attendance ('+from+' to '+to+')', escH(pr.name)+' · Team · '+from+' to '+to);
 }
 
 async function _buildChartsPDF(){
@@ -4510,11 +4545,11 @@ async function _buildChartsPDF(){
       <thead><tr><th>Project</th><th style="text-align:right">Updated</th><th style="text-align:right">Target</th><th style="text-align:center">Workers</th><th>Progress</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    ${_pdfFooter('All Projects · Page 1 of 1')}
+    ${_pdfFooter('All Projects')}
     </body></html>`;
 
   const filename = `CTS_all_projects_${TODAY.replace(/-/g,'')}.pdf`;
-  await _generatePDFFromHTML(html, filename, 'Downloaded all-projects report');
+  await _generatePDFFromHTML(html, filename, 'Downloaded all-projects report', 'All Projects');
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -4888,7 +4923,7 @@ async function generateWorkerReport(name, fromOverride, toOverride){
   </div>
   <div class="footer">
     <span>CTS Production · Generated ${new Date().toLocaleDateString('en-MY')}</span>
-    <span>${escH(name)} · ${escH(pr.name)} · Page 1 of 1</span>
+    <span>${escH(name)} · ${escH(pr.name)}</span>
   </div>
   </body></html>`;
 
@@ -4898,23 +4933,10 @@ async function generateWorkerReport(name, fromOverride, toOverride){
   await new Promise(r=>setTimeout(r,600));
   try{
     const canvas = await html2canvas(win.document.body,{scale:2,useCORS:true,backgroundColor:'#ffffff',windowWidth:794,windowHeight:win.document.body.scrollHeight});
-    win.close();
     const {jsPDF}=window.jspdf;
-    const A4_W=210,A4_H=297,imgW=A4_W,imgH=(canvas.height*imgW)/canvas.width;
     const pdf=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
-    const imgData=canvas.toDataURL('image/jpeg',0.97);
-    const totalPages=Math.max(1,Math.ceil(imgH/A4_H));
-    let y=0,page=1;
-    while(y<imgH){
-      if(y>0)pdf.addPage();
-      pdf.addImage(imgData,'JPEG',0,-y,imgW,imgH);
-      pdf.setFillColor(255,255,255);
-      pdf.rect(A4_W-22,A4_H-12,22,12,'F');
-      pdf.setFontSize(8);
-      pdf.setTextColor(120,120,120);
-      pdf.text(`${page}/${totalPages}`,A4_W-6,A4_H-6,{align:'right'});
-      y+=A4_H;page++;
-    }
+    _addPaginatedPages(pdf, canvas, win, escH(name)+' · '+escH(pr.name));
+    win.close();
     pdf.save(`CTS_${name.replace(/\s+/g,'_')}_report_${TODAY.replace(/-/g,'')}.pdf`);
     showToast('✓ Report downloaded');
     logActivity('REPORT','Downloaded attendance report', name);
