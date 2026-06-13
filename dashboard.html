@@ -4233,7 +4233,7 @@ function confirmReportRange(){
 // ════════════════════════════════════════════════════════════════════
 // Wraps html2canvas + jsPDF flow. All tab PDFs use this so the look
 // stays consistent: CTS orange header, A4 portrait, JPEG-compressed.
-async function _generatePDFFromHTML(bodyHTML, filename, activityDetail, footerLabel){
+async function _generatePDFFromHTML(bodyHTML, filename, activityDetail, footerLabel, headerLabel){
   const win = window.open('','_blank','width=900,height=700');
   if(!win){ showToast('⚠ Allow popups to download PDF','warn'); return false; }
   win.document.write(bodyHTML); win.document.close(); win.focus();
@@ -4242,7 +4242,7 @@ async function _generatePDFFromHTML(bodyHTML, filename, activityDetail, footerLa
     const canvas = await html2canvas(win.document.body,{scale:2,useCORS:true,backgroundColor:'#ffffff',windowWidth:794,windowHeight:win.document.body.scrollHeight});
     const {jsPDF}=window.jspdf;
     const pdf=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
-    _addPaginatedPages(pdf, canvas, win, footerLabel);
+    _addPaginatedPages(pdf, canvas, win, footerLabel, headerLabel);
     win.close();
     pdf.save(filename);
     showToast('✓ PDF downloaded');
@@ -4310,7 +4310,7 @@ function _pdfFooter(label){
 // without cutting a table row in half, and stamps a footer + page
 // number ("1/2", "2/2"...) on every page.
 // ════════════════════════════════════════════════════════════════════
-function _addPaginatedPages(pdf, canvas, win, footerLabel){
+function _addPaginatedPages(pdf, canvas, win, footerLabel, headerLabel){
   const A4_W=210, A4_H=297, imgW=A4_W, imgH=(canvas.height*imgW)/canvas.width;
   const cssW = (win.document.body.getBoundingClientRect().width)||794;
   const mmPerCssPx = imgW/cssW;
@@ -4319,16 +4319,19 @@ function _addPaginatedPages(pdf, canvas, win, footerLabel){
     .sort((a,b)=>a-b);
   const imgData = canvas.toDataURL('image/jpeg',0.97);
   const footerH = 10; // mm reserved at bottom of each page
-  const usableH = A4_H-footerH;
+  const headerH = 12; // mm reserved at top of pages after the first
+  const usableFirst = A4_H-footerH;
+  const usableRest = A4_H-footerH-headerH;
 
-  const breaks=[]; let cursor=0;
+  const breaks=[]; let cursor=0; let first=true;
   while(cursor < imgH-0.5){
-    const limit = cursor+usableH;
+    const usable = first ? usableFirst : usableRest;
+    const limit = cursor+usable;
     if(limit >= imgH){ breaks.push(imgH); break; }
     const candidates = rowBottomsMM.filter(b=>b>cursor+0.5 && b<=limit);
     let bp = candidates.length ? Math.max(...candidates) : limit;
     if(bp <= cursor+0.5) bp = limit;
-    breaks.push(bp); cursor = bp;
+    breaks.push(bp); cursor = bp; first=false;
   }
   if(breaks.length===0) breaks.push(imgH);
 
@@ -4336,7 +4339,23 @@ function _addPaginatedPages(pdf, canvas, win, footerLabel){
   let y=0;
   breaks.forEach((bp,i)=>{
     if(i>0) pdf.addPage();
-    pdf.addImage(imgData,'JPEG',0,-y,imgW,imgH);
+    const yOffset = i>0 ? headerH : 0;
+    pdf.addImage(imgData,'JPEG',0,yOffset-y,imgW,imgH);
+    if(i>0){
+      pdf.setFillColor(255,255,255);
+      pdf.rect(0,0,A4_W,headerH,'F');
+      pdf.setDrawColor(255,91,46);
+      pdf.setLineWidth(0.6);
+      pdf.line(15,headerH-2,A4_W-15,headerH-2);
+      pdf.setFontSize(9);
+      pdf.setTextColor(26,26,26);
+      pdf.setFont(undefined,'bold');
+      pdf.text(String(headerLabel||''),15,headerH-5);
+      pdf.setFont(undefined,'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(120,120,120);
+      pdf.text('(continued)',A4_W-15,headerH-5,{align:'right'});
+    }
     pdf.setFillColor(255,255,255);
     pdf.rect(0,A4_H-footerH,A4_W,footerH,'F');
     pdf.setDrawColor(216,210,196);
@@ -4401,7 +4420,7 @@ async function _buildAssemblyPDF(){
     </body></html>`;
 
   const filename = `CTS_${(pr.name||'project').replace(/\s+/g,'_')}_assembly_${TODAY.replace(/-/g,'')}.pdf`;
-  await _generatePDFFromHTML(html, filename, 'Downloaded assembly report', escH(pr.name)+' · Assembly');
+  await _generatePDFFromHTML(html, filename, 'Downloaded assembly report', escH(pr.name)+' · Assembly', 'Assembly Progress Report — '+escH(pr.name));
 }
 
 async function _buildTeamAttendancePDF(fromDate, toDate){
@@ -4503,7 +4522,7 @@ async function _buildTeamAttendancePDF(fromDate, toDate){
     </body></html>`;
 
   const filename = `CTS_${(pr.name||'project').replace(/\s+/g,'_')}_team_attendance_${from.replace(/-/g,'')}_to_${to.replace(/-/g,'')}.pdf`;
-  await _generatePDFFromHTML(html, filename, 'Downloaded team attendance ('+from+' to '+to+')', escH(pr.name)+' · Team · '+from+' to '+to);
+  await _generatePDFFromHTML(html, filename, 'Downloaded team attendance ('+from+' to '+to+')', escH(pr.name)+' · Team · '+from+' to '+to, 'Team Attendance Report — '+escH(pr.name));
 }
 
 async function _buildChartsPDF(){
@@ -4549,7 +4568,7 @@ async function _buildChartsPDF(){
     </body></html>`;
 
   const filename = `CTS_all_projects_${TODAY.replace(/-/g,'')}.pdf`;
-  await _generatePDFFromHTML(html, filename, 'Downloaded all-projects report', 'All Projects');
+  await _generatePDFFromHTML(html, filename, 'Downloaded all-projects report', 'All Projects', 'All Projects Status');
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -4935,7 +4954,7 @@ async function generateWorkerReport(name, fromOverride, toOverride){
     const canvas = await html2canvas(win.document.body,{scale:2,useCORS:true,backgroundColor:'#ffffff',windowWidth:794,windowHeight:win.document.body.scrollHeight});
     const {jsPDF}=window.jspdf;
     const pdf=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
-    _addPaginatedPages(pdf, canvas, win, escH(name)+' · '+escH(pr.name));
+    _addPaginatedPages(pdf, canvas, win, escH(name)+' · '+escH(pr.name), 'Attendance Report — '+escH(name));
     win.close();
     pdf.save(`CTS_${name.replace(/\s+/g,'_')}_report_${TODAY.replace(/-/g,'')}.pdf`);
     showToast('✓ Report downloaded');
