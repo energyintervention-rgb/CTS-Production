@@ -4430,7 +4430,7 @@ async function _buildTeamAttendancePDF(fromDate, toDate){
         <td style="font-size:9px">${dayType}</td>
         <td style="font-family:monospace">${escH(ci||'')}</td>
         <td style="font-family:monospace">${escH(co||'')}</td>
-        <td style="font-family:monospace;text-align:right">${hrs?hrs+'h':''}</td>
+        <td style="font-family:monospace;text-align:right">${hrs?hrs.toFixed(2)+'h':''}</td>
         <td><span style="font-size:9px;font-weight:700;color:${statusColor}">${status}</span></td>
       </tr>`;
     });
