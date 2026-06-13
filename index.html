@@ -523,18 +523,12 @@ button { font-family: inherit; }
 }
 body[data-theme="dark"] .sp-card { box-shadow: none; background: color-mix(in srgb, var(--accent) 3%, var(--surface)); }
 .sp-card-prod { border-left: 2px solid var(--accent); }
-.sp-card-fleet { border-left: 2px solid var(--info); }
-.sp-card-team { border-left: 2px solid var(--good); }
-.sp-card-activity { border-left: 2px solid var(--line); }
 
 .sp-card-head {
   font-size: 9px; letter-spacing: 1.5px; font-weight: 600;
   font-family: 'JetBrains Mono', monospace; margin-bottom: 10px;
 }
 .sp-card-prod .sp-card-head { color: var(--accent); }
-.sp-card-fleet .sp-card-head { color: var(--info); }
-.sp-card-team  .sp-card-head { color: var(--good); }
-.sp-card-activity .sp-card-head { color: var(--ink-soft); }
 
 .sp-prod-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; gap: 14px; }
 .sp-prod-name { font-size: 17px; color: var(--ink); font-weight: 600; }
@@ -677,22 +671,6 @@ body[data-theme="dark"] .sp-card { box-shadow: none; background: color-mix(in sr
   letter-spacing: 0.3px; margin-right: 4px;
 }
 @media (max-width: 560px) { .topbar-clock { display: none; } }
-
-.btn-docs {
-  background: var(--accent); color: #ffffff;
-  font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
-  padding: 7px 13px; border-radius: 3px;
-  text-decoration: none;
-  display: inline-flex; align-items: center; gap: 6px;
-  border: none; cursor: pointer; transition: filter 0.15s;
-  font-family: 'Space Grotesk', sans-serif;
-}
-.btn-docs:hover { filter: brightness(1.1); }
-.btn-docs svg { width: 14px; height: 14px; }
-@media (max-width: 480px) {
-  .btn-docs span { display: none; }
-  .btn-docs { padding: 7px 9px; }
-}
 
 .sp-loading { font-size: 10px; color: var(--ink-soft); font-family: 'JetBrains Mono', monospace; padding: 6px 0; }
 </style>
@@ -965,10 +943,6 @@ function daysSince(startStr) {
     if(isNaN(start.getTime())) return 0;
     return Math.max(0, Math.floor((Date.now() - start.getTime()) / 86400000));
   } catch(e) { return 0; }
-}
-function todayMY() {
-  const d = new Date();
-  return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
 }
 
 // Production carousel state — rotates through all active runs
