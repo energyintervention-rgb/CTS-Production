@@ -4250,9 +4250,11 @@ async function _generatePDFFromHTML(bodyHTML, filename, activityDetail){
     while(y<imgH){
       if(y>0)pdf.addPage();
       pdf.addImage(imgData,'JPEG',0,-y,imgW,imgH);
+      pdf.setFillColor(255,255,255);
+      pdf.rect(A4_W-22,A4_H-12,22,12,'F');
       pdf.setFontSize(8);
       pdf.setTextColor(120,120,120);
-      pdf.text(`${page}/${totalPages}`,A4_W-15,A4_H-8,{align:'right'});
+      pdf.text(`${page}/${totalPages}`,A4_W-6,A4_H-6,{align:'right'});
       y+=A4_H;page++;
     }
     showToast('✓ PDF downloaded');
@@ -4906,9 +4908,11 @@ async function generateWorkerReport(name, fromOverride, toOverride){
     while(y<imgH){
       if(y>0)pdf.addPage();
       pdf.addImage(imgData,'JPEG',0,-y,imgW,imgH);
+      pdf.setFillColor(255,255,255);
+      pdf.rect(A4_W-22,A4_H-12,22,12,'F');
       pdf.setFontSize(8);
       pdf.setTextColor(120,120,120);
-      pdf.text(`${page}/${totalPages}`,A4_W-15,A4_H-8,{align:'right'});
+      pdf.text(`${page}/${totalPages}`,A4_W-6,A4_H-6,{align:'right'});
       y+=A4_H;page++;
     }
     pdf.save(`CTS_${name.replace(/\s+/g,'_')}_report_${TODAY.replace(/-/g,'')}.pdf`);
