@@ -2848,7 +2848,7 @@ function renderUpcoming(){
     work:    'background:color-mix(in srgb,var(--good) 10%,transparent);color:var(--good);border:1px solid color-mix(in srgb,var(--good) 30%,transparent)'
   };
   const STATUS_LABEL = { holiday:'Day off', rest:'Rest day', work:'Working' };
-  const TYPE_ICON = { holiday:'🎌', rest:'🏖', work:'💼' };
+  const TYPE_ICON = { holiday:'⭐', rest:'🛋', work:'💼' };
 
   rowsEl.innerHTML = days.map((day, idx) => {
     const info = getDayInfo(day.dateStr, day.dow);
