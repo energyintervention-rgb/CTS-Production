@@ -1382,7 +1382,7 @@ function makeProject(id, name){
     // Minimum hours worked on a rest/holiday before OT is auto-approved (below this → "Short OT", not Approved)
     otMinHours: 4,
     // Late tolerance buckets (minutes). minor ≤ 15, moderate ≤ 60, major ≤ 120, mismatch > 120
-    lateTiers: { minor: 15, moderate: 60, major: 120 },
+    lateTiers: { grace: 5, minor: 15, moderate: 60, major: 120 },
     attendance:{},
     plan:{
       startDate:'2026-06-01',endDate:'2026-07-31',
@@ -2463,12 +2463,14 @@ function isTravelReason(reason){
 // Classify a late duration (in minutes) into a tier. Returns {tier, label, color, bg}.
 function classifyLate(lateMin){
   const pr = attProject();
-  const tiers = pr.lateTiers || { minor: 15, moderate: 60, major: 120 };
-  if(lateMin <= 0)           return { tier: 'onTime',   label: 'On Time',                color: '#2d6a4f', bg: '#e6f0ec' };
-  if(lateMin <= tiers.minor) return { tier: 'minor',    label: 'Late (minor)',           color: '#d4a017', bg: '#faf3e0' };
-  if(lateMin <= tiers.moderate) return { tier: 'moderate', label: 'Late',                color: '#e07b1f', bg: '#fdeed8' };
-  if(lateMin <= tiers.major) return { tier: 'major',    label: 'Very Late',              color: '#c1311e', bg: '#f7e6e3' };
-  return                          { tier: 'mismatch', label: 'Possible Shift Mismatch',  color: '#7a1b14', bg: '#f0c5be' };
+  const tiers = pr.lateTiers || { grace: 5, minor: 15, moderate: 60, major: 120 };
+  const grace = (tiers.grace != null) ? tiers.grace : 5;
+  if(lateMin <= 0)              return { tier: 'onTime',   label: 'On Time',               color: '#2d6a4f', bg: '#e6f0ec' };
+  if(lateMin <= grace)          return { tier: 'onTime',   label: 'On Time (grace)',        color: '#2d6a4f', bg: '#e6f0ec' };
+  if(lateMin <= tiers.minor)    return { tier: 'minor',    label: 'Late (minor)',           color: '#d4a017', bg: '#faf3e0' };
+  if(lateMin <= tiers.moderate) return { tier: 'moderate', label: 'Late',                  color: '#e07b1f', bg: '#fdeed8' };
+  if(lateMin <= tiers.major)    return { tier: 'major',    label: 'Very Late',             color: '#c1311e', bg: '#f7e6e3' };
+  return                            { tier: 'mismatch', label: 'Possible Shift Mismatch', color: '#7a1b14', bg: '#f0c5be' };
 }
 
 // Format a minutes value as "Xh Ym" (or "Ym" if under 1h)
@@ -2495,10 +2497,13 @@ function calcAttendanceStatus(workerName, clockInTime, reason, pr){
   // Travel reason = excused
   if(isTravelReason(reason)) return { lateMin: 0, status: 'travel', reasonExcused: true, shiftLabel: sched.label, severity: { tier:'travel', label:'Off-site (Travel)', color:'#1f6391', bg:'#e1eef7' } };
 
-  // Compute minutes late vs the WORKER'S shift start
+  // Compute minutes late vs the WORKER'S shift start (seconds-precise, floor to minutes)
   const [sh, sm] = sched.start.split(':').map(Number);
-  const [th, tm] = clockInTime.substring(0,5).split(':').map(Number);
-  let diff = (th*60 + tm) - (sh*60 + sm);
+  const _tParts = clockInTime.split(':').map(Number);
+  const th = _tParts[0], tm = _tParts[1], ts = _tParts[2] || 0;
+  const _shiftSec = sh * 3600 + sm * 60;
+  const _clockSec = th * 3600 + tm * 60 + ts;
+  let diff = Math.floor((_clockSec - _shiftSec) / 60);
   // Handle wraparound: night shift starts 20:00, worker clocks in 21:00 → 60 min late.
   // BUT if worker clocks in 03:00 (3am) for a 20:00 shift, that's actually -17h = wrap to +7h late
   // → for night shifts, treat negative-large as "next day clock-in" only if shift ends past midnight.
@@ -2513,9 +2518,14 @@ function calcAttendanceStatus(workerName, clockInTime, reason, pr){
   }
 
   const lateMin = Math.max(0, diff);
+  // Grace 1-5 min = On Time status — consistent with classifyLate
+  const _pr2   = attProject();
+  const _t2    = _pr2.lateTiers || { grace: 5, minor: 15, moderate: 60, major: 120 };
+  const _grace = (_t2.grace != null) ? _t2.grace : 5;
+  const _inGrace = lateMin > 0 && lateMin <= _grace;
   return {
     lateMin,
-    status: lateMin > 0 ? 'late' : 'onTime',
+    status: (lateMin <= 0 || _inGrace) ? 'onTime' : 'late',
     reasonExcused: false,
     shiftLabel: sched.label,
     severity: classifyLate(lateMin)
@@ -2654,7 +2664,8 @@ function renderAttendance(){
     const flexAct=isFlex?activeFlexSession(flexSess):null;
     const flexTM=isFlex?flexTotalMins(flexSess):0;
     const hours=isFlex?flexTM/60:calcHours(rec.clockIn,rec.clockOut);
-    const lateStr=lateMin>0?fmtLateDuration(lateMin)+' late':'';
+    // Suppress late badge when within grace period (attV2.status === 'onTime')
+    const lateStr=(lateMin>0 && attV2.status==='late')?fmtLateDuration(lateMin)+' late':'';
     const initials=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
     const colors={onTime:'var(--good)',late:'var(--warn)',tooEarly:'var(--info)',absent:'var(--ink-soft)',ot:'var(--good)',flex:'var(--info)',travel:'var(--info)'};
     const stxt={onTime:'ON TIME',late:'LATE',tooEarly:'EARLY',absent:'ABSENT',ot:'OT',flex:'FLEX',travel:'OFF-SITE'};
@@ -2956,7 +2967,9 @@ async function doClockin(name,reason=''){
   const pr=attProject(), sched=getTodaySchedule(pr), hols=(pr.plan&&pr.plan.holidays)||[];
   const isOT=!sched.on||!!hols.find(h=>h.enabled&&h.date===TODAY)||!!rec.overtimeStatus;
   const status=isOT?'ot':getClockStatus(timeStr);
-  const lateMin=isOT?0:calcLate(timeStr);
+  // Use v2 (shift+grace aware) — consistent with renderAttendance and report
+  const _attV2ci = isOT ? { lateMin: 0 } : calcAttendanceStatus(name, timeStr, reason, attProject());
+  const lateMin  = _attV2ci.lateMin;
   setAttRecord(name,{...rec,clockIn:timeStr,gps_in:gps,status,lateMin,reason});
   renderAttendance();
   showToast('✓ '+name+' clocked in at '+timeStr);
@@ -3248,7 +3261,9 @@ function saveEditRecord(name){
   const pr3=attProject(), s3=getTodaySchedule(pr3), h3=(pr3.plan&&pr3.plan.holidays)||[];
   const recCur=getAttRecord(name);
   const isOT3=!s3.on||!!h3.find(h=>h.enabled&&h.date===TODAY)||!!recCur.overtimeStatus;
-  const lm=isOT3?0:calcLate(ci);
+  // Use v2 (shift+grace aware) — consistent with renderAttendance and report
+  const _attV2ed = isOT3 ? { lateMin: 0 } : calcAttendanceStatus(name, ci, recCur.reason||'', pr3);
+  const lm = _attV2ed.lateMin;
   const st=isOT3?'ot':getClockStatus(ci);
   setAttRecord(name,{clockIn:ci,clockOut:co,gps_in:recCur.gps_in||'',gps_out:recCur.gps_out||'',status:st,lateMin:lm,reason:recCur.reason||''});
   renderAttendance();
@@ -4479,8 +4494,11 @@ async function _buildTeamAttendancePDF(fromDate, toDate){
       let status='', statusColor='#5a5a5a';
       if(isWork){
         if(ci){
-          if(rec.lateMin>0){ status='Late'; statusColor='#d4a017'; totalLate++; }
-          else { status='On Time'; statusColor='#2d6a4f'; }
+          // Grace 1-5 min = On Time (matches classifyLate + calcAttendanceStatus)
+          const _csvTiers = pr.lateTiers || { grace: 5, minor: 15, moderate: 60, major: 120 };
+          const _csvGrace = (_csvTiers.grace != null) ? _csvTiers.grace : 5;
+          if(rec.lateMin > 0 && rec.lateMin > _csvGrace){ status='Late'; statusColor='#d4a017'; totalLate++; }
+          else { status = rec.lateMin > 0 ? 'On Time (grace)' : 'On Time'; statusColor='#2d6a4f'; }
           totalPresent++;
         } else {
           status='Absent'; statusColor='#c1311e'; totalAbsent++;
@@ -4634,7 +4652,12 @@ function sendAttWhatsApp(){
     workers.forEach(w => {
       const name = (typeof w==='string') ? w : (w.name||'');
       const rec = att[name+'_'+TODAY];
-      if(rec && rec.clockIn){ present++; if(rec.lateMin>0) late++; }
+      if(rec && rec.clockIn){
+        present++;
+        const _waTiers = pr.lateTiers || { grace: 5, minor: 15, moderate: 60, major: 120 };
+        const _waGrace = (_waTiers.grace != null) ? _waTiers.grace : 5;
+        if(rec.lateMin > 0 && rec.lateMin > _waGrace) late++;
+      }
     });
     const absent = workers.length - present;
     const msg = `*CTS Team Attendance — ${TODAY}*\nProject: ${pr.name}\nWorkers: ${workers.length}\nPresent: ${present}\nLate: ${late}\nAbsent: ${absent}\nAttendance: ${workers.length>0?Math.round(present/workers.length*100):0}%`;
@@ -4811,7 +4834,7 @@ async function generateWorkerReport(name, fromOverride, toOverride){
           onTimeCnt++;
           status = 'Off-site (Travel)';
           statusColor = '#1f6391'; statusBg = '#e1eef7';
-        } else if(attStatus.lateMin > 0){
+        } else if(attStatus.status === 'late'){
           lateCnt++;
           totalLateMin += attStatus.lateMin;
           lateStr = fmtLateDuration(attStatus.lateMin);
@@ -4821,7 +4844,10 @@ async function generateWorkerReport(name, fromOverride, toOverride){
           statusColor = attStatus.severity.color; statusBg = attStatus.severity.bg;
         } else {
           onTimeCnt++;
-          status = 'On Time';
+          // Show grace note in report if within grace window
+          status = attStatus.lateMin > 0
+            ? 'On Time (grace +' + fmtLateDuration(attStatus.lateMin) + ')'
+            : 'On Time';
           statusColor = '#2d6a4f'; statusBg = '#e6f0ec';
         }
         if(hours>0) totalHours += hours;
