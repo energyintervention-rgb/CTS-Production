@@ -977,6 +977,29 @@
   }
   .chart-wrap { position: relative; height: 320px; }
 
+  /* Power Demand chart: type dropdown + range-brush zoom */
+  .kw-chart-type-select {
+    background: var(--surface-2); border: 1px solid var(--line); color: var(--ink);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    padding: 5px 8px; border-radius: 3px; cursor: pointer;
+  }
+  .kw-brush-wrap {
+    position: relative; height: 40px; margin: 10px 0 4px;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 3px;
+    overflow: hidden; user-select: none;
+  }
+  .kw-brush-overview { position: absolute; inset: 0; }
+  .kw-brush-selection {
+    position: absolute; top: 0; bottom: 0;
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    border-left: 2px solid var(--accent); border-right: 2px solid var(--accent);
+    cursor: grab;
+  }
+  .kw-brush-selection:active { cursor: grabbing; }
+  .kw-brush-handle { position: absolute; top: 0; bottom: 0; width: 10px; cursor: ew-resize; }
+  .kw-brush-handle.left { left: -5px; }
+  .kw-brush-handle.right { right: -5px; }
+
   /* Table */
   .data-table { width: 100%; border-collapse: collapse;
     font-family: 'JetBrains Mono', monospace; font-size: 12px; }
@@ -1492,9 +1515,22 @@
   <div class="panel">
     <div class="panel-head">
       <h2 id="kwChartTitle">Power Demand · 5-min intervals</h2>
-      <div class="meta" id="rangeMeta">—</div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="meta" id="rangeMeta">—</div>
+        <select id="kwChartTypeSelect" class="kw-chart-type-select" aria-label="Chart type">
+          <option value="bar">Bar</option>
+          <option value="line">Line</option>
+        </select>
+      </div>
     </div>
     <div class="chart-wrap"><canvas id="kwChart"></canvas></div>
+    <div class="kw-brush-wrap" id="kwBrushWrap">
+      <canvas id="kwBrushChart" class="kw-brush-overview"></canvas>
+      <div class="kw-brush-selection" id="kwBrushSelection">
+        <div class="kw-brush-handle left" id="kwBrushHandleLeft"></div>
+        <div class="kw-brush-handle right" id="kwBrushHandleRight"></div>
+      </div>
+    </div>
     <div class="tariff-legend" id="tariffLegend">
       <span class="tl-item"><span class="tl-swatch tl-peak"></span> Peak <span id="tlPeakDays" class="tl-time">Mon–Fri</span> <span id="tlPeakWindow" class="tl-time">08:00–22:00</span></span>
       <span class="tl-item"><span class="tl-swatch tl-offpeak"></span> Off-peak <span class="tl-time">other times</span></span>
@@ -1931,6 +1967,9 @@
       <span>Devices</span>
       <button class="btn small" id="addDeviceBtn">+ Add device</button>
     </h4>
+    <input type="text" id="deviceSearch" placeholder="Search by name, device ID, or timezone..."
+      style="width:100%; box-sizing:border-box; margin-bottom:8px; padding:8px 10px; border-radius:2px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font-family:'JetBrains Mono',monospace; font-size:12px;">
+    <div id="deviceListMeta" style="font-size:11px; color:var(--ink-soft); font-family:'JetBrains Mono',monospace; margin-bottom:8px;"></div>
     <div class="device-list" id="deviceList"></div>
 
     <div class="modal-actions">
@@ -1963,12 +2002,16 @@ function uid() { return 'd' + Math.random().toString(36).slice(2, 9); }
 function makeDevice(over) {
   const id = uid();
   const base = 'https://energy-eye-functions-prod-7g42tsfywv4ro.azurewebsites.net';
+  // /data is CORS-blocked on the direct Azure URL for non-https origins (confirmed
+  // while debugging the admin dashboard) — route it through the Cloudflare Worker
+  // proxy instead. /status works fine directly, so it stays on the Azure URL.
+  const dataProxyBase = 'https://energy.energyintervention.workers.dev';
   return {
     id,
     name: 'Device ' + id.slice(1, 4),
     deviceId: '',
     key: '',
-    dataUrl: base + '/api/v1/devices/{deviceId}/data',
+    dataUrl: dataProxyBase + '/api/v1/devices/{deviceId}/data',
     statusUrl: base + '/api/v1/devices/{deviceId}/status',
     // Per-device defaults (added in v2 — multi-region support)
     utcOffset: '+08:00',                       // ISO offset for display (e.g. +08:00, +10:00, +11:00)
@@ -2001,7 +2044,14 @@ function loadCfg() {
     }
     const parsed = JSON.parse(raw);
     const merged = { ...defaultCfg, ...parsed };
+    // The old default dataUrl pointed straight at Azure, which is CORS-blocked.
+    // Devices saved before the fix still carry that exact URL — rewrite it to
+    // the Cloudflare proxy. Anything the user customized to something else is
+    // left alone (only an exact match to the old default is touched).
+    const OLD_DATA_URL = 'https://energy-eye-functions-prod-7g42tsfywv4ro.azurewebsites.net/api/v1/devices/{deviceId}/data';
+    const NEW_DATA_URL = 'https://energy.energyintervention.workers.dev/api/v1/devices/{deviceId}/data';
     // Backfill per-device fields added in later versions
+    let migratedUrl = false;
     if (Array.isArray(merged.devices)) {
       merged.devices.forEach(d => {
         if (!d.peakStart) d.peakStart = '08:00';
@@ -2011,6 +2061,7 @@ function loadCfg() {
         if (!d.resolution) d.resolution = parsed.resolution || '5min';
         if (!d.from) d.from = parsed.from || '2026-01-01T16:00:00Z';
         if (!d.to)   d.to   = parsed.to   || '2028-12-31T16:00:00Z';
+        if (d.dataUrl === OLD_DATA_URL) { d.dataUrl = NEW_DATA_URL; migratedUrl = true; }
       });
     }
     // Drop legacy global fields (now per-device); the in-memory cfg no longer carries them
@@ -2018,6 +2069,7 @@ function loadCfg() {
     delete merged.resolution;
     delete merged.from;
     delete merged.to;
+    if (migratedUrl) localStorage.setItem(LS_KEY, JSON.stringify(merged));
     return merged;
   } catch { return { ...defaultCfg, devices: [makeDevice({ name: 'Default' })] }; }
 }
@@ -2027,6 +2079,10 @@ let cfg = loadCfg();
 if (!cfg.activeId && cfg.devices.length) cfg.activeId = cfg.devices[0].id;
 
 let kwChart = null, kwhChart = null, lastRows = [];
+let kwChartTypeMode = 'bar';      // 'bar' | 'line' — user's chosen display for the Power Demand chart
+let kwBrushChart = null;
+let kwBrushStart = null, kwBrushEnd = null; // indices into the current valid-rows array, null = full range
+let kwBrushFullLen = -1;          // detects when the underlying data changed, to reset the brush
 
 function activeDevice() {
   return cfg.devices.find(d => d.id === cfg.activeId) || cfg.devices[0];
@@ -2072,6 +2128,70 @@ document.getElementById('deviceSelect').addEventListener('change', (e) => {
   tvyDeviceSwitch();
 });
 
+/* =========================
+   Power Demand chart: type toggle + brush zoom
+   ========================= */
+document.getElementById('kwChartTypeSelect').addEventListener('change', (e) => {
+  kwChartTypeMode = e.target.value === 'line' ? 'line' : 'bar';
+  if (lastRows.length) renderCharts(lastRows);
+});
+
+(function setupKwBrush() {
+  const wrap = document.getElementById('kwBrushWrap');
+  const sel = document.getElementById('kwBrushSelection');
+  const handleLeft = document.getElementById('kwBrushHandleLeft');
+  const handleRight = document.getElementById('kwBrushHandleRight');
+  if (!wrap || !sel || !handleLeft || !handleRight) return;
+
+  let dragMode = null;      // 'left' | 'right' | 'move'
+  let dragStartX = 0;
+  let dragStartIdx = [0, 0];
+
+  function startDrag(mode) {
+    return (e) => {
+      if (kwBrushFullLen < 2) return;
+      dragMode = mode;
+      dragStartX = e.clientX;
+      dragStartIdx = [kwBrushStart == null ? 0 : kwBrushStart, kwBrushEnd == null ? kwBrushFullLen - 1 : kwBrushEnd];
+      e.preventDefault();
+    };
+  }
+  handleLeft.addEventListener('mousedown', startDrag('left'));
+  handleRight.addEventListener('mousedown', startDrag('right'));
+  sel.addEventListener('mousedown', (e) => {
+    if (e.target === handleLeft || e.target === handleRight) return;
+    startDrag('move')(e);
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!dragMode) return;
+    const rect = wrap.getBoundingClientRect();
+    const n = kwBrushFullLen;
+    const dxIdx = Math.round(((e.clientX - dragStartX) / rect.width) * (n - 1));
+    let s = dragStartIdx[0], en = dragStartIdx[1];
+    if (dragMode === 'left') {
+      s = Math.max(0, Math.min(dragStartIdx[0] + dxIdx, en - 1));
+    } else if (dragMode === 'right') {
+      en = Math.min(n - 1, Math.max(dragStartIdx[1] + dxIdx, s + 1));
+    } else {
+      const span = dragStartIdx[1] - dragStartIdx[0];
+      s = Math.max(0, Math.min(dragStartIdx[0] + dxIdx, n - 1 - span));
+      en = s + span;
+    }
+    kwBrushStart = s; kwBrushEnd = en;
+    const leftPct = (s / (n - 1)) * 100;
+    const rightPct = (en / (n - 1)) * 100;
+    sel.style.left = leftPct + '%';
+    sel.style.width = Math.max(0, rightPct - leftPct) + '%';
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!dragMode) return;
+    dragMode = null;
+    if (lastRows.length) renderCharts(lastRows);
+  });
+})();
+
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -2081,10 +2201,19 @@ function escapeHtml(s) {
    ========================= */
 const modalBg = document.getElementById('modalBg');
 let modalDevices = []; // working copy edited in modal
+let expandedDeviceIds = new Set(); // which cards are expanded, by device.id
+let deviceSearchTerm = '';
+const DEVICE_RENDER_CAP = 50; // don't render more than this many cards at once
 
 function openModal() {
   modalDevices = cfg.devices.map(d => ({ ...d }));
   if (!modalDevices.length) modalDevices.push(makeDevice());
+  // Start with only the active device expanded so opening the modal with
+  // thousands of devices doesn't render everything wide open.
+  expandedDeviceIds = new Set(modalDevices.filter(d => d.id === cfg.activeId).map(d => d.id));
+  deviceSearchTerm = '';
+  const search = document.getElementById('deviceSearch');
+  if (search) search.value = '';
   renderDeviceCards();
   modalBg.classList.add('open');
 }
@@ -2092,12 +2221,40 @@ function closeModal() { modalBg.classList.remove('open'); }
 
 function renderDeviceCards() {
   const list = document.getElementById('deviceList');
+  const metaEl = document.getElementById('deviceListMeta');
   list.innerHTML = '';
-  modalDevices.forEach((d, idx) => {
+
+  // Pair each device with its real index in modalDevices BEFORE filtering,
+  // so data-i always points at the right device to mutate regardless of
+  // which subset is currently shown.
+  const term = (deviceSearchTerm || '').toLowerCase().trim();
+  const withIdx = modalDevices.map((d, idx) => ({ d, idx }));
+  const matches = term
+    ? withIdx.filter(({ d }) =>
+        (d.name || '').toLowerCase().includes(term) ||
+        (d.deviceId || '').toLowerCase().includes(term) ||
+        ('utc' + (d.utcOffset || '')).toLowerCase().includes(term))
+    : withIdx;
+  const shown = matches.slice(0, DEVICE_RENDER_CAP);
+
+  if (metaEl) {
+    if (!term) {
+      metaEl.textContent = modalDevices.length + (modalDevices.length === 1 ? ' device' : ' devices');
+    } else {
+      metaEl.textContent = 'Showing ' + shown.length + ' of ' + matches.length + ' matching devices (' + modalDevices.length + ' total)';
+    }
+    if (matches.length > shown.length) {
+      metaEl.textContent += ' — refine search to narrow further';
+    }
+  }
+
+  shown.forEach(({ d, idx }) => {
     const card = document.createElement('div');
-    card.className = 'device-card' + (d.id === cfg.activeId ? ' active' : '') + ' expanded';
+    const isExpanded = expandedDeviceIds.has(d.id);
+    card.className = 'device-card' + (d.id === cfg.activeId ? ' active' : '') + (isExpanded ? ' expanded' : '');
     card.innerHTML = `
       <div class="device-card-head">
+        <button type="button" class="btn small" data-act="toggle" data-i="${idx}" title="${isExpanded ? 'Collapse' : 'Expand'}" style="padding:4px 8px; flex-shrink:0;">${isExpanded ? '−' : '+'}</button>
         <div class="device-card-name">
           <input type="text" data-i="${idx}" data-f="name" value="${escapeHtml(d.name)}" placeholder="Friendly name" />
           ${d.id === cfg.activeId ? '<span class="device-tag">active</span>' : ''}
@@ -2251,6 +2408,11 @@ function renderDeviceCards() {
         const removingActive = modalDevices[i].id === cfg.activeId;
         modalDevices.splice(i, 1);
         if (removingActive) cfg.activeId = modalDevices[0].id;
+        renderDeviceCards();
+      } else if (act === 'toggle') {
+        const id = modalDevices[i].id;
+        if (expandedDeviceIds.has(id)) expandedDeviceIds.delete(id);
+        else expandedDeviceIds.add(id);
         renderDeviceCards();
       } else if (act === 'activate') {
         cfg.activeId = modalDevices[i].id;
@@ -2438,10 +2600,19 @@ document.getElementById('settingsFab').addEventListener('click', openModal);
 document.getElementById('closeModal').addEventListener('click', closeModal);
 modalBg.addEventListener('click', (e) => { if (e.target === modalBg) closeModal(); });
 
+document.getElementById('deviceSearch').addEventListener('input', (e) => {
+  deviceSearchTerm = e.target.value;
+  renderDeviceCards();
+});
+
 document.getElementById('addDeviceBtn').addEventListener('click', () => {
   const d = makeDevice({ name: 'New device', deviceId: '', key: '' });
   modalDevices.push(d);
   if (!cfg.activeId) cfg.activeId = d.id;
+  expandedDeviceIds.add(d.id);
+  deviceSearchTerm = '';
+  const search = document.getElementById('deviceSearch');
+  if (search) search.value = '';
   renderDeviceCards();
 });
 
@@ -3544,19 +3715,59 @@ function renderCharts(rows) {
     }
     return r.isPartial ? base + '88' : base;
   });
-  kwChart = new Chart(document.getElementById('kwChart'), {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        data: seriesData,
-        backgroundColor: barColors,
+
+  // Brush zoom range applies to the Power Demand chart only — the
+  // Cumulative Energy chart below always shows the full range, unaffected.
+  if (valid.length !== kwBrushFullLen) {
+    kwBrushStart = null; kwBrushEnd = null;
+    kwBrushFullLen = valid.length;
+  }
+  const kwB0 = (kwBrushStart == null) ? 0 : kwBrushStart;
+  const kwB1 = (kwBrushEnd == null) ? Math.max(0, valid.length - 1) : kwBrushEnd;
+  const kwLabels = labels.slice(kwB0, kwB1 + 1);
+  const kwSeriesData = seriesData.slice(kwB0, kwB1 + 1);
+  const kwBarColors = barColors.slice(kwB0, kwB1 + 1);
+
+  const kwDataset = kwChartTypeMode === 'line'
+    ? {
+        data: kwSeriesData,
+        borderColor: c.accent,
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: c.accent,
+        pointHitRadius: 8,
+        tension: 0.2,
+        fill: false,
+        segment: { borderColor: (ctx) => kwBarColors[ctx.p0DataIndex] || c.accent }
+      }
+    : {
+        data: kwSeriesData,
+        backgroundColor: kwBarColors,
         borderRadius: 1, borderSkipped: false,
         barPercentage: 1, categoryPercentage: 0.92
-      }]
+      };
+
+  const kwOpts = commonOpts(yAxisLabel);
+  kwOpts.plugins.tooltip.callbacks = {
+    title: () => '',
+    label: (item) => {
+      const dev = activeDevice() || {};
+      const name = dev.name || 'Device';
+      const metric = useKwh ? 'Energy' : 'Power Demand';
+      return name + ' / ' + metric + ' - ' + yAxisLabel + ': ' + Number(item.parsed.y).toFixed(2) + ' ' + yAxisLabel;
     },
-    options: commonOpts(yAxisLabel)
+    afterLabel: (item) => kwLabels[item.dataIndex]
+  };
+
+  kwChart = new Chart(document.getElementById('kwChart'), {
+    type: kwChartTypeMode,
+    data: { labels: kwLabels, datasets: [kwDataset] },
+    options: kwOpts
   });
+
+  renderKwBrush(labels, seriesData, kwB0, kwB1, c);
 
   kwhChart = new Chart(document.getElementById('kwhChart'), {
     type: 'line',
@@ -3572,6 +3783,47 @@ function renderCharts(rows) {
     },
     options: commonOpts('kWh (cumulative)')
   });
+}
+
+// Renders the small overview strip below the Power Demand chart and
+// positions the selection band over it. Always shows the FULL range,
+// regardless of what the main chart is currently zoomed to.
+function renderKwBrush(fullLabels, fullData, selStart, selEnd, c) {
+  if (kwBrushChart) kwBrushChart.destroy();
+  const canvas = document.getElementById('kwBrushChart');
+  if (!canvas) return;
+  kwBrushChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: fullLabels,
+      datasets: [{
+        data: fullData,
+        borderColor: c.inkSoft,
+        borderWidth: 1,
+        pointRadius: 0,
+        tension: 0.1,
+        fill: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: { x: { display: false }, y: { display: false } }
+    }
+  });
+
+  const n = fullLabels.length;
+  const sel = document.getElementById('kwBrushSelection');
+  if (!sel) return;
+  if (n > 1) {
+    const leftPct = (selStart / (n - 1)) * 100;
+    const rightPct = (selEnd / (n - 1)) * 100;
+    sel.style.left = leftPct + '%';
+    sel.style.width = Math.max(0, rightPct - leftPct) + '%';
+    sel.style.display = '';
+  } else {
+    sel.style.display = 'none';
+  }
 }
 function renderTable(rows) {
   // Stash for exports
@@ -5588,12 +5840,17 @@ function tvyUpdateStats(statsA, statsB, periodA, periodB) {
   } else {
     const kwhPct = ((statsA.kwh - statsB.kwh) / Math.max(statsB.kwh, 0.0001)) * 100;
     const kwhWord = statsA.kwh > statsB.kwh ? 'more' : statsA.kwh < statsB.kwh ? 'less' : 'the same';
-    const peakWord = statsA.peakKw > statsB.peakKw ? 'higher peak' : 'lower peak';
-    const peakDiff = Math.abs(statsA.peakKw - statsB.peakKw);
+    let peakClause = '';
+    if (statsA.peakKw != null && statsB.peakKw != null) {
+      const peakWord = statsA.peakKw > statsB.peakKw ? 'higher peak' : 'lower peak';
+      const peakDiff = Math.abs(statsA.peakKw - statsB.peakKw);
+      peakClause = ' · ' + peakWord + ' by ' + peakDiff.toFixed(2) + ' kW (A ' + statsA.peakKw.toFixed(2) +
+        ' vs B ' + statsB.peakKw.toFixed(2) + ').';
+    } else {
+      peakClause = ' · peak kW unavailable for one or both periods.';
+    }
     summaryEl.textContent =
-      'Period A used ' + Math.abs(kwhPct).toFixed(1) + '% ' + kwhWord + ' energy than B · ' +
-      peakWord + ' by ' + peakDiff.toFixed(2) + ' kW (A ' + statsA.peakKw.toFixed(2) +
-      ' vs B ' + statsB.peakKw.toFixed(2) + ').';
+      'Period A used ' + Math.abs(kwhPct).toFixed(1) + '% ' + kwhWord + ' energy than B' + peakClause;
   }
 }
 
