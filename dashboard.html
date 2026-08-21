@@ -1951,7 +1951,7 @@ async function flexClockIn(name){
     if(activeFlexSession(sessions)){ showToast('Already clocked in','warn'); return; }
     const timeStr=nowHMS();
     showToast('⏳ Please wait, getting location…');
-    const gps=await getGPS();
+    const [gps]=await Promise.all([getGPS(), new Promise(r=>setTimeout(r,500))]);
     sessions.push({clockIn:timeStr,clockOut:'',gps_in:gps,overnight:false});
     setFlexSessions(name,sessions);
     const rec=getAttRecord(name);
@@ -1973,7 +1973,7 @@ async function flexClockOut(name){
     if(!active){ showToast('Not clocked in','warn'); return; }
     const timeStr=nowHMS();
     showToast('⏳ Please wait, getting location…');
-    const gps=await getGPS();
+    const [gps]=await Promise.all([getGPS(), new Promise(r=>setTimeout(r,500))]);
     active.clockOut=timeStr;
     active.gps_out=gps;
     active.overnight=isOvernightClockout(active.clockIn,timeStr);
@@ -3082,7 +3082,7 @@ async function doClockin(name,reason=''){
   const rec=getAttRecord(name);
   const timeStr=nowHMS();
   showToast('⏳ Please wait, getting location…');
-  const gps=await getGPS();
+  const [gps]=await Promise.all([getGPS(), new Promise(r=>setTimeout(r,500))]);
   const pr=attProject(), sched=getTodaySchedule(pr), hols=(pr.plan&&pr.plan.holidays)||[];
   const isOT=!sched.on||!!hols.find(h=>h.enabled&&h.date===TODAY)||!!rec.overtimeStatus;
   const status=isOT?'ot':getClockStatus(timeStr);
@@ -3099,7 +3099,7 @@ async function doClockout(name,reason=''){
   if(!rec.clockIn){ showToast('Not clocked in','warn'); return; }
   const timeStr=nowHMS();
   showToast('⏳ Please wait, getting location…');
-  const gps=await getGPS();
+  const [gps]=await Promise.all([getGPS(), new Promise(r=>setTimeout(r,500))]);
   const overnight=isOvernightClockout(rec.clockIn,timeStr);
   setAttRecord(name,{...rec,clockOut:timeStr,gps_out:gps,reason:reason||rec.reason,earlyLeave:isEarlyLeave(timeStr),overnight});
   renderAttendance();
