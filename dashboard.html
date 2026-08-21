@@ -3071,6 +3071,7 @@ async function doClockin(name,reason=''){
   const lateMin  = _attV2ci.lateMin;
   setAttRecord(name,{...rec,clockIn:timeStr,gps_in:gps,status,lateMin,reason});
   renderAttendance();
+  logActivity('CLOCK_IN', name+' clocked in at '+timeStr+(reason?' — '+reason:''), name);
   showToast('✓ '+name+' clocked in at '+timeStr);
 }
 
@@ -3082,6 +3083,7 @@ async function doClockout(name,reason=''){
   const overnight=isOvernightClockout(rec.clockIn,timeStr);
   setAttRecord(name,{...rec,clockOut:timeStr,gps_out:gps,reason:reason||rec.reason,earlyLeave:isEarlyLeave(timeStr),overnight});
   renderAttendance();
+  logActivity('CLOCK_OUT', name+' clocked out at '+timeStr+(reason?' — '+reason:''), name);
   showToast('✓ '+name+' clocked out at '+timeStr);
 }
 
