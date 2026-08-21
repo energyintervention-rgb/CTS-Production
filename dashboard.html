@@ -1950,6 +1950,7 @@ async function flexClockIn(name){
     if(sessions.length>=4){ showToast('Max 4 sessions reached','warn'); return; }
     if(activeFlexSession(sessions)){ showToast('Already clocked in','warn'); return; }
     const timeStr=nowHMS();
+    showToast('⏳ Please wait, getting location…');
     const gps=await getGPS();
     sessions.push({clockIn:timeStr,clockOut:'',gps_in:gps,overnight:false});
     setFlexSessions(name,sessions);
@@ -1971,6 +1972,7 @@ async function flexClockOut(name){
     const active=activeFlexSession(sessions);
     if(!active){ showToast('Not clocked in','warn'); return; }
     const timeStr=nowHMS();
+    showToast('⏳ Please wait, getting location…');
     const gps=await getGPS();
     active.clockOut=timeStr;
     active.gps_out=gps;
@@ -3079,6 +3081,7 @@ function confirmClockOut(){
 async function doClockin(name,reason=''){
   const rec=getAttRecord(name);
   const timeStr=nowHMS();
+  showToast('⏳ Please wait, getting location…');
   const gps=await getGPS();
   const pr=attProject(), sched=getTodaySchedule(pr), hols=(pr.plan&&pr.plan.holidays)||[];
   const isOT=!sched.on||!!hols.find(h=>h.enabled&&h.date===TODAY)||!!rec.overtimeStatus;
@@ -3095,6 +3098,7 @@ async function doClockout(name,reason=''){
   const rec=getAttRecord(name);
   if(!rec.clockIn){ showToast('Not clocked in','warn'); return; }
   const timeStr=nowHMS();
+  showToast('⏳ Please wait, getting location…');
   const gps=await getGPS();
   const overnight=isOvernightClockout(rec.clockIn,timeStr);
   setAttRecord(name,{...rec,clockOut:timeStr,gps_out:gps,reason:reason||rec.reason,earlyLeave:isEarlyLeave(timeStr),overnight});
@@ -5107,12 +5111,14 @@ async function generateWorkerReport(name, fromOverride, toOverride){
 // ══════════════════════════════════════════
 function closeModal(id){ document.getElementById(id).classList.remove('show'); }
 
+let _toastTimer=null;
 function showToast(msg, type=''){
   const t=document.getElementById('toast');
   t.textContent=msg;
   t.className='toast'+(type?' toast-'+type:'');
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
 }
 
 function escH(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
