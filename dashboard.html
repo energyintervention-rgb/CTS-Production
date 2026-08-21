@@ -1940,35 +1940,51 @@ function flexTotalMins(sessions){
 function minsToHHMM(mins){ const h=Math.floor(mins/60),m=mins%60; return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
 function activeFlexSession(sessions){ return sessions.find(s=>s.clockIn&&!s.clockOut); }
 
+const _flexClockLock = new Set();
+
 async function flexClockIn(name){
-  const sessions=getFlexSessions(name);
-  if(sessions.length>=4){ showToast('Max 4 sessions reached','warn'); return; }
-  if(activeFlexSession(sessions)){ showToast('Already clocked in','warn'); return; }
-  const timeStr=nowHMS();
-  const gps=await getGPS();
-  sessions.push({clockIn:timeStr,clockOut:'',gps_in:gps,overnight:false});
-  setFlexSessions(name,sessions);
-  const rec=getAttRecord(name);
-  if(!rec.clockIn) setAttRecord(name,{...rec,clockIn:timeStr,gps_in:gps,status:'present',lateMin:0});
-  saveState(); renderAttendance();
-  showToast('✓ '+name+' flex session #'+sessions.length+' started');
+  if(_flexClockLock.has(name)) return;
+  _flexClockLock.add(name);
+  try{
+    const sessions=getFlexSessions(name);
+    if(sessions.length>=4){ showToast('Max 4 sessions reached','warn'); return; }
+    if(activeFlexSession(sessions)){ showToast('Already clocked in','warn'); return; }
+    const timeStr=nowHMS();
+    const gps=await getGPS();
+    sessions.push({clockIn:timeStr,clockOut:'',gps_in:gps,overnight:false});
+    setFlexSessions(name,sessions);
+    const rec=getAttRecord(name);
+    if(!rec.clockIn) setAttRecord(name,{...rec,clockIn:timeStr,gps_in:gps,status:'present',lateMin:0});
+    logActivity('CLOCK_IN', name+' flex session #'+sessions.length+' started at '+timeStr, name);
+    saveState(); renderAttendance();
+    showToast('✓ '+name+' flex session #'+sessions.length+' started');
+  } finally {
+    _flexClockLock.delete(name);
+  }
 }
 
 async function flexClockOut(name){
-  const sessions=getFlexSessions(name);
-  const active=activeFlexSession(sessions);
-  if(!active){ showToast('Not clocked in','warn'); return; }
-  const timeStr=nowHMS();
-  const gps=await getGPS();
-  active.clockOut=timeStr;
-  active.gps_out=gps;
-  active.overnight=isOvernightClockout(active.clockIn,timeStr);
-  setFlexSessions(name,sessions);
-  const rec=getAttRecord(name);
-  const totalMins=flexTotalMins(sessions);
-  setAttRecord(name,{...rec,clockOut:timeStr,gps_out:gps});
-  saveState(); renderAttendance();
-  showToast('✓ '+name+' session ended · Total: '+minsToHHMM(totalMins));
+  if(_flexClockLock.has(name)) return;
+  _flexClockLock.add(name);
+  try{
+    const sessions=getFlexSessions(name);
+    const active=activeFlexSession(sessions);
+    if(!active){ showToast('Not clocked in','warn'); return; }
+    const timeStr=nowHMS();
+    const gps=await getGPS();
+    active.clockOut=timeStr;
+    active.gps_out=gps;
+    active.overnight=isOvernightClockout(active.clockIn,timeStr);
+    setFlexSessions(name,sessions);
+    const rec=getAttRecord(name);
+    const totalMins=flexTotalMins(sessions);
+    setAttRecord(name,{...rec,clockOut:timeStr,gps_out:gps});
+    logActivity('CLOCK_OUT', name+' flex session ended at '+timeStr+' · Total: '+minsToHHMM(totalMins), name);
+    saveState(); renderAttendance();
+    showToast('✓ '+name+' session ended · Total: '+minsToHHMM(totalMins));
+  } finally {
+    _flexClockLock.delete(name);
+  }
 }
 
 function startRealtimeSync(){
