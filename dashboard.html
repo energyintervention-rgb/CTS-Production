@@ -740,7 +740,7 @@ body::before {
     </div>
   </div>
   <div class="topbar-right">
-    <span id="idleTimerBadge" style="display:none;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.5px;color:#fff;background:var(--ink-soft);padding:3px 8px;border-radius:2px;font-weight:700;">⏱ Auto-logout in 10:00</span>
+    <span id="idleTimerBadge" style="display:none;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.5px;color:#ffffff;background:#3a4152;border:none;padding:3px 8px;border-radius:2px;font-weight:700;">⏱ Auto-logout in 10:00</span>
     <span id="syncIndicator">⏳</span>
     <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
     <button class="btn-hamburger" onclick="snavOpen()" aria-label="Menu">
@@ -1552,12 +1552,14 @@ function updateIdleBanner(){
   const el = document.getElementById('idleTimerBadge');
   if(!el) return;
   el.style.display = 'inline-block';
+  el.style.color = '#ffffff';
+  el.style.border = 'none';
   if(_idleSecondsLeft <= IDLE_WARNING_SECONDS){
-    el.style.background = 'var(--bad)';
+    el.style.background = '#c1311e';
     el.textContent = '⏻ Auto-logout in ' + _idleSecondsLeft + 's';
   } else {
     const m=Math.floor(_idleSecondsLeft/60), s=_idleSecondsLeft%60;
-    el.style.background = 'var(--ink-soft)';
+    el.style.background = '#3a4152';
     el.textContent = '⏱ Auto-logout in ' + m + ':' + String(s).padStart(2,'0');
   }
 }
