@@ -1568,7 +1568,7 @@ function logout(){
   localStorage.removeItem('cts_session');
   sessionStorage.clear();
   _pinAttempts=0;
-  window.location.href='index.html';
+  flushSaveState().finally(()=>{ window.location.href='index.html'; });
 }
 
 function showLoginScreen(){ sessionStorage.clear(); window.location.href='index.html'; }
@@ -1861,6 +1861,16 @@ function saveState(){
     delete data.adminMode;
     DOC_REF.set(data).catch(e=>console.warn('Firestore save error:',e));
   },1500);
+}
+
+function flushSaveState(){
+  clearTimeout(_saveTimer);
+  if(!DOC_REF) return Promise.resolve();
+  const data=JSON.parse(JSON.stringify(S));
+  delete data.adminMode;
+  const savePromise = DOC_REF.set(data).catch(e=>console.warn('Firestore save error:',e));
+  const timeoutPromise = new Promise(resolve=>setTimeout(resolve,3000));
+  return Promise.race([savePromise, timeoutPromise]);
 }
 
 let _firstLoad=true;
