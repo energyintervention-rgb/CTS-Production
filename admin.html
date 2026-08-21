@@ -2438,8 +2438,16 @@ function refJump(id){
 }
 
 function doLogout(){
-  sessionStorage.clear();
-  window.location.href='index.html';
+  const name = sessionStorage.getItem('cts_name') || 'Admin';
+  const entry = {type:'LOGOUT', detail:'Logged out', actor:name, ts:new Date().toISOString(), date:new Date().toISOString().slice(0,10)};
+  const finish = () => { sessionStorage.clear(); window.location.href='index.html'; };
+  if(!DOC_REF){ finish(); return; }
+  DOC_REF.get().then(snap=>{
+    const remote = snap.exists ? (snap.data().activityLog||[]) : (_S.activityLog||[]);
+    const updated = [entry, ...remote];
+    return DOC_REF.set({activityLog: updated}, {merge:true});
+  }).catch(e=>console.warn('Logout log save error:',e))
+    .finally(finish);
 }
 
 function toggleTheme(){
