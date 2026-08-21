@@ -1164,7 +1164,7 @@ body::before {
     <div id="clockInHint" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--bad);margin-bottom:8px;display:none;">⚠ Please provide a reason for being late.</div>
     <p style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-soft);margin-bottom:14px;line-height:1.5;">This record is final once submitted.<br>Only Admin can make changes after this.</p>
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('clockInModal')">Not Yet</button>
+      <button class="btn-cancel" id="clockInCancelBtn" onclick="closeModal('clockInModal')">Not Yet</button>
       <button class="btn-confirm" id="clockInBtn" onclick="confirmClockIn()">Yes, Clock In</button>
     </div>
   </div>
@@ -1223,7 +1223,7 @@ body::before {
     <div id="clockOutHint" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--bad);margin-bottom:8px;display:none;">⚠ Please provide a reason for leaving early.</div>
     <p style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-soft);margin-bottom:14px;line-height:1.5;">This record is final once submitted.<br>Only Admin can make changes after this.</p>
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('clockOutModal')">Not Yet</button>
+      <button class="btn-cancel" id="clockOutCancelBtn" onclick="closeModal('clockOutModal')">Not Yet</button>
       <button class="btn-confirm" id="clockOutBtn" onclick="confirmClockOut()">Yes, Clock Out</button>
     </div>
   </div>
@@ -1942,15 +1942,16 @@ function activeFlexSession(sessions){ return sessions.find(s=>s.clockIn&&!s.cloc
 
 const _flexClockLock = new Set();
 
-async function flexClockIn(name){
+async function flexClockIn(name,btn){
   if(_flexClockLock.has(name)) return;
   _flexClockLock.add(name);
+  const origLabel = btn ? btn.textContent : null;
+  if(btn){ btn.disabled=true; btn.style.opacity='.6'; btn.style.cursor='not-allowed'; btn.textContent='⏳ Please wait…'; }
   try{
     const sessions=getFlexSessions(name);
     if(sessions.length>=4){ showToast('Max 4 sessions reached','warn'); return; }
     if(activeFlexSession(sessions)){ showToast('Already clocked in','warn'); return; }
     const timeStr=nowHMS();
-    showToast('⏳ Please wait, getting location…');
     const [gps]=await Promise.all([getGPS(), new Promise(r=>setTimeout(r,500))]);
     sessions.push({clockIn:timeStr,clockOut:'',gps_in:gps,overnight:false});
     setFlexSessions(name,sessions);
@@ -1961,18 +1962,20 @@ async function flexClockIn(name){
     showToast('✓ '+name+' flex session #'+sessions.length+' started');
   } finally {
     _flexClockLock.delete(name);
+    if(btn && origLabel!==null){ btn.disabled=false; btn.style.opacity=''; btn.style.cursor=''; btn.textContent=origLabel; }
   }
 }
 
-async function flexClockOut(name){
+async function flexClockOut(name,btn){
   if(_flexClockLock.has(name)) return;
   _flexClockLock.add(name);
+  const origLabel = btn ? btn.textContent : null;
+  if(btn){ btn.disabled=true; btn.style.opacity='.6'; btn.style.cursor='not-allowed'; btn.textContent='⏳ Please wait…'; }
   try{
     const sessions=getFlexSessions(name);
     const active=activeFlexSession(sessions);
     if(!active){ showToast('Not clocked in','warn'); return; }
     const timeStr=nowHMS();
-    showToast('⏳ Please wait, getting location…');
     const [gps]=await Promise.all([getGPS(), new Promise(r=>setTimeout(r,500))]);
     active.clockOut=timeStr;
     active.gps_out=gps;
@@ -1986,6 +1989,7 @@ async function flexClockOut(name){
     showToast('✓ '+name+' session ended · Total: '+minsToHHMM(totalMins));
   } finally {
     _flexClockLock.delete(name);
+    if(btn && origLabel!==null){ btn.disabled=false; btn.style.opacity=''; btn.style.cursor=''; btn.textContent=origLabel; }
   }
 }
 
@@ -2753,11 +2757,11 @@ function renderAttendance(){
       const sL=4-flexSess.length;
       const fDone=flexSess.length>=4&&!flexAct;
       if(canOut){
-        actionBtn=`<button class="btn-clockout" onclick="flexClockOut('${escH(name)}')">⏹ CLOCK OUT</button>`;
-        if(canIn) actionBtn+=`<button class="btn-clockin" onclick="flexClockIn('${escH(name)}')" style="margin-left:6px;opacity:.5;cursor:not-allowed;" disabled>▶ IN (${sL} left)</button>`;
-      } else if(canIn) actionBtn=`<button class="btn-clockin" onclick="flexClockIn('${escH(name)}')">▶ CLOCK IN${sL<4?' ('+sL+' left)':''}</button>`;
+        actionBtn=`<button class="btn-clockout" onclick="flexClockOut('${escH(name)}',this)">⏹ CLOCK OUT</button>`;
+        if(canIn) actionBtn+=`<button class="btn-clockin" onclick="flexClockIn('${escH(name)}',this)" style="margin-left:6px;opacity:.5;cursor:not-allowed;" disabled>▶ IN (${sL} left)</button>`;
+      } else if(canIn) actionBtn=`<button class="btn-clockin" onclick="flexClockIn('${escH(name)}',this)">▶ CLOCK IN${sL<4?' ('+sL+' left)':''}</button>`;
       else if(fDone) actionBtn=`<span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--good);padding:10px 0;">✓ Flex complete — ${minsToHHMM(flexTM)}</span>`;
-      else actionBtn=`<button class="btn-clockin" onclick="flexClockIn('${escH(name)}')">▶ CLOCK IN</button>`;
+      else actionBtn=`<button class="btn-clockin" onclick="flexClockIn('${escH(name)}',this)">▶ CLOCK IN</button>`;
     } else if(!rec.clockIn) actionBtn=`<button class="btn-clockin" onclick="requestClockin('${name}')">▶ CLOCK IN</button>`;
     else if(!rec.clockOut) actionBtn=`<button class="btn-clockout" onclick="requestClockOut('${name}')">⏹ CLOCK OUT</button>`;
     else actionBtn=`<span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--good);padding:10px 0;">✓ ${dayOff?'OT':'Shift'} complete — ${hours.toFixed(1)}h</span>`;
@@ -3027,7 +3031,7 @@ function requestClockOut(name){
   document.getElementById('jobUpdateModal').classList.add('show');
 }
 
-function confirmClockIn(){
+async function confirmClockIn(){
   const {name,isLate}=pendingClockAction||{};
   if(!name) return;
   const reason=document.getElementById('clockInReason').value.trim();
@@ -3037,9 +3041,15 @@ function confirmClockIn(){
     document.getElementById('clockInReason').focus();
     return;
   }
-  closeModal('clockInModal');
+  const btn=document.getElementById('clockInBtn'), cancelBtn=document.getElementById('clockInCancelBtn');
+  const origLabel=btn.textContent;
+  btn.disabled=true; cancelBtn.disabled=true;
+  btn.textContent='⏳ Please wait…';
   pendingClockAction=null;
-  doClockin(name,reason);
+  await doClockin(name,reason);
+  btn.disabled=false; cancelBtn.disabled=false;
+  btn.textContent=origLabel;
+  closeModal('clockInModal');
 }
 
 function proceedToClockOut(){
@@ -3063,7 +3073,7 @@ function proceedToClockOut(){
   setTimeout(()=>document.getElementById('clockOutReason').focus(),200);
 }
 
-function confirmClockOut(){
+async function confirmClockOut(){
   const {name,isEarly}=pendingClockAction||{};
   if(!name) return;
   const reason=document.getElementById('clockOutReason').value.trim();
@@ -3073,9 +3083,15 @@ function confirmClockOut(){
     document.getElementById('clockOutReason').focus();
     return;
   }
-  closeModal('clockOutModal');
+  const btn=document.getElementById('clockOutBtn'), cancelBtn=document.getElementById('clockOutCancelBtn');
+  const origLabel=btn.textContent;
+  btn.disabled=true; cancelBtn.disabled=true;
+  btn.textContent='⏳ Please wait…';
   pendingClockAction=null;
-  doClockout(name,reason);
+  await doClockout(name,reason);
+  btn.disabled=false; cancelBtn.disabled=false;
+  btn.textContent=origLabel;
+  closeModal('clockOutModal');
 }
 
 async function doClockin(name,reason=''){
