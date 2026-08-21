@@ -1512,8 +1512,7 @@ let _idleInterval = null;
 let _idleActivityBound = false;
 
 function startIdleTimer(){
-  // Only enforce on admin / supervisor
-  if(!SESSION || (SESSION.role !== 'admin' && SESSION.role !== 'supervisor')) return;
+  if(!SESSION) return;
   resetIdleTimer();
   // Bind activity listeners once (passive for performance)
   if(!_idleActivityBound){
