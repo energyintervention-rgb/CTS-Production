@@ -1772,10 +1772,27 @@ function sendPINResetRequest(name,projectId){
 const MAX_WORK_HOURS=12;
 function checkAutoClockOut(){
   if(!SESSION||SESSION.role!=='worker') return;
-  const name=SESSION.name, pr=attProject();
+  checkAutoClockOutForWorker(SESSION.name, true);
+}
+
+// Runs for every worker in the project — used on admin/supervisor login so
+// stale open sessions get closed promptly instead of waiting for that
+// specific worker to log back in themselves (which could be days/weeks later).
+function checkAutoClockOutAll(){
+  const pr=attProject();
+  if(!pr) return;
+  (pr.workers||[]).forEach(w=>{
+    const name=(typeof w==='string')?w:(w.name||'');
+    if(name) checkAutoClockOutForWorker(name, false);
+  });
+}
+
+function checkAutoClockOutForWorker(name, showModal){
+  const pr=attProject();
   if(!pr) return;
   const att=pr.attendance||{};
   const keys=Object.keys(att).filter(k=>k.startsWith(name+'_')&&k!==name+'_'+TODAY);
+  let anyClosed=false;
   keys.forEach(key=>{
     const rec=att[key];
     const dateStr=key.replace(name+'_','');
@@ -1790,16 +1807,21 @@ function checkAutoClockOut(){
       const autoTime=String(autoH).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s||0).padStart(2,'0');
       if(openFlex){ openFlex.clockOut=autoTime; openFlex.autoClockOut=true; if(pr.flexSessions) pr.flexSessions[flexKey]=sessions; }
       if(openMain){ rec.clockOut=autoTime; rec.autoClockOut=true; att[key]=rec; }
-      document.getElementById('autoClockOutMsg').textContent='You did not clock out on '+dateStr+'. You have been automatically clocked out at '+autoTime+' ('+MAX_WORK_HOURS+'h limit).';
-      document.getElementById('autoClockOutModal').style.display='flex';
-      document.getElementById('autoClockOutReason').value='';
-      document.getElementById('autoClockOutHint').style.display='none';
-      window._autoClockOutKey=key; window._autoClockOutDate=dateStr; window._autoClockOutName=name; window._autoClockOutTime=autoTime;
       logActivity('AUTO_CLOCKOUT','Auto clocked out '+name+' on '+dateStr+' at '+autoTime+' (12h limit)',name);
-      saveState();
+      anyClosed=true;
+      if(showModal){
+        document.getElementById('autoClockOutMsg').textContent='You did not clock out on '+dateStr+'. You have been automatically clocked out at '+autoTime+' ('+MAX_WORK_HOURS+'h limit).';
+        document.getElementById('autoClockOutModal').style.display='flex';
+        document.getElementById('autoClockOutReason').value='';
+        document.getElementById('autoClockOutHint').style.display='none';
+        window._autoClockOutKey=key; window._autoClockOutDate=dateStr; window._autoClockOutName=name; window._autoClockOutTime=autoTime;
+      }
     }
   });
+  if(anyClosed) saveState();
+  return anyClosed;
 }
+
 
 function confirmAutoClockOutReason(){
   const reason=document.getElementById('autoClockOutReason').value.trim();
@@ -1834,8 +1856,8 @@ function onLoginSuccess(){
     showWorkerView();
     setTimeout(checkAutoClockOut,800);
     startIdleTimer();
-  } else if(SESSION.role==='supervisor') { showSupervisorView(); startIdleTimer(); }
-  else { showAdminView(); startIdleTimer(); }
+  } else if(SESSION.role==='supervisor') { showSupervisorView(); startIdleTimer(); setTimeout(checkAutoClockOutAll,800); }
+  else { showAdminView(); startIdleTimer(); setTimeout(checkAutoClockOutAll,800); }
 }
 
 function showWorkerView(){
